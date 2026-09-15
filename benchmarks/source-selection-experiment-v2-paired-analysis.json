@@ -1,0 +1,291 @@
+{
+  "note": "Paired per-question comparison on common answerable-question subsets only, from per-question metrics of the saved strict evaluation runs (k=5 unless noted).",
+  "answerable_sets": {
+    "QUALITY_SELECTED|5": [
+      "auto-eng-011",
+      "auto-eng-012",
+      "auto-eng-013",
+      "auto-eng-014",
+      "auto-eng-015",
+      "auto-eng-016",
+      "auto-eng-017",
+      "auto-eng-018",
+      "auto-eng-026",
+      "auto-eng-027",
+      "auto-eng-028"
+    ],
+    "QUALITY_SELECTED|8": [
+      "auto-eng-009",
+      "auto-eng-010",
+      "auto-eng-011",
+      "auto-eng-012",
+      "auto-eng-013",
+      "auto-eng-014",
+      "auto-eng-015",
+      "auto-eng-016",
+      "auto-eng-017",
+      "auto-eng-018",
+      "auto-eng-026",
+      "auto-eng-027",
+      "auto-eng-028"
+    ],
+    "QUALITY_SELECTED|11": [
+      "auto-eng-001",
+      "auto-eng-002",
+      "auto-eng-003",
+      "auto-eng-004",
+      "auto-eng-009",
+      "auto-eng-010",
+      "auto-eng-011",
+      "auto-eng-012",
+      "auto-eng-013",
+      "auto-eng-014",
+      "auto-eng-015",
+      "auto-eng-016",
+      "auto-eng-017",
+      "auto-eng-018",
+      "auto-eng-026",
+      "auto-eng-027",
+      "auto-eng-028"
+    ],
+    "RANDOM_BASELINE|5": [
+      "auto-eng-005",
+      "auto-eng-006",
+      "auto-eng-007",
+      "auto-eng-008"
+    ],
+    "RANDOM_BASELINE|8": [
+      "auto-eng-005",
+      "auto-eng-006",
+      "auto-eng-007",
+      "auto-eng-008"
+    ],
+    "RANDOM_BASELINE|11": [
+      "auto-eng-005",
+      "auto-eng-006",
+      "auto-eng-007",
+      "auto-eng-008",
+      "auto-eng-011",
+      "auto-eng-012",
+      "auto-eng-016",
+      "auto-eng-017",
+      "auto-eng-018",
+      "auto-eng-028"
+    ]
+  },
+  "paired": {
+    "QUALITY11_vs_RANDOM11_k3": {
+      "k": 3,
+      "n_common": 6,
+      "questions": [
+        "auto-eng-011",
+        "auto-eng-012",
+        "auto-eng-016",
+        "auto-eng-017",
+        "auto-eng-018",
+        "auto-eng-028"
+      ],
+      "left": {
+        "run": "QUALITY_SELECTED|11",
+        "mean_recall": 0.6667,
+        "mean_mrr": 0.5833,
+        "mean_ndcg": 0.6052
+      },
+      "right": {
+        "run": "RANDOM_BASELINE|11",
+        "mean_recall": 0.6667,
+        "mean_mrr": 0.5833,
+        "mean_ndcg": 0.6052
+      },
+      "left_better_recall": 0,
+      "right_better_recall": 0,
+      "equal_recall": 6,
+      "left_better_mrr": 0,
+      "right_better_mrr": 0,
+      "equal_mrr": 6
+    },
+    "QUALITY11_vs_RANDOM11_k5": {
+      "k": 5,
+      "n_common": 6,
+      "questions": [
+        "auto-eng-011",
+        "auto-eng-012",
+        "auto-eng-016",
+        "auto-eng-017",
+        "auto-eng-018",
+        "auto-eng-028"
+      ],
+      "left": {
+        "run": "QUALITY_SELECTED|11",
+        "mean_recall": 1.0,
+        "mean_mrr": 0.65,
+        "mean_ndcg": 0.7341
+      },
+      "right": {
+        "run": "RANDOM_BASELINE|11",
+        "mean_recall": 1.0,
+        "mean_mrr": 0.6667,
+        "mean_ndcg": 0.7487
+      },
+      "left_better_recall": 0,
+      "right_better_recall": 0,
+      "equal_recall": 6,
+      "left_better_mrr": 0,
+      "right_better_mrr": 2,
+      "equal_mrr": 4
+    },
+    "QUALITY11_vs_RANDOM11_k10": {
+      "k": 10,
+      "n_common": 6,
+      "questions": [
+        "auto-eng-011",
+        "auto-eng-012",
+        "auto-eng-016",
+        "auto-eng-017",
+        "auto-eng-018",
+        "auto-eng-028"
+      ],
+      "left": {
+        "run": "QUALITY_SELECTED|11",
+        "mean_recall": 1.0,
+        "mean_mrr": 0.65,
+        "mean_ndcg": 0.7341
+      },
+      "right": {
+        "run": "RANDOM_BASELINE|11",
+        "mean_recall": 1.0,
+        "mean_mrr": 0.6667,
+        "mean_ndcg": 0.7487
+      },
+      "left_better_recall": 0,
+      "right_better_recall": 0,
+      "equal_recall": 6,
+      "left_better_mrr": 0,
+      "right_better_mrr": 2,
+      "equal_mrr": 4
+    },
+    "QUALITY5_vs_RANDOM5_k3": {
+      "k": 3,
+      "n_common": 0,
+      "questions": [],
+      "left": {
+        "run": "QUALITY_SELECTED|5",
+        "mean_recall": null,
+        "mean_mrr": null,
+        "mean_ndcg": null
+      },
+      "right": {
+        "run": "RANDOM_BASELINE|5",
+        "mean_recall": null,
+        "mean_mrr": null,
+        "mean_ndcg": null
+      }
+    },
+    "QUALITY5_vs_RANDOM5_k5": {
+      "k": 5,
+      "n_common": 0,
+      "questions": [],
+      "left": {
+        "run": "QUALITY_SELECTED|5",
+        "mean_recall": null,
+        "mean_mrr": null,
+        "mean_ndcg": null
+      },
+      "right": {
+        "run": "RANDOM_BASELINE|5",
+        "mean_recall": null,
+        "mean_mrr": null,
+        "mean_ndcg": null
+      }
+    },
+    "QUALITY5_vs_RANDOM5_k10": {
+      "k": 10,
+      "n_common": 0,
+      "questions": [],
+      "left": {
+        "run": "QUALITY_SELECTED|5",
+        "mean_recall": null,
+        "mean_mrr": null,
+        "mean_ndcg": null
+      },
+      "right": {
+        "run": "RANDOM_BASELINE|5",
+        "mean_recall": null,
+        "mean_mrr": null,
+        "mean_ndcg": null
+      }
+    },
+    "QUALITY5_vs_QUALITY8_k5": {
+      "k": 5,
+      "n_common": 11,
+      "questions": [
+        "auto-eng-011",
+        "auto-eng-012",
+        "auto-eng-013",
+        "auto-eng-014",
+        "auto-eng-015",
+        "auto-eng-016",
+        "auto-eng-017",
+        "auto-eng-018",
+        "auto-eng-026",
+        "auto-eng-027",
+        "auto-eng-028"
+      ],
+      "left": {
+        "run": "QUALITY_SELECTED|5",
+        "mean_recall": 0.9091,
+        "mean_mrr": 0.6818,
+        "mean_ndcg": 0.7385
+      },
+      "right": {
+        "run": "QUALITY_SELECTED|8",
+        "mean_recall": 0.9091,
+        "mean_mrr": 0.6727,
+        "mean_ndcg": 0.7305
+      },
+      "left_better_recall": 0,
+      "right_better_recall": 0,
+      "equal_recall": 11,
+      "left_better_mrr": 2,
+      "right_better_mrr": 0,
+      "equal_mrr": 9
+    },
+    "QUALITY8_vs_QUALITY11_k5": {
+      "k": 5,
+      "n_common": 13,
+      "questions": [
+        "auto-eng-009",
+        "auto-eng-010",
+        "auto-eng-011",
+        "auto-eng-012",
+        "auto-eng-013",
+        "auto-eng-014",
+        "auto-eng-015",
+        "auto-eng-016",
+        "auto-eng-017",
+        "auto-eng-018",
+        "auto-eng-026",
+        "auto-eng-027",
+        "auto-eng-028"
+      ],
+      "left": {
+        "run": "QUALITY_SELECTED|8",
+        "mean_recall": 0.9231,
+        "mean_mrr": 0.7231,
+        "mean_ndcg": 0.772
+      },
+      "right": {
+        "run": "QUALITY_SELECTED|11",
+        "mean_recall": 0.9231,
+        "mean_mrr": 0.7231,
+        "mean_ndcg": 0.772
+      },
+      "left_better_recall": 0,
+      "right_better_recall": 0,
+      "equal_recall": 13,
+      "left_better_mrr": 0,
+      "right_better_mrr": 0,
+      "equal_mrr": 13
+    }
+  }
+}

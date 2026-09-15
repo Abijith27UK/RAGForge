@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #0A0E14;
+  color: #E7ECF3;
+  font-feature-settings: "tnum" 1, "cv03" 1, "cv04" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin, unobtrusive scrollbars (developer-tool feel). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2A3546 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2A3546;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::selection {
+  background: #0B3B55;
+  color: #E7ECF3;
+}
+
+/* Keyboard focus is always visible, never a generic outline. */
+:focus-visible {
+  outline: 1px solid #38BDF8;
+  outline-offset: 1px;
+}
+
+@layer components {
+  /* Uppercase micro-label used for section headers and column heads. */
+  .section-label {
+    @apply text-2xs font-semibold uppercase tracking-[0.14em] text-ink-faint;
+  }
+  /* Monospace data value. */
+  .data-value {
+    font-family: theme("fontFamily.mono");
+    font-variant-numeric: tabular-nums;
+  }
+  /* Skeleton shimmer block. */
+  .skeleton {
+    background: linear-gradient(90deg, #131924 25%, #182030 50%, #131924 75%);
+    background-size: 200px 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+}

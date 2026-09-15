@@ -1,0 +1,987 @@
+{
+  "experiment": "source-selection-experiment-v1",
+  "research_question": "Does explainable source-quality-based selection produce a better and/or more efficient domain-specific RAG knowledge base than an equivalent random-source baseline?",
+  "random_seed": 20260915,
+  "frozen_baseline_caveat": "All experiment results inherit the baseline limitation: ground truth was agent-authored by reading indexed chunk texts and is NOT human-reviewed. Results are NOT publication-grade.",
+  "run_at": "2026-09-15 17:11:50",
+  "runs": [
+    {
+      "strategy": "QUALITY_SELECTED",
+      "n_sources_requested": 5,
+      "n_sources_selected": 5,
+      "kb_id": "kb_58aee3f9b703",
+      "random_seed": null,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Ackermann_steering_geometry",
+          "source_id": "src_3d6a724d2ed8",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_98a530919e26",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-roll_bar",
+          "source_id": "src_3b10be94405b",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile",
+          "source_id": "src_1fd1cda81ce0",
+          "quality_score": 0.5358,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile_layout",
+          "source_id": "src_7d41ce63bdeb",
+          "quality_score": 0.5358,
+          "automated_decision": "REVIEW"
+        }
+      ],
+      "documents": 5,
+      "chunks": 277,
+      "corpus_chars": 166172,
+      "ingest_seconds": 1.7,
+      "index_seconds": 22.38,
+      "ingest_message": "5 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "277 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 0
+      },
+      "coverage": {
+        "answerable": 0,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-005",
+          "auto-eng-006",
+          "auto-eng-007",
+          "auto-eng-008",
+          "auto-eng-009",
+          "auto-eng-010",
+          "auto-eng-011",
+          "auto-eng-012",
+          "auto-eng-013",
+          "auto-eng-014",
+          "auto-eng-015",
+          "auto-eng-016",
+          "auto-eng-017",
+          "auto-eng-018",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025",
+          "auto-eng-026",
+          "auto-eng-027",
+          "auto-eng-028"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": null,
+          "recall_at_k": null,
+          "precision_at_k": null,
+          "mrr": null,
+          "ndcg": null,
+          "doc_recall_at_k": null,
+          "questions_evaluated": 0,
+          "note": "no answerable questions in this corpus; evaluation not run"
+        },
+        "5": {
+          "run_id": null,
+          "recall_at_k": null,
+          "precision_at_k": null,
+          "mrr": null,
+          "ndcg": null,
+          "doc_recall_at_k": null,
+          "questions_evaluated": 0,
+          "note": "no answerable questions in this corpus; evaluation not run"
+        },
+        "10": {
+          "run_id": null,
+          "recall_at_k": null,
+          "precision_at_k": null,
+          "mrr": null,
+          "ndcg": null,
+          "doc_recall_at_k": null,
+          "questions_evaluated": 0,
+          "note": "no answerable questions in this corpus; evaluation not run"
+        }
+      }
+    },
+    {
+      "strategy": "QUALITY_SELECTED",
+      "n_sources_requested": 8,
+      "n_sources_selected": 8,
+      "kb_id": "kb_c1a41117c392",
+      "random_seed": null,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Ackermann_steering_geometry",
+          "source_id": "src_7c237d8876ef",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_e03e95883058",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-roll_bar",
+          "source_id": "src_bf8881095e24",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automatic_transmission",
+          "source_id": "src_027ff7457f22",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile",
+          "source_id": "src_d4a829498daa",
+          "quality_score": 0.5358,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile_layout",
+          "source_id": "src_a8d5eece5ca7",
+          "quality_score": 0.5358,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Battery_management_system",
+          "source_id": "src_d8a5dca5f629",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Brake",
+          "source_id": "src_80e6de1cc3ee",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        }
+      ],
+      "documents": 8,
+      "chunks": 386,
+      "corpus_chars": 243064,
+      "ingest_seconds": 2.93,
+      "index_seconds": 25.25,
+      "ingest_message": "8 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "386 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 3
+      },
+      "coverage": {
+        "answerable": 3,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-005",
+          "auto-eng-006",
+          "auto-eng-007",
+          "auto-eng-008",
+          "auto-eng-011",
+          "auto-eng-012",
+          "auto-eng-013",
+          "auto-eng-014",
+          "auto-eng-015",
+          "auto-eng-016",
+          "auto-eng-017",
+          "auto-eng-018",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-026",
+          "auto-eng-027",
+          "auto-eng-028"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_6855e57b7c23",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 3
+        },
+        "5": {
+          "run_id": "eval_4e6366e6d38d",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.20000000000000004,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 3
+        },
+        "10": {
+          "run_id": "eval_606850e4c211",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.10000000000000002,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 3
+        }
+      }
+    },
+    {
+      "strategy": "QUALITY_SELECTED",
+      "n_sources_requested": 11,
+      "n_sources_selected": 11,
+      "kb_id": "kb_3217fd29bc60",
+      "random_seed": null,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Ackermann_steering_geometry",
+          "source_id": "src_804532c33f8f",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_74089d33b2a2",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-roll_bar",
+          "source_id": "src_9215f671cd4d",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automatic_transmission",
+          "source_id": "src_1744422e59ba",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile",
+          "source_id": "src_5d5b49a60dfc",
+          "quality_score": 0.5358,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile_layout",
+          "source_id": "src_62a3fc1a353b",
+          "quality_score": 0.5358,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Battery_management_system",
+          "source_id": "src_a4f1b72698ca",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Brake",
+          "source_id": "src_5436ea63cacb",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Charging_station",
+          "source_id": "src_f095ed52c89a",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Continuously_variable_transmission",
+          "source_id": "src_d62d94402f4d",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Crumple_zone",
+          "source_id": "src_9e0e981bf669",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        }
+      ],
+      "documents": 11,
+      "chunks": 684,
+      "corpus_chars": 379231,
+      "ingest_seconds": 4.41,
+      "index_seconds": 36.16,
+      "ingest_message": "11 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "684 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 3
+      },
+      "coverage": {
+        "answerable": 3,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-005",
+          "auto-eng-006",
+          "auto-eng-007",
+          "auto-eng-008",
+          "auto-eng-011",
+          "auto-eng-012",
+          "auto-eng-013",
+          "auto-eng-014",
+          "auto-eng-015",
+          "auto-eng-016",
+          "auto-eng-017",
+          "auto-eng-018",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-026",
+          "auto-eng-027",
+          "auto-eng-028"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_bef1b8ed8962",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 3
+        },
+        "5": {
+          "run_id": "eval_3bd64cb45cf1",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.20000000000000004,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 3
+        },
+        "10": {
+          "run_id": "eval_d79a52e851ba",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.10000000000000002,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 3
+        }
+      }
+    },
+    {
+      "strategy": "RANDOM_BASELINE",
+      "n_sources_requested": 5,
+      "n_sources_selected": 5,
+      "kb_id": "kb_8dfa42d87061",
+      "random_seed": 20260915,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_d7e6ed505ef9",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile",
+          "source_id": "src_982c63d0248f",
+          "quality_score": 0.5358,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Shock_absorber",
+          "source_id": "src_8f9b5bdad683",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Transmission_(mechanical_device)",
+          "source_id": "src_aa7ab0322945",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Wankel_engine",
+          "source_id": "src_f3c363cb7fa0",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        }
+      ],
+      "documents": 5,
+      "chunks": 431,
+      "corpus_chars": 289176,
+      "ingest_seconds": 4.5,
+      "index_seconds": 49.16,
+      "ingest_message": "5 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "431 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 4
+      },
+      "coverage": {
+        "answerable": 4,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-009",
+          "auto-eng-010",
+          "auto-eng-011",
+          "auto-eng-012",
+          "auto-eng-013",
+          "auto-eng-014",
+          "auto-eng-015",
+          "auto-eng-016",
+          "auto-eng-017",
+          "auto-eng-018",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025",
+          "auto-eng-026",
+          "auto-eng-027",
+          "auto-eng-028"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_2c67d0919061",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        },
+        "5": {
+          "run_id": "eval_66efd6a56fa3",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        },
+        "10": {
+          "run_id": "eval_01ba831e5009",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        }
+      }
+    },
+    {
+      "strategy": "RANDOM_BASELINE",
+      "n_sources_requested": 8,
+      "n_sources_selected": 8,
+      "kb_id": "kb_4247706c2612",
+      "random_seed": 20260915,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_068d9ebad13a",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile",
+          "source_id": "src_28c60c76b564",
+          "quality_score": 0.5358,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Diesel_engine",
+          "source_id": "src_103bfbb32c90",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Double_wishbone_suspension",
+          "source_id": "src_c79ebbb042cb",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Lithium-ion_battery",
+          "source_id": "src_3b53f81f33ca",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Tire",
+          "source_id": "src_8f74ee291e43",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Transmission_(mechanical_device)",
+          "source_id": "src_326a3b2dd560",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Wankel_engine",
+          "source_id": "src_6d1d7e3c780e",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        }
+      ],
+      "documents": 8,
+      "chunks": 953,
+      "corpus_chars": 628646,
+      "ingest_seconds": 10.3,
+      "index_seconds": 87.76,
+      "ingest_message": "8 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "953 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 4
+      },
+      "coverage": {
+        "answerable": 4,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-009",
+          "auto-eng-010",
+          "auto-eng-011",
+          "auto-eng-012",
+          "auto-eng-013",
+          "auto-eng-014",
+          "auto-eng-015",
+          "auto-eng-016",
+          "auto-eng-017",
+          "auto-eng-018",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025",
+          "auto-eng-026",
+          "auto-eng-027",
+          "auto-eng-028"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_a8b328a1c9e3",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        },
+        "5": {
+          "run_id": "eval_0711a96fb725",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        },
+        "10": {
+          "run_id": "eval_3b7ddea79265",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        }
+      }
+    },
+    {
+      "strategy": "RANDOM_BASELINE",
+      "n_sources_requested": 11,
+      "n_sources_selected": 11,
+      "kb_id": "kb_ca4af9e662d3",
+      "random_seed": 20260915,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_46b69fceafda",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automatic_transmission",
+          "source_id": "src_c6adb224da07",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile",
+          "source_id": "src_85d30727e7d7",
+          "quality_score": 0.5358,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Diesel_engine",
+          "source_id": "src_8adc7fb970e7",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Double_wishbone_suspension",
+          "source_id": "src_13c379371d2c",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Lithium-ion_battery",
+          "source_id": "src_bb5117bd68ee",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Regenerative_braking",
+          "source_id": "src_dba478ee5f5e",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Suspension_(vehicle)",
+          "source_id": "src_4e37e6c0e570",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Tire",
+          "source_id": "src_9dca21bd53a3",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Transmission_(mechanical_device)",
+          "source_id": "src_6c8ce2095945",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Wankel_engine",
+          "source_id": "src_8f71c04c3375",
+          "quality_score": 0.4525,
+          "automated_decision": "REVIEW"
+        }
+      ],
+      "documents": 11,
+      "chunks": 1191,
+      "corpus_chars": 774049,
+      "ingest_seconds": 5.51,
+      "index_seconds": 63.85,
+      "ingest_message": "11 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "1191 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 10
+      },
+      "coverage": {
+        "answerable": 10,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-009",
+          "auto-eng-010",
+          "auto-eng-013",
+          "auto-eng-014",
+          "auto-eng-015",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025",
+          "auto-eng-026",
+          "auto-eng-027"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_5d1d5e9b637c",
+          "recall_at_k": 0.8,
+          "precision_at_k": 0.3,
+          "mrr": 0.6833333333333333,
+          "ndcg": 0.7130929753571458,
+          "doc_recall_at_k": 0.9,
+          "questions_evaluated": 10
+        },
+        "5": {
+          "run_id": "eval_430f6a51d8b7",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.22000000000000003,
+          "mrr": 0.7333333333333333,
+          "ndcg": 0.7992282869718244,
+          "doc_recall_at_k": 0.9,
+          "questions_evaluated": 10
+        },
+        "10": {
+          "run_id": "eval_144ff39309cb",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.11000000000000001,
+          "mrr": 0.7333333333333333,
+          "ndcg": 0.7992282869718244,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 10
+        }
+      }
+    }
+  ],
+  "staging_kb_id": "kb_deaef26a2c0f",
+  "pool_ranking": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Automobile",
+      "quality_score": 0.5358,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Automobile_layout",
+      "quality_score": 0.5358,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Ackermann_steering_geometry",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Anti-roll_bar",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Automatic_transmission",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Battery_management_system",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Brake",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Charging_station",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Continuously_variable_transmission",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Crumple_zone",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Diesel_engine",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Differential_(mechanical_device)",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Disc_brake",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Double_wishbone_suspension",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Drum_brake",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Dual-clutch_transmission",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Electric_motor",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Electric_vehicle",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Engine",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Four-stroke_engine",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Fuel_injection",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Hybrid_electric_vehicle",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Lithium-ion_battery",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/MacPherson_strut",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Manual_transmission",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Regenerative_braking",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Shock_absorber",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Steering",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Suspension_(vehicle)",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Tire",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Transmission_(mechanical_device)",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Turbocharger",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Vehicle_dynamics",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Vehicle_frame",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Wankel_engine",
+      "quality_score": 0.4525,
+      "automated_decision": "REVIEW"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Optional: OpenAI-compatible LLM + embeddings (works for OpenAI, local servers, etc.)
+# Install with: pip install -r requirements-openai.txt
+openai>=1.40

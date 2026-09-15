@@ -1,0 +1,272 @@
+{
+  "benchmark": "automobile-engineering-baseline-v1",
+  "version": 1,
+  "created_at": "2026-09-15",
+  "kb_id": "kb_f278c283c748",
+  "kb_name": "Automobile Engineering KB (E2E)",
+  "authorship": {
+    "method": "manual chunk selection by reading indexed chunk texts (no keywords, no LLM generation)",
+    "author": "Buffy (Codebuff agent), operating under explicit human instruction",
+    "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+    "integrity_rules": [
+      "Every expected_chunk_id must exist in the KB at load time (loader validates).",
+      "Ground truth is chunk-ID based only; keyword fallback is diagnostic-only and never mixes into headline metrics.",
+      "No relevance grades: binary relevance (NDCG is binary-relevance NDCG)."
+    ]
+  },
+  "relevance_model": "binary",
+  "questions": [
+    {
+      "id": "auto-eng-001",
+      "subdomain": "engine",
+      "question": "What is an engine and what does it convert energy into?",
+      "expected_chunk_ids": ["chk_d15901e67e35"],
+      "expected_document_ids": ["doc_90752e50cc19"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_d15901e67e35 (Engine - Wikipedia, section Introduction): 'An engine or motor is a machine designed to convert one or more forms of energy into mechanical energy.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-002",
+      "subdomain": "engine",
+      "question": "Which internal combustion engine type has been most successful for light automobiles?",
+      "expected_chunk_ids": ["chk_c6fcd78d2a1b"],
+      "expected_document_ids": ["doc_90752e50cc19"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_c6fcd78d2a1b (Engine - Wikipedia, section Automobiles): 'The lightweight gasoline internal combustion engine, operating on a four-stroke Otto cycle, has been the most successful for light automobiles.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-003",
+      "subdomain": "engine",
+      "question": "Which engines are typically used for trucks and buses instead of gasoline engines?",
+      "expected_chunk_ids": ["chk_c6fcd78d2a1b"],
+      "expected_document_ids": ["doc_90752e50cc19"],
+      "expected_keywords": [],
+      "provenance": "Same chunk as auto-eng-002: 'the thermally more-efficient Diesel engine is used for trucks and buses.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-004",
+      "subdomain": "engine",
+      "question": "What four stages make up a four-stroke internal combustion cycle?",
+      "expected_chunk_ids": ["chk_d15901e67e35"],
+      "expected_document_ids": ["doc_90752e50cc19"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_d15901e67e35 figure caption: 'four stages of a four-stroke gasoline-fueled internal combustion cycle: Induction (Fuel enters), Compression, Ignition (Fuel is burnt), Emission (Exhaust exits).' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-005",
+      "subdomain": "transmission",
+      "question": "What is a transmission (gearbox) in a machine?",
+      "expected_chunk_ids": ["chk_32090a0af504"],
+      "expected_document_ids": ["doc_20244bd4c0a6"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_32090a0af504 (Transmission - Wikipedia, Introduction): 'A transmission (also called a gearbox) is a mechanical device which uses a gear set - two or more gears working together - to change the speed, direction of rotation, or torque multiplication or reduction.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-006",
+      "subdomain": "transmission",
+      "question": "How does a dual-clutch transmission differ from a manual transmission?",
+      "expected_chunk_ids": ["chk_4aad8a5bf267"],
+      "expected_document_ids": ["doc_20244bd4c0a6"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_4aad8a5bf267 (Transmission - Wikipedia, Dual-clutch section): 'A dual-clutch transmission (DCT) uses two separate clutches for odd and even gear sets... often similar to two separate manual transmissions with their respective clutches contained within one housing.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-007",
+      "subdomain": "transmission",
+      "question": "What distinguishes a continuously variable transmission from stepped transmissions?",
+      "expected_chunk_ids": ["chk_4aad8a5bf267"],
+      "expected_document_ids": ["doc_20244bd4c0a6"],
+      "expected_keywords": [],
+      "provenance": "Same chunk as auto-eng-006 (CVT paragraphs): 'A continuously variable transmission (CVT) can change seamlessly through a continuous range of gear ratios. This contrasts with other transmissions that provide a limited number of gear ratios in fixed steps.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-008",
+      "subdomain": "transmission",
+      "question": "What gearsets and coupling does a hydraulic automatic transmission typically use?",
+      "expected_chunk_ids": ["chk_f433a0155c1c"],
+      "expected_document_ids": ["doc_20244bd4c0a6"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_f433a0155c1c (Transmission - Wikipedia, Hydraulic automatic section): 'uses planetary gearsets that are operated using hydraulics... connected to the engine via a torque converter.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-009",
+      "subdomain": "braking",
+      "question": "What is a brake and by what means does it usually slow a vehicle?",
+      "expected_chunk_ids": ["chk_32d144475094"],
+      "expected_document_ids": ["doc_f70fcb4ed4e9"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_32d144475094 (Brake - Wikipedia, Introduction): 'A brake is a mechanical device that inhibits motion by absorbing energy from a moving system... most often accomplished by means of friction.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-010",
+      "subdomain": "braking",
+      "question": "How do friction pad/shoe brakes work in common configurations?",
+      "expected_chunk_ids": ["chk_12d14a4bdaa2"],
+      "expected_document_ids": ["doc_f70fcb4ed4e9"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_12d14a4bdaa2 (Brake - Wikipedia, Friction section): 'Friction (pad/shoe) brakes are often rotating devices with a stationary pad and a rotating wear surface. Common configurations include shoes that contract to rub on the outside of a rotating drum.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-011",
+      "subdomain": "braking",
+      "question": "How does regenerative braking differ from conventional friction braking in what happens to kinetic energy?",
+      "expected_chunk_ids": ["chk_6110c9562b0b"],
+      "expected_document_ids": ["doc_494b7f7a6fd7"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_6110c9562b0b (Regenerative braking - Wikipedia, Introduction): 'Regenerative braking is an energy recovery mechanism that slows down a moving vehicle or object by converting its kinetic energy or potential energy into a form that can be either used immediately or stored until needed.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-012",
+      "subdomain": "braking",
+      "question": "How do hybrid and fully electric vehicles combine regenerative and friction braking?",
+      "expected_chunk_ids": ["chk_25735cdb8449"],
+      "expected_document_ids": ["doc_494b7f7a6fd7"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_25735cdb8449 (Regenerative braking - Wikipedia): 'Many hybrid electric and fully electric vehicles employ regenerative braking in conjunction with friction braking' and 'Regenerative and friction braking must both be used, creating the need to control them to produce the required total braking.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-013",
+      "subdomain": "steering",
+      "question": "How does a conventional automotive steering system transmit driver input to the front wheels?",
+      "expected_chunk_ids": ["chk_412bc04d30b5"],
+      "expected_document_ids": ["doc_5679743e2c32"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_412bc04d30b5 (Steering - Wikipedia): 'The steering wheel is attached to a steering column, which is linked to rods, pivots and gears... may include a rack and pinion mechanism that converts several turns of the steering wheel into a large linear displacement.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-014",
+      "subdomain": "steering",
+      "question": "How do hydraulic and electric power steering systems differ in efficiency?",
+      "expected_chunk_ids": ["chk_9a61450271c8"],
+      "expected_document_ids": ["doc_5679743e2c32"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_9a61450271c8 (Steering - Wikipedia, Power steering): 'Electric Power Steering (EPS) is more efficient than hydraulic power-steering, since the electric power-steering motor only needs to provide assistance when the steering wheel is turned, whereas the hydraulic pump must run constantly.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-015",
+      "subdomain": "steering",
+      "question": "What does speed-sensitive steering change about assistance at low versus high speed?",
+      "expected_chunk_ids": ["chk_9a61450271c8"],
+      "expected_document_ids": ["doc_5679743e2c32"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_9a61450271c8 / adjacent Speed-sensitive steering text: 'highly assisted steering at low speeds for maneuverability, and lightly assisted steering at high speed for stability.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-016",
+      "subdomain": "suspension",
+      "question": "What factors influence a vehicle's roll rate and what does roll rate shift between axles?",
+      "expected_chunk_ids": ["chk_a35339965c58", "chk_a3b572103f5e"],
+      "expected_document_ids": ["doc_31ee9762026c"],
+      "expected_keywords": [],
+      "provenance": "Chunks chk_a35339965c58 and chk_a3b572103f5e (Car suspension - Wikipedia, Roll rate section): 'influenced by... sprung mass, track width, CG height, spring and damper rates, roll centre heights of front and rear, anti-roll bar stiffness and tire pressure/construction' and 'does not change the total amount of weight transfer... but shifts the speed and percentage of weight transferred... to another axle.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-017",
+      "subdomain": "suspension",
+      "question": "What is roll couple percentage and how is it commonly adjusted?",
+      "expected_chunk_ids": ["chk_a3b572103f5e"],
+      "expected_document_ids": ["doc_31ee9762026c"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_a3b572103f5e (Car suspension - Wikipedia, Roll couple percentage): 'a simplified method of describing lateral load transfer distribution front to rear, and subsequently handling balance... commonly adjusted through the use of anti-roll bars.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-018",
+      "subdomain": "suspension",
+      "question": "How can interconnected suspension decouple vehicle vibration modes passively?",
+      "expected_chunk_ids": ["chk_6feb72cf879a"],
+      "expected_document_ids": ["doc_31ee9762026c"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_6feb72cf879a (Car suspension - Wikipedia, Interconnected suspension): 'could easily decouple different vehicle vibration modes in a passive manner. Interconnections can be realized by various means, such as mechanical, hydraulic, and pneumatic.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-019",
+      "subdomain": "chassis",
+      "question": "What is a vehicle frame (chassis) and what role does it play?",
+      "expected_chunk_ids": ["chk_a7f082f1367f"],
+      "expected_document_ids": ["doc_239d623a606a"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_a7f082f1367f (Vehicle frame - Wikipedia, Introduction): 'A vehicle frame, also historically known as its chassis, is the main supporting structure of a motor vehicle to which all other components are attached, comparable to the skeleton of an organism.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-020",
+      "subdomain": "chassis",
+      "question": "What construction replaced body-on-frame in passenger cars during the 20th century?",
+      "expected_chunk_ids": ["chk_a7f082f1367f"],
+      "expected_document_ids": ["doc_239d623a606a"],
+      "expected_keywords": [],
+      "provenance": "Same chunk as auto-eng-019: 'Until the 1930s, virtually every car had a structural frame separate from its body, known as body-on-frame construction' and 'unibody passenger cars had become common' (unitized body). Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-021",
+      "subdomain": "chassis",
+      "question": "What is a ladder frame and where is it still commonly used?",
+      "expected_chunk_ids": ["chk_fe8b35e2ec9c"],
+      "expected_document_ids": ["doc_239d623a606a"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_fe8b35e2ec9c (Vehicle frame - Wikipedia, Frame rails): 'A ladder frame, named for its shape' with pickup truck frame caption 'heavy c-shaped longitudinal rails... crossmember just forward of the axle.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-022",
+      "subdomain": "vehicle-dynamics",
+      "question": "What attributes of tires most directly affect vehicle dynamics?",
+      "expected_chunk_ids": ["chk_9dad83ea029d"],
+      "expected_document_ids": ["doc_154c9462f9b4"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_9dad83ea029d (Vehicle dynamics - Wikipedia): 'le dynamics can be attributed directly to the tires. These include:' (pneumatic trail, slip angle, camber thrust etc. list follows). Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-023",
+      "subdomain": "vehicle-dynamics",
+      "question": "How can the dynamic behaviour of vehicles be analysed and simulated?",
+      "expected_chunk_ids": ["chk_9dad83ea029d"],
+      "expected_document_ids": ["doc_154c9462f9b4"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_9dad83ea029d (Vehicle dynamics - Wikipedia, Analysis and simulation): 'can be analysed in several different ways... as straightforward as a simple spring mass system, through a three-degree of freedom (DoF) bicycle model, to... multibody system simulation.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-024",
+      "subdomain": "vehicle-dynamics",
+      "question": "Which phenomena are listed as key vehicle dynamics behaviours (roll, pitch, yaw)?",
+      "expected_chunk_ids": ["chk_2c9452f46a9e"],
+      "expected_document_ids": ["doc_154c9462f9b4"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_2c9452f46a9e (Vehicle dynamics - Wikipedia, Introduction lists): 'Noise, vibration, and harshness; Pitch; Ride quality; Roll; Speed wobble; Understeer, oversteer, lift-off oversteer, and fishtailing; Weight transfer and load transfer; Yaw.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-025",
+      "subdomain": "electric-vehicles",
+      "question": "What is a battery management system and which battery states does it monitor?",
+      "expected_chunk_ids": ["chk_4aa26676288d"],
+      "expected_document_ids": ["doc_5ea596059dba"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_4aa26676288d (Battery management system - Wikipedia, Introduction): 'any electronic system that manages a rechargeable battery (cell or battery pack)... while monitoring and estimating its various states (such as state of health and state of charge).' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-026",
+      "subdomain": "electric-vehicles",
+      "question": "What kind of battery powers the propulsion system of a battery electric vehicle?",
+      "expected_chunk_ids": ["chk_e1cf621cbdf1"],
+      "expected_document_ids": ["doc_36e74359e648"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_e1cf621cbdf1 (Electric vehicle - Wikipedia): 'An electric-vehicle battery (EVB)... is a battery used to power the propulsion system of a battery electric vehicle (BEVs). These batteries are usually a secondary (rechargeable) battery, and are typically lithium-ion batteries.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-027",
+      "subdomain": "electric-vehicles",
+      "question": "How does AC versus DC electric vehicle charging work?",
+      "expected_chunk_ids": ["chk_dc579a51ada4"],
+      "expected_document_ids": ["doc_36e74359e648"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_dc579a51ada4 (Electric vehicle - Wikipedia, Charging section): 'At an AC charging station, AC power from the grid is supplied to this onboard charger, which converts it into DC power to recharge the battery. DC chargers provide higher-power charging... bypassing the onboard converter.' Manually read and selected 2026-09-15."
+    },
+    {
+      "id": "auto-eng-028",
+      "subdomain": "general-automobile",
+      "question": "What secondary energy source recovers energy that would otherwise be wasted by friction brakes in cars?",
+      "expected_chunk_ids": ["chk_bea2185abe4c"],
+      "expected_document_ids": ["doc_83cf15f7960a"],
+      "expected_keywords": [],
+      "provenance": "Chunk chk_bea2185abe4c (Car - Wikipedia, Hybrid/EV section): 'recovers and returns to a battery some energy which would otherwise be wasted by friction brakes getting hot' and 'all cars must have friction brakes (front disc brakes)'. Manually read and selected 2026-09-15."
+    }
+  ]
+}

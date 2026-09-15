@@ -1,0 +1,70 @@
+{
+  "domain": "Automobile Engineering",
+  "version": "1.0.0",
+  "provenance": "Curated domain configuration (agent-drafted, human review pending). Areas derived from the domain definition of automobile engineering, NOT from benchmark questions.",
+  "requirement_areas": [
+    {
+      "id": "engine",
+      "name": "Engine & power generation",
+      "description": "Internal and external combustion engines for vehicles: Otto and Diesel cycles, two-stroke and four-stroke operation, engine architecture (cylinders, pistons, crankshaft, valvetrain), rotary engines, turbocharging and supercharging, fuel systems and fuel injection, engine efficiency and emissions.",
+      "seed_terms": ["internal combustion engine", "four-stroke", "two-stroke", "Otto cycle", "Diesel engine", "cylinder", "piston", "crankshaft", "valvetrain", "turbocharger", "fuel injection", "compression ratio", "Wankel", "horsepower", "torque curve"],
+      "weight": 0.14
+    },
+    {
+      "id": "transmission",
+      "name": "Transmission & drivetrain",
+      "description": "Power transmission from engine to wheels: manual and automatic gearboxes, dual-clutch and continuously variable transmissions, torque converters, gear ratios, differentials, driveshafts, drive layouts (FWD, RWD, AWD), final drive.",
+      "seed_terms": ["transmission", "gearbox", "gear ratio", "clutch", "torque converter", "dual-clutch", "continuously variable", "differential", "driveshaft", "all-wheel drive", "final drive", "planetary gearset"],
+      "weight": 0.12
+    },
+    {
+      "id": "braking",
+      "name": "Braking systems",
+      "description": "Vehicle braking: friction brakes (disc and drum), hydraulic circuits, brake pads and rotors, anti-lock braking systems, brake force distribution, engine braking, regenerative braking interaction.",
+      "seed_terms": ["brake", "disc brake", "drum brake", "brake pad", "rotor", "hydraulic brake", "anti-lock braking", "brake force", "brake bias", "stopping distance", "fade"],
+      "weight": 0.12
+    },
+    {
+      "id": "steering",
+      "name": "Steering systems",
+      "description": "Directional control: steering geometry (Ackermann, camber, caster, toe), rack and pinion, recirculating ball, hydraulic and electric power steering, speed-sensitive assistance, four-wheel steering.",
+      "seed_terms": ["steering", "rack and pinion", "recirculating ball", "power steering", "Ackermann", "steering ratio", "kingpin", "caster angle", "toe angle", "four-wheel steering"],
+      "weight": 0.10
+    },
+    {
+      "id": "suspension",
+      "name": "Suspension & ride",
+      "description": "Wheels, tires, and suspension: springs, dampers, MacPherson strut, double wishbone, multi-link, anti-roll bars, unsprung mass, ride rate, roll rate, wheel alignment, tire construction and dynamics.",
+      "seed_terms": ["suspension", "spring", "damper", "shock absorber", "MacPherson strut", "double wishbone", "multi-link", "anti-roll bar", "sprung mass", "unsprung mass", "ride rate", "roll rate", "tire", "camber", "wheel alignment"],
+      "weight": 0.12
+    },
+    {
+      "id": "chassis",
+      "name": "Chassis & body structure",
+      "description": "Vehicle structures: ladder frame, body-on-frame, unibody/monocoque construction, subframes, crumple zones, crashworthiness, vehicle architecture, platform design, weight distribution.",
+      "seed_terms": ["chassis", "vehicle frame", "ladder frame", "body-on-frame", "unibody", "monocoque", "subframe", "crumple zone", "crash structure", "torsional stiffness", "weight distribution", "platform"],
+      "weight": 0.10
+    },
+    {
+      "id": "vehicle-dynamics",
+      "name": "Vehicle dynamics & handling",
+      "description": "Motion and control of the complete vehicle: longitudinal and lateral dynamics, understeer/oversteer, weight transfer, slip angles, roll and pitch, ride quality, handling balance, simulation models.",
+      "seed_terms": ["vehicle dynamics", "understeer", "oversteer", "weight transfer", "slip angle", "roll", "pitch", "yaw", "handling", "ride quality", "bicycle model", "lateral acceleration"],
+      "weight": 0.12
+    },
+    {
+      "id": "electric-vehicles",
+      "name": "Electric vehicles & electrification",
+      "description": "Electric and hybrid propulsion: battery electric vehicles, traction batteries and battery management, electric motors, power electronics and inverters, charging systems and infrastructure, hybridization, range and efficiency.",
+      "seed_terms": ["electric vehicle", "battery electric", "hybrid electric", "traction battery", "battery management system", "lithium-ion", "electric motor", "inverter", "charging station", "regenerative braking", "range", "kilowatt-hour"],
+      "weight": 0.12
+    },
+    {
+      "id": "fundamentals",
+      "name": "Automobile fundamentals & general systems",
+      "description": "General automobile engineering: vehicle classification and layout, major component systems, history and development of the automobile, safety systems, fuels, lubrication, cooling, electrical systems, maintenance engineering.",
+      "seed_terms": ["automobile", "car", "vehicle", "drivetrain", "powertrain", "axle", "wheel", "fuel system", "cooling system", "lubrication", "vehicle safety", "automotive engineering"],
+      "weight": 0.06
+    }
+  ]
+}

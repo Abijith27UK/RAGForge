@@ -1,0 +1,61 @@
+{
+  "experiment": "source-selection-experiment-v2",
+  "version": 1,
+  "created_at": "2026-09-15",
+  "research_question": "Does explainable source-quality-based selection produce a better and/or more efficient domain-specific RAG knowledge base than an equivalent random-source baseline?",
+  "supersedes": "source-selection-experiment-v1 (frozen; instrument failure: 34/36 sources scored an identical 0.4525 under the v1 scorer, so top-N degenerated into alphabetical selection)",
+  "instrument_fix": {
+    "scorer": "heuristic-v2-content-aware",
+    "design_doc": "docs/design-source-quality-v2.md",
+    "validation_report": "benchmarks/v2-pool-report.json",
+    "validation_summary": "36/36 unique content_relevance values and composites on the frozen 36-URL pool; evidence passages semantically audited; two prior iterations rejected by evidence audit (blended-query embedding mismatch, then Wikipedia navbox boilerplate masquerading as coverage) and fixed before validation.",
+    "stop_condition_status": "not triggered"
+  },
+  "hypotheses": {
+    "H1": "QUALITY_SELECTED corpora (top-N by v2 content-aware composite) achieve higher retrieval metrics (Recall@K, MRR, NDCG) on the frozen benchmark than RANDOM_BASELINE corpora of the same N, on the common answerable-question subset.",
+    "H2": "QUALITY_SELECTED corpora reach equal-or-better metrics with fewer documents/chunks/corpus characters than RANDOM_BASELINE (efficiency).",
+    "H0": "Selection strategy makes no difference in the metrics above.",
+    "honesty_note": "With N small relative to the pool, coverage (how many benchmark questions are even answerable in a corpus) may dominate retrieval metrics; coverage is reported strictly separately and cross-strategy metric comparisons are made only on common answerable-question subsets."
+  },
+  "variables": {
+    "independent": "source-selection strategy: QUALITY_SELECTED (top-N by v2 composite score) vs RANDOM_BASELINE (uniform random with fixed seed)",
+    "controlled": [
+      "candidate pool (same 36 URLs as v1)",
+      "number of sources N (5, 8, 11)",
+      "ingestion pipeline (same API, same parsers)",
+      "chunking (section-aware, target 1200, overlap 150)",
+      "embedding model (sentence-transformers MiniLM, 384-d, normalized)",
+      "vector database (Qdrant, dense cosine)",
+      "retrieval configuration (dense top-k)",
+      "evaluation benchmark (frozen automobile-engineering-baseline-v1 questions, strict mode, keyword fallback disabled)",
+      "random seed (20260915)"
+    ],
+    "dependent": [
+      "Recall@3/5/10, Precision@3/5/10, MRR, NDCG (chunk basis; doc-recall recorded)",
+      "coverage: answerable questions per corpus (reported separately, never mixed into metrics)",
+      "documents, chunks, corpus_chars, ingest_seconds, index_seconds",
+      "selected source ids + v2 signals (content_relevance, domain_coverage, confidence, composite)"
+    ]
+  },
+  "candidate_pool": {
+    "provenance": "identical to source-selection-experiment-v1.json candidate_pool (36 real Wikipedia URLs, all verified HTTP 200 at design time)",
+    "urls_ref": "../benchmarks/source-selection-experiment-v1.json#/candidate_pool/urls"
+  },
+  "selection_scores": {
+    "method": "v2 scorer run in the runner over the same cached page content; composite = content_relevance*0.40 + domain_coverage*0.20 + authority*0.15 + accessibility*0.10 + source_type*0.05 + recency*0.05 + duplication*0.05",
+    "tie_break": "descending composite, then URL ascending (deterministic)"
+  },
+  "protocol": {
+    "runs": "6 corpora: QUALITY_SELECTED x N in {5,8,11} and RANDOM_BASELINE x N in {5,8,11}",
+    "corpus_build": "per run: create KB -> analyze-domain (deterministic mock spec) -> discover sources (real probes) -> ACCEPT selected -> ingest -> index with controlled chunking config",
+    "ground_truth": "frozen benchmark questions translated per corpus via deterministic chunk content_hash; document GT via source URL; benchmark file never modified; questions with no translated GT are excluded as unanswerable and listed",
+    "evaluation": "strict mode (allow_keyword_fallback=false), top_k in {3,5,10}, per-run evaluation run ids recorded",
+    "comparison_rule": "cross-run metric comparisons only on the intersection of answerable questions; the intersection is reported explicitly"
+  },
+  "random_seed": 20260915,
+  "frozen_baseline": {
+    "benchmark": "benchmarks/automobile-engineering-baseline-v1.json (never modified by this experiment)",
+    "ground_truth_caveat": "Ground truth is agent-authored, human review pending. Every metric in this experiment inherits that limitation and must not be presented as publication-grade until a human has reviewed the benchmark selections."
+  },
+  "no_new_retrieval_features": ["BM25", "hybrid retrieval", "reranking", "semantic chunking", "LLM-as-a-judge", "automatic optimization", "MCP", "chatbot", "multi-agent"]
+}

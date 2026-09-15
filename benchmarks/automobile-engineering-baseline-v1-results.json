@@ -1,0 +1,922 @@
+{
+  "benchmark": "automobile-engineering-baseline-v1",
+  "kb_id": "kb_f278c283c748",
+  "run_at": "2026-09-15 16:46:04",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "retrieval_backend": "qdrant-dense",
+  "strict_runs": [
+    {
+      "run_id": "eval_cfa40aa87e11",
+      "label": "automobile-engineering-baseline-v1 strict k=3",
+      "top_k": 3,
+      "aggregate": {
+        "recall_at_k": 0.8214285714285714,
+        "precision_at_k": 0.2857142857142857,
+        "mrr": 0.7083333333333333,
+        "ndcg": 0.7376660274234746,
+        "doc_recall_at_k": 0.9642857142857143,
+        "doc_precision_at_k": 0.32142857142857145,
+        "doc_mrr": 0.9464285714285714,
+        "doc_ndcg": 2.001253690943906,
+        "questions_evaluated": 28,
+        "questions_with_explicit_gt": 28,
+        "questions_with_keyword_fallback": 0,
+        "questions_skipped_no_gt": 0,
+        "strict_mode": true,
+        "run_label": "automobile-engineering-baseline-v1 strict k=3",
+        "notes": "Run label: automobile-engineering-baseline-v1 strict k=3"
+      },
+      "per_question": [
+        {
+          "benchmark_id": "auto-eng-001",
+          "question": "What is an engine and what does it convert energy into?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-002",
+          "question": "Which internal combustion engine type has been most successful for light automobiles?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-003",
+          "question": "Which engines are typically used for trucks and buses instead of gasoline engines?",
+          "recall_at_k": 0.0,
+          "precision_at_k": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-004",
+          "question": "What four stages make up a four-stroke internal combustion cycle?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-005",
+          "question": "What is a transmission (gearbox) in a machine?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-006",
+          "question": "How does a dual-clutch transmission differ from a manual transmission?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-007",
+          "question": "What distinguishes a continuously variable transmission from stepped transmissions?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-008",
+          "question": "What gearsets and coupling does a hydraulic automatic transmission typically use?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-009",
+          "question": "What is a brake and by what means does it usually slow a vehicle?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-010",
+          "question": "How do friction pad/shoe brakes work in common configurations?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-011",
+          "question": "How does regenerative braking differ from conventional friction braking in what happens to kinetic energy?",
+          "recall_at_k": 0.0,
+          "precision_at_k": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-012",
+          "question": "How do hybrid and fully electric vehicles combine regenerative and friction braking?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-013",
+          "question": "How does a conventional automotive steering system transmit driver input to the front wheels?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-014",
+          "question": "How do hydraulic and electric power steering systems differ in efficiency?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-015",
+          "question": "What does speed-sensitive steering change about assistance at low versus high speed?",
+          "recall_at_k": 0.0,
+          "precision_at_k": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-016",
+          "question": "What factors influence a vehicle's roll rate and what does roll rate shift between axles?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.6666666666666666,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-017",
+          "question": "What is roll couple percentage and how is it commonly adjusted?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-018",
+          "question": "How can interconnected suspension decouple vehicle vibration modes passively?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-019",
+          "question": "What is a vehicle frame (chassis) and what role does it play?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.3333333333333333,
+          "ndcg": 0.5,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-020",
+          "question": "What construction replaced body-on-frame in passenger cars during the 20th century?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-021",
+          "question": "What is a ladder frame and where is it still commonly used?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-022",
+          "question": "What attributes of tires most directly affect vehicle dynamics?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-023",
+          "question": "How can the dynamic behaviour of vehicles be analysed and simulated?",
+          "recall_at_k": 0.0,
+          "precision_at_k": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-024",
+          "question": "Which phenomena are listed as key vehicle dynamics behaviours (roll, pitch, yaw)?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-025",
+          "question": "What is a battery management system and which battery states does it monitor?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-026",
+          "question": "What kind of battery powers the propulsion system of a battery electric vehicle?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-027",
+          "question": "How does AC versus DC electric vehicle charging work?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-028",
+          "question": "What secondary energy source recovers energy that would otherwise be wasted by friction brakes in cars?",
+          "recall_at_k": 0.0,
+          "precision_at_k": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "doc_recall_at_k": 0.0,
+          "note": ""
+        }
+      ]
+    },
+    {
+      "run_id": "eval_72da28c330e5",
+      "label": "automobile-engineering-baseline-v1 strict k=5",
+      "top_k": 5,
+      "aggregate": {
+        "recall_at_k": 0.9642857142857143,
+        "precision_at_k": 0.2,
+        "mrr": 0.7369047619047618,
+        "ndcg": 0.7929307141712663,
+        "doc_recall_at_k": 0.9642857142857143,
+        "doc_precision_at_k": 0.19285714285714287,
+        "doc_mrr": 0.9464285714285714,
+        "doc_ndcg": 2.7173744525676136,
+        "questions_evaluated": 28,
+        "questions_with_explicit_gt": 28,
+        "questions_with_keyword_fallback": 0,
+        "questions_skipped_no_gt": 0,
+        "strict_mode": true,
+        "run_label": "automobile-engineering-baseline-v1 strict k=5",
+        "notes": "Run label: automobile-engineering-baseline-v1 strict k=5"
+      },
+      "per_question": [
+        {
+          "benchmark_id": "auto-eng-001",
+          "question": "What is an engine and what does it convert energy into?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-002",
+          "question": "Which internal combustion engine type has been most successful for light automobiles?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-003",
+          "question": "Which engines are typically used for trucks and buses instead of gasoline engines?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.2,
+          "ndcg": 0.38685280723454163,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-004",
+          "question": "What four stages make up a four-stroke internal combustion cycle?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-005",
+          "question": "What is a transmission (gearbox) in a machine?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-006",
+          "question": "How does a dual-clutch transmission differ from a manual transmission?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-007",
+          "question": "What distinguishes a continuously variable transmission from stepped transmissions?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-008",
+          "question": "What gearsets and coupling does a hydraulic automatic transmission typically use?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-009",
+          "question": "What is a brake and by what means does it usually slow a vehicle?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-010",
+          "question": "How do friction pad/shoe brakes work in common configurations?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-011",
+          "question": "How does regenerative braking differ from conventional friction braking in what happens to kinetic energy?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.2,
+          "ndcg": 0.38685280723454163,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-012",
+          "question": "How do hybrid and fully electric vehicles combine regenerative and friction braking?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-013",
+          "question": "How does a conventional automotive steering system transmit driver input to the front wheels?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-014",
+          "question": "How do hydraulic and electric power steering systems differ in efficiency?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-015",
+          "question": "What does speed-sensitive steering change about assistance at low versus high speed?",
+          "recall_at_k": 0.0,
+          "precision_at_k": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-016",
+          "question": "What factors influence a vehicle's roll rate and what does roll rate shift between axles?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-017",
+          "question": "What is roll couple percentage and how is it commonly adjusted?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-018",
+          "question": "How can interconnected suspension decouple vehicle vibration modes passively?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-019",
+          "question": "What is a vehicle frame (chassis) and what role does it play?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.3333333333333333,
+          "ndcg": 0.5,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-020",
+          "question": "What construction replaced body-on-frame in passenger cars during the 20th century?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-021",
+          "question": "What is a ladder frame and where is it still commonly used?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-022",
+          "question": "What attributes of tires most directly affect vehicle dynamics?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-023",
+          "question": "How can the dynamic behaviour of vehicles be analysed and simulated?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.2,
+          "ndcg": 0.38685280723454163,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-024",
+          "question": "Which phenomena are listed as key vehicle dynamics behaviours (roll, pitch, yaw)?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-025",
+          "question": "What is a battery management system and which battery states does it monitor?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-026",
+          "question": "What kind of battery powers the propulsion system of a battery electric vehicle?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-027",
+          "question": "How does AC versus DC electric vehicle charging work?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-028",
+          "question": "What secondary energy source recovers energy that would otherwise be wasted by friction brakes in cars?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.2,
+          "ndcg": 0.38685280723454163,
+          "doc_recall_at_k": 0.0,
+          "note": ""
+        }
+      ]
+    },
+    {
+      "run_id": "eval_5e31a0d8dc9d",
+      "label": "automobile-engineering-baseline-v1 strict k=10",
+      "top_k": 10,
+      "aggregate": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.10357142857142858,
+        "mrr": 0.7428571428571429,
+        "ndcg": 0.8056523994251242,
+        "doc_recall_at_k": 1.0,
+        "doc_precision_at_k": 0.1,
+        "doc_mrr": 0.9500000000000001,
+        "doc_ndcg": 4.011877561044762,
+        "questions_evaluated": 28,
+        "questions_with_explicit_gt": 28,
+        "questions_with_keyword_fallback": 0,
+        "questions_skipped_no_gt": 0,
+        "strict_mode": true,
+        "run_label": "automobile-engineering-baseline-v1 strict k=10",
+        "notes": "Run label: automobile-engineering-baseline-v1 strict k=10"
+      },
+      "per_question": [
+        {
+          "benchmark_id": "auto-eng-001",
+          "question": "What is an engine and what does it convert energy into?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-002",
+          "question": "Which internal combustion engine type has been most successful for light automobiles?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-003",
+          "question": "Which engines are typically used for trucks and buses instead of gasoline engines?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.2,
+          "ndcg": 0.38685280723454163,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-004",
+          "question": "What four stages make up a four-stroke internal combustion cycle?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-005",
+          "question": "What is a transmission (gearbox) in a machine?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-006",
+          "question": "How does a dual-clutch transmission differ from a manual transmission?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-007",
+          "question": "What distinguishes a continuously variable transmission from stepped transmissions?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-008",
+          "question": "What gearsets and coupling does a hydraulic automatic transmission typically use?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-009",
+          "question": "What is a brake and by what means does it usually slow a vehicle?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-010",
+          "question": "How do friction pad/shoe brakes work in common configurations?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-011",
+          "question": "How does regenerative braking differ from conventional friction braking in what happens to kinetic energy?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.2,
+          "ndcg": 0.38685280723454163,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-012",
+          "question": "How do hybrid and fully electric vehicles combine regenerative and friction braking?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-013",
+          "question": "How does a conventional automotive steering system transmit driver input to the front wheels?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-014",
+          "question": "How do hydraulic and electric power steering systems differ in efficiency?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-015",
+          "question": "What does speed-sensitive steering change about assistance at low versus high speed?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.16666666666666666,
+          "ndcg": 0.3562071871080222,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-016",
+          "question": "What factors influence a vehicle's roll rate and what does roll rate shift between axles?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-017",
+          "question": "What is roll couple percentage and how is it commonly adjusted?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-018",
+          "question": "How can interconnected suspension decouple vehicle vibration modes passively?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-019",
+          "question": "What is a vehicle frame (chassis) and what role does it play?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.3333333333333333,
+          "ndcg": 0.5,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-020",
+          "question": "What construction replaced body-on-frame in passenger cars during the 20th century?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-021",
+          "question": "What is a ladder frame and where is it still commonly used?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-022",
+          "question": "What attributes of tires most directly affect vehicle dynamics?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-023",
+          "question": "How can the dynamic behaviour of vehicles be analysed and simulated?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.2,
+          "ndcg": 0.38685280723454163,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-024",
+          "question": "Which phenomena are listed as key vehicle dynamics behaviours (roll, pitch, yaw)?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-025",
+          "question": "What is a battery management system and which battery states does it monitor?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-026",
+          "question": "What kind of battery powers the propulsion system of a battery electric vehicle?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-027",
+          "question": "How does AC versus DC electric vehicle charging work?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        },
+        {
+          "benchmark_id": "auto-eng-028",
+          "question": "What secondary energy source recovers energy that would otherwise be wasted by friction brakes in cars?",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.2,
+          "ndcg": 0.38685280723454163,
+          "doc_recall_at_k": 1.0,
+          "note": ""
+        }
+      ]
+    }
+  ],
+  "diagnostic_run_id": null
+}

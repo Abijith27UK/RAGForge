@@ -1,0 +1,1914 @@
+{
+  "experiment": "source-selection-experiment-v2",
+  "research_question": "Does explainable source-quality-based selection produce a better and/or more efficient domain-specific RAG knowledge base than an equivalent random-source baseline?",
+  "scorer": {
+    "version": "heuristic-v2-content-aware",
+    "domain_map": {
+      "domain": "Automobile Engineering",
+      "version": "1.0.0",
+      "provenance": "Curated domain configuration (agent-drafted, human review pending). Areas derived from the domain definition of automobile engineering, NOT from benchmark questions."
+    }
+  },
+  "random_seed": 20260915,
+  "frozen_baseline_caveat": "Ground truth is agent-authored, human review pending. Every metric in this experiment inherits that limitation and must not be presented as publication-grade until a human has reviewed the benchmark selections.",
+  "run_at": "2026-09-15 18:50:29",
+  "pool_ranking": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Regenerative_braking",
+      "v2_composite": 0.4464,
+      "v2_signals": {
+        "content_relevance": 0.3737,
+        "domain_coverage": 0.2222,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Suspension_(vehicle)",
+      "v2_composite": 0.4188,
+      "v2_signals": {
+        "content_relevance": 0.3603,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 0.969
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Electric_vehicle",
+      "v2_composite": 0.4112,
+      "v2_signals": {
+        "content_relevance": 0.3411,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+      "v2_composite": 0.4055,
+      "v2_signals": {
+        "content_relevance": 0.327,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Steering",
+      "v2_composite": 0.4052,
+      "v2_signals": {
+        "content_relevance": 0.3263,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Anti-roll_bar",
+      "v2_composite": 0.4022,
+      "v2_signals": {
+        "content_relevance": 0.3187,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Brake",
+      "v2_composite": 0.4011,
+      "v2_signals": {
+        "content_relevance": 0.316,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Tire",
+      "v2_composite": 0.3961,
+      "v2_signals": {
+        "content_relevance": 0.3034,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Disc_brake",
+      "v2_composite": 0.394,
+      "v2_signals": {
+        "content_relevance": 0.2983,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Drum_brake",
+      "v2_composite": 0.3911,
+      "v2_signals": {
+        "content_relevance": 0.291,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Engine",
+      "v2_composite": 0.39,
+      "v2_signals": {
+        "content_relevance": 0.2883,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Electric_motor",
+      "v2_composite": 0.3895,
+      "v2_signals": {
+        "content_relevance": 0.2869,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Shock_absorber",
+      "v2_composite": 0.3894,
+      "v2_signals": {
+        "content_relevance": 0.2868,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/MacPherson_strut",
+      "v2_composite": 0.3876,
+      "v2_signals": {
+        "content_relevance": 0.2823,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Vehicle_frame",
+      "v2_composite": 0.3871,
+      "v2_signals": {
+        "content_relevance": 0.281,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Hybrid_electric_vehicle",
+      "v2_composite": 0.3849,
+      "v2_signals": {
+        "content_relevance": 0.2754,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Manual_transmission",
+      "v2_composite": 0.3822,
+      "v2_signals": {
+        "content_relevance": 0.3242,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Automobile_layout",
+      "v2_composite": 0.3764,
+      "v2_signals": {
+        "content_relevance": 0.3097,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Automobile",
+      "v2_composite": 0.3751,
+      "v2_signals": {
+        "content_relevance": 0.3064,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Continuously_variable_transmission",
+      "v2_composite": 0.3744,
+      "v2_signals": {
+        "content_relevance": 0.3048,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Automatic_transmission",
+      "v2_composite": 0.3721,
+      "v2_signals": {
+        "content_relevance": 0.2989,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Differential_(mechanical_device)",
+      "v2_composite": 0.372,
+      "v2_signals": {
+        "content_relevance": 0.2988,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Four-stroke_engine",
+      "v2_composite": 0.3625,
+      "v2_signals": {
+        "content_relevance": 0.2194,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Crumple_zone",
+      "v2_composite": 0.3618,
+      "v2_signals": {
+        "content_relevance": 0.2733,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Turbocharger",
+      "v2_composite": 0.3595,
+      "v2_signals": {
+        "content_relevance": 0.212,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Vehicle_dynamics",
+      "v2_composite": 0.3583,
+      "v2_signals": {
+        "content_relevance": 0.2645,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Diesel_engine",
+      "v2_composite": 0.3576,
+      "v2_signals": {
+        "content_relevance": 0.2071,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Wankel_engine",
+      "v2_composite": 0.3539,
+      "v2_signals": {
+        "content_relevance": 0.2535,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Double_wishbone_suspension",
+      "v2_composite": 0.3529,
+      "v2_signals": {
+        "content_relevance": 0.2511,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Ackermann_steering_geometry",
+      "v2_composite": 0.3514,
+      "v2_signals": {
+        "content_relevance": 0.2472,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Transmission_(mechanical_device)",
+      "v2_composite": 0.3492,
+      "v2_signals": {
+        "content_relevance": 0.2417,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Fuel_injection",
+      "v2_composite": 0.3474,
+      "v2_signals": {
+        "content_relevance": 0.1817,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Charging_station",
+      "v2_composite": 0.3467,
+      "v2_signals": {
+        "content_relevance": 0.18,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Dual-clutch_transmission",
+      "v2_composite": 0.3422,
+      "v2_signals": {
+        "content_relevance": 0.1688,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Lithium-ion_battery",
+      "v2_composite": 0.3312,
+      "v2_signals": {
+        "content_relevance": 0.1413,
+        "domain_coverage": 0.1111,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Battery_management_system",
+      "v2_composite": 0.317,
+      "v2_signals": {
+        "content_relevance": 0.1613,
+        "domain_coverage": 0.0,
+        "authority": 0.6,
+        "accessibility": 1.0,
+        "source_type": 0.45,
+        "recency": 0.5,
+        "duplication": 0.3
+      },
+      "confidence": 1.0
+    }
+  ],
+  "answerable_question_intersection": {
+    "note": "Cross-run metric comparisons are only valid on common answerable subsets.",
+    "global_intersection_size": 0,
+    "global_intersection_question_ids": [],
+    "pairwise_sizes": {
+      "QUALITY_SELECTED|11 & QUALITY_SELECTED|5": 11,
+      "QUALITY_SELECTED|11 & QUALITY_SELECTED|8": 13,
+      "QUALITY_SELECTED|11 & RANDOM_BASELINE|11": 6,
+      "QUALITY_SELECTED|11 & RANDOM_BASELINE|5": 0,
+      "QUALITY_SELECTED|11 & RANDOM_BASELINE|8": 0,
+      "QUALITY_SELECTED|5 & QUALITY_SELECTED|8": 11,
+      "QUALITY_SELECTED|5 & RANDOM_BASELINE|11": 6,
+      "QUALITY_SELECTED|5 & RANDOM_BASELINE|5": 0,
+      "QUALITY_SELECTED|5 & RANDOM_BASELINE|8": 0,
+      "QUALITY_SELECTED|8 & RANDOM_BASELINE|11": 6,
+      "QUALITY_SELECTED|8 & RANDOM_BASELINE|5": 0,
+      "QUALITY_SELECTED|8 & RANDOM_BASELINE|8": 0,
+      "RANDOM_BASELINE|11 & RANDOM_BASELINE|5": 4,
+      "RANDOM_BASELINE|11 & RANDOM_BASELINE|8": 4,
+      "RANDOM_BASELINE|5 & RANDOM_BASELINE|8": 4
+    },
+    "per_run_answerable_sizes": {
+      "QUALITY_SELECTED|5": 11,
+      "QUALITY_SELECTED|8": 13,
+      "QUALITY_SELECTED|11": 17,
+      "RANDOM_BASELINE|5": 4,
+      "RANDOM_BASELINE|8": 4,
+      "RANDOM_BASELINE|11": 10
+    }
+  },
+  "runs": [
+    {
+      "strategy": "QUALITY_SELECTED",
+      "n_sources_requested": 5,
+      "n_sources_selected": 5,
+      "kb_id": "kb_49147f23c7c1",
+      "random_seed": null,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_184d25a6b2c9",
+          "v2_composite": 0.4055,
+          "v2_signals": {
+            "content_relevance": 0.327,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Electric_vehicle",
+          "source_id": "src_c000fdde6210",
+          "v2_composite": 0.4112,
+          "v2_signals": {
+            "content_relevance": 0.3411,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "electric-vehicles"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Regenerative_braking",
+          "source_id": "src_644f01a97542",
+          "v2_composite": 0.4464,
+          "v2_signals": {
+            "content_relevance": 0.3737,
+            "domain_coverage": 0.2222,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking",
+            "electric-vehicles"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Steering",
+          "source_id": "src_c4117ce86620",
+          "v2_composite": 0.4052,
+          "v2_signals": {
+            "content_relevance": 0.3263,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "steering"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Suspension_(vehicle)",
+          "source_id": "src_24dc22f7ce37",
+          "v2_composite": 0.4188,
+          "v2_signals": {
+            "content_relevance": 0.3603,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 0.969,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        }
+      ],
+      "documents": 5,
+      "chunks": 511,
+      "corpus_chars": 316770,
+      "ingest_seconds": 2.77,
+      "index_seconds": 33.88,
+      "ingest_message": "5 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "511 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 11
+      },
+      "coverage": {
+        "answerable": 11,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-005",
+          "auto-eng-006",
+          "auto-eng-007",
+          "auto-eng-008",
+          "auto-eng-009",
+          "auto-eng-010",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_1b5ac69f4e07",
+          "recall_at_k": 0.7272727272727273,
+          "precision_at_k": 0.2727272727272727,
+          "mrr": 0.6363636363636364,
+          "ndcg": 0.6601690461039014,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 11
+        },
+        "5": {
+          "run_id": "eval_ce16c3fd3fdc",
+          "recall_at_k": 0.9090909090909091,
+          "precision_at_k": 0.2,
+          "mrr": 0.6818181818181818,
+          "ndcg": 0.7384738748445183,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 11
+        },
+        "10": {
+          "run_id": "eval_01d9b172e165",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.10909090909090911,
+          "mrr": 0.696969696969697,
+          "ndcg": 0.7708563463997931,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 11
+        }
+      }
+    },
+    {
+      "strategy": "QUALITY_SELECTED",
+      "n_sources_requested": 8,
+      "n_sources_selected": 8,
+      "kb_id": "kb_d88f8163fb5e",
+      "random_seed": null,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_37a57a8b2587",
+          "v2_composite": 0.4055,
+          "v2_signals": {
+            "content_relevance": 0.327,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-roll_bar",
+          "source_id": "src_c68e14b5158b",
+          "v2_composite": 0.4022,
+          "v2_signals": {
+            "content_relevance": 0.3187,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Brake",
+          "source_id": "src_8c5b42d5570f",
+          "v2_composite": 0.4011,
+          "v2_signals": {
+            "content_relevance": 0.316,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Electric_vehicle",
+          "source_id": "src_f31553740105",
+          "v2_composite": 0.4112,
+          "v2_signals": {
+            "content_relevance": 0.3411,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "electric-vehicles"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Regenerative_braking",
+          "source_id": "src_850c88f3dcb5",
+          "v2_composite": 0.4464,
+          "v2_signals": {
+            "content_relevance": 0.3737,
+            "domain_coverage": 0.2222,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking",
+            "electric-vehicles"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Steering",
+          "source_id": "src_a65e2ea5193e",
+          "v2_composite": 0.4052,
+          "v2_signals": {
+            "content_relevance": 0.3263,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "steering"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Suspension_(vehicle)",
+          "source_id": "src_e02eada67de2",
+          "v2_composite": 0.4188,
+          "v2_signals": {
+            "content_relevance": 0.3603,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 0.969,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Tire",
+          "source_id": "src_850a21cec974",
+          "v2_composite": 0.3961,
+          "v2_signals": {
+            "content_relevance": 0.3034,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        }
+      ],
+      "documents": 8,
+      "chunks": 737,
+      "corpus_chars": 450236,
+      "ingest_seconds": 2.91,
+      "index_seconds": 39.17,
+      "ingest_message": "8 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "737 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 13
+      },
+      "coverage": {
+        "answerable": 13,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-005",
+          "auto-eng-006",
+          "auto-eng-007",
+          "auto-eng-008",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_c267a9b08fa9",
+          "recall_at_k": 0.7692307692307693,
+          "precision_at_k": 0.28205128205128205,
+          "mrr": 0.6923076923076923,
+          "ndcg": 0.7124507313186859,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 13
+        },
+        "5": {
+          "run_id": "eval_d625000eb973",
+          "recall_at_k": 0.9230769230769231,
+          "precision_at_k": 0.2,
+          "mrr": 0.7230769230769231,
+          "ndcg": 0.7719665478163076,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 13
+        },
+        "10": {
+          "run_id": "eval_e70d419e8186",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1076923076923077,
+          "mrr": 0.7358974358974358,
+          "ndcg": 0.7993671006707708,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 13
+        }
+      }
+    },
+    {
+      "strategy": "QUALITY_SELECTED",
+      "n_sources_requested": 11,
+      "n_sources_selected": 11,
+      "kb_id": "kb_9ddec3658c96",
+      "random_seed": null,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_4c08dfa4e5ff",
+          "v2_composite": 0.4055,
+          "v2_signals": {
+            "content_relevance": 0.327,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-roll_bar",
+          "source_id": "src_9d109bc5bdf4",
+          "v2_composite": 0.4022,
+          "v2_signals": {
+            "content_relevance": 0.3187,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Brake",
+          "source_id": "src_ccfb14525ab1",
+          "v2_composite": 0.4011,
+          "v2_signals": {
+            "content_relevance": 0.316,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Disc_brake",
+          "source_id": "src_d7d965260ec4",
+          "v2_composite": 0.394,
+          "v2_signals": {
+            "content_relevance": 0.2983,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Drum_brake",
+          "source_id": "src_97f438fd2f88",
+          "v2_composite": 0.3911,
+          "v2_signals": {
+            "content_relevance": 0.291,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Electric_vehicle",
+          "source_id": "src_eef1db9cf4af",
+          "v2_composite": 0.4112,
+          "v2_signals": {
+            "content_relevance": 0.3411,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "electric-vehicles"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Engine",
+          "source_id": "src_e1f30c01c80a",
+          "v2_composite": 0.39,
+          "v2_signals": {
+            "content_relevance": 0.2883,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "engine"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Regenerative_braking",
+          "source_id": "src_606375785a2e",
+          "v2_composite": 0.4464,
+          "v2_signals": {
+            "content_relevance": 0.3737,
+            "domain_coverage": 0.2222,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking",
+            "electric-vehicles"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Steering",
+          "source_id": "src_bb6e64edc8d9",
+          "v2_composite": 0.4052,
+          "v2_signals": {
+            "content_relevance": 0.3263,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "steering"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Suspension_(vehicle)",
+          "source_id": "src_c9465c172b62",
+          "v2_composite": 0.4188,
+          "v2_signals": {
+            "content_relevance": 0.3603,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 0.969,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Tire",
+          "source_id": "src_cd1a27904eff",
+          "v2_composite": 0.3961,
+          "v2_signals": {
+            "content_relevance": 0.3034,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        }
+      ],
+      "documents": 11,
+      "chunks": 949,
+      "corpus_chars": 598051,
+      "ingest_seconds": 6.36,
+      "index_seconds": 67.53,
+      "ingest_message": "11 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "949 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 17
+      },
+      "coverage": {
+        "answerable": 17,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-005",
+          "auto-eng-006",
+          "auto-eng-007",
+          "auto-eng-008",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_0e272fea8a6f",
+          "recall_at_k": 0.7647058823529411,
+          "precision_at_k": 0.2745098039215686,
+          "mrr": 0.7058823529411765,
+          "ndcg": 0.721285853361348,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 17
+        },
+        "5": {
+          "run_id": "eval_b0523f85500c",
+          "recall_at_k": 0.9411764705882353,
+          "precision_at_k": 0.2,
+          "mrr": 0.7441176470588236,
+          "ndcg": 0.7921318635109054,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 17
+        },
+        "10": {
+          "run_id": "eval_bfb52f62dd59",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.10588235294117647,
+          "mrr": 0.753921568627451,
+          "ndcg": 0.8130852274584361,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 17
+        }
+      }
+    },
+    {
+      "strategy": "RANDOM_BASELINE",
+      "n_sources_requested": 5,
+      "n_sources_selected": 5,
+      "kb_id": "kb_761a8ed86369",
+      "random_seed": 20260915,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_42c368a9bac4",
+          "v2_composite": 0.4055,
+          "v2_signals": {
+            "content_relevance": 0.327,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile",
+          "source_id": "src_0f0ed44e6a61",
+          "v2_composite": 0.3751,
+          "v2_signals": {
+            "content_relevance": 0.3064,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Shock_absorber",
+          "source_id": "src_3b8f2ecae7f2",
+          "v2_composite": 0.3894,
+          "v2_signals": {
+            "content_relevance": 0.2868,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Transmission_(mechanical_device)",
+          "source_id": "src_fe6fefdde27b",
+          "v2_composite": 0.3492,
+          "v2_signals": {
+            "content_relevance": 0.2417,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Wankel_engine",
+          "source_id": "src_f831d3e3dcbc",
+          "v2_composite": 0.3539,
+          "v2_signals": {
+            "content_relevance": 0.2535,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        }
+      ],
+      "documents": 5,
+      "chunks": 431,
+      "corpus_chars": 289176,
+      "ingest_seconds": 4.29,
+      "index_seconds": 34.99,
+      "ingest_message": "5 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "431 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 4
+      },
+      "coverage": {
+        "answerable": 4,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-009",
+          "auto-eng-010",
+          "auto-eng-011",
+          "auto-eng-012",
+          "auto-eng-013",
+          "auto-eng-014",
+          "auto-eng-015",
+          "auto-eng-016",
+          "auto-eng-017",
+          "auto-eng-018",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025",
+          "auto-eng-026",
+          "auto-eng-027",
+          "auto-eng-028"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_f0dbba49d931",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        },
+        "5": {
+          "run_id": "eval_d8c0bce6c28d",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        },
+        "10": {
+          "run_id": "eval_d4f5a53bd3c0",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        }
+      }
+    },
+    {
+      "strategy": "RANDOM_BASELINE",
+      "n_sources_requested": 8,
+      "n_sources_selected": 8,
+      "kb_id": "kb_b1a989957b54",
+      "random_seed": 20260915,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_c2996e4835d3",
+          "v2_composite": 0.4055,
+          "v2_signals": {
+            "content_relevance": 0.327,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile",
+          "source_id": "src_2e50bfe2cdd6",
+          "v2_composite": 0.3751,
+          "v2_signals": {
+            "content_relevance": 0.3064,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Diesel_engine",
+          "source_id": "src_e5b2ed88babc",
+          "v2_composite": 0.3576,
+          "v2_signals": {
+            "content_relevance": 0.2071,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "engine"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Double_wishbone_suspension",
+          "source_id": "src_86657730430b",
+          "v2_composite": 0.3529,
+          "v2_signals": {
+            "content_relevance": 0.2511,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Lithium-ion_battery",
+          "source_id": "src_423e6487afec",
+          "v2_composite": 0.3312,
+          "v2_signals": {
+            "content_relevance": 0.1413,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "electric-vehicles"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Tire",
+          "source_id": "src_eb7631afbfdb",
+          "v2_composite": 0.3961,
+          "v2_signals": {
+            "content_relevance": 0.3034,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Transmission_(mechanical_device)",
+          "source_id": "src_52582dea4c04",
+          "v2_composite": 0.3492,
+          "v2_signals": {
+            "content_relevance": 0.2417,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Wankel_engine",
+          "source_id": "src_ca9de1da563e",
+          "v2_composite": 0.3539,
+          "v2_signals": {
+            "content_relevance": 0.2535,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        }
+      ],
+      "documents": 8,
+      "chunks": 953,
+      "corpus_chars": 628646,
+      "ingest_seconds": 6.02,
+      "index_seconds": 59.42,
+      "ingest_message": "8 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "953 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 4
+      },
+      "coverage": {
+        "answerable": 4,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-009",
+          "auto-eng-010",
+          "auto-eng-011",
+          "auto-eng-012",
+          "auto-eng-013",
+          "auto-eng-014",
+          "auto-eng-015",
+          "auto-eng-016",
+          "auto-eng-017",
+          "auto-eng-018",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025",
+          "auto-eng-026",
+          "auto-eng-027",
+          "auto-eng-028"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_9077828c33cc",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        },
+        "5": {
+          "run_id": "eval_ed76b070a665",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.2,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        },
+        "10": {
+          "run_id": "eval_565f1cc36021",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.1,
+          "mrr": 0.875,
+          "ndcg": 0.9077324383928644,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 4
+        }
+      }
+    },
+    {
+      "strategy": "RANDOM_BASELINE",
+      "n_sources_requested": 11,
+      "n_sources_selected": 11,
+      "kb_id": "kb_334143bb8cca",
+      "random_seed": 20260915,
+      "selected_sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Anti-lock_braking_system",
+          "source_id": "src_f3645ac6506b",
+          "v2_composite": 0.4055,
+          "v2_signals": {
+            "content_relevance": 0.327,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automatic_transmission",
+          "source_id": "src_417b25605744",
+          "v2_composite": 0.3721,
+          "v2_signals": {
+            "content_relevance": 0.2989,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Automobile",
+          "source_id": "src_cabe2e1261a6",
+          "v2_composite": 0.3751,
+          "v2_signals": {
+            "content_relevance": 0.3064,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Diesel_engine",
+          "source_id": "src_9f6205305e92",
+          "v2_composite": 0.3576,
+          "v2_signals": {
+            "content_relevance": 0.2071,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "engine"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Double_wishbone_suspension",
+          "source_id": "src_7b96f7861af9",
+          "v2_composite": 0.3529,
+          "v2_signals": {
+            "content_relevance": 0.2511,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Lithium-ion_battery",
+          "source_id": "src_c4a70a51f422",
+          "v2_composite": 0.3312,
+          "v2_signals": {
+            "content_relevance": 0.1413,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "electric-vehicles"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Regenerative_braking",
+          "source_id": "src_4d301abb4689",
+          "v2_composite": 0.4464,
+          "v2_signals": {
+            "content_relevance": 0.3737,
+            "domain_coverage": 0.2222,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "braking",
+            "electric-vehicles"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Suspension_(vehicle)",
+          "source_id": "src_e4aa8518a773",
+          "v2_composite": 0.4188,
+          "v2_signals": {
+            "content_relevance": 0.3603,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 0.969,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Tire",
+          "source_id": "src_b0db05c9a99e",
+          "v2_composite": 0.3961,
+          "v2_signals": {
+            "content_relevance": 0.3034,
+            "domain_coverage": 0.1111,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [
+            "suspension"
+          ],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Transmission_(mechanical_device)",
+          "source_id": "src_54c9ef91bd46",
+          "v2_composite": 0.3492,
+          "v2_signals": {
+            "content_relevance": 0.2417,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Wankel_engine",
+          "source_id": "src_58a53c9c8b92",
+          "v2_composite": 0.3539,
+          "v2_signals": {
+            "content_relevance": 0.2535,
+            "domain_coverage": 0.0,
+            "authority": 0.6,
+            "accessibility": 1.0,
+            "source_type": 0.45,
+            "recency": 0.5,
+            "duplication": 0.3
+          },
+          "v2_confidence": 1.0,
+          "v2_covered_areas": [],
+          "pipeline_decision": "REVIEW"
+        }
+      ],
+      "documents": 11,
+      "chunks": 1191,
+      "corpus_chars": 774049,
+      "ingest_seconds": 7.28,
+      "index_seconds": 88.59,
+      "ingest_message": "11 ingested, 0 duplicate skipped, 0 failed",
+      "chunking_config": {
+        "chunker": "section-aware",
+        "target_size": 1200,
+        "overlap": 150
+      },
+      "embedding_model": "1191 vectors via sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)",
+      "ground_truth_translation": {
+        "method": "content_hash chunk translation from frozen baseline; doc GT via source URL",
+        "questions_loaded": 10
+      },
+      "coverage": {
+        "answerable": 10,
+        "total": 28,
+        "excluded_unanswerable": [
+          "auto-eng-001",
+          "auto-eng-002",
+          "auto-eng-003",
+          "auto-eng-004",
+          "auto-eng-009",
+          "auto-eng-010",
+          "auto-eng-013",
+          "auto-eng-014",
+          "auto-eng-015",
+          "auto-eng-019",
+          "auto-eng-020",
+          "auto-eng-021",
+          "auto-eng-022",
+          "auto-eng-023",
+          "auto-eng-024",
+          "auto-eng-025",
+          "auto-eng-026",
+          "auto-eng-027"
+        ]
+      },
+      "evaluation": {
+        "3": {
+          "run_id": "eval_c6c07a65b588",
+          "recall_at_k": 0.8,
+          "precision_at_k": 0.3,
+          "mrr": 0.6833333333333333,
+          "ndcg": 0.7130929753571458,
+          "doc_recall_at_k": 0.9,
+          "questions_evaluated": 10
+        },
+        "5": {
+          "run_id": "eval_2b4b7667c48d",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.22000000000000003,
+          "mrr": 0.7333333333333333,
+          "ndcg": 0.7992282869718244,
+          "doc_recall_at_k": 0.9,
+          "questions_evaluated": 10
+        },
+        "10": {
+          "run_id": "eval_fca22c238d4b",
+          "recall_at_k": 1.0,
+          "precision_at_k": 0.11000000000000001,
+          "mrr": 0.7333333333333333,
+          "ndcg": 0.7992282869718244,
+          "doc_recall_at_k": 1.0,
+          "questions_evaluated": 10
+        }
+      }
+    }
+  ]
+}
