@@ -69,3 +69,21 @@ indiscriminate construction (the baseline-vs-RAGForge experiments).
   (Experiment 3 — not yet implemented)
 - **H4**: Reranking improves precision without hurting recall. (Experiment 4 — not yet implemented)
 - **H5**: Configuration optimized via evaluation feedback outperforms manual defaults. (Experiment 5)
+
+## Methodological safeguards (V3)
+
+The measurement instrument itself is now part of the research discipline:
+
+- **Ground-truth lifecycle** — benchmark questions carry an explicit DRAFT → REVIEW → APPROVED →
+  FROZEN status chain with reviewer attribution; only FROZEN benchmark *versions* (immutable
+  snapshots) are usable for official experiments. The current Automobile baseline remains
+  explicitly "agent-authored, human review pending" until reviewed.
+- **No cross-set metric comparisons** — aggregate metrics computed on different answerable-question
+  subsets are never compared as though comparable; cross-strategy conclusions come from paired
+  analysis on the common-question intersection (see the source-selection v2 paired artifact).
+- **Instrument audits before experiments** — a scorer/selection mechanism that cannot discriminate
+  the candidate pool (v1: 34/36 identical scores) invalidates the experiment; v2's 36/36-unique
+  instrument check is the template.
+- **Separate evidence classes** — corpus coverage (is the answer in the corpus?), retrieval quality
+  (is it ranked highly?), and efficiency (chars/time per answerable question) are reported
+  separately and never mixed.

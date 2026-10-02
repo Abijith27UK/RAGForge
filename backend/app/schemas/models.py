@@ -48,6 +48,30 @@ class SourceDecision(str, enum.Enum):
     REJECT = "REJECT"
 
 
+class QuestionStatus(str, enum.Enum):
+    """Lifecycle of a benchmark question (V3 Phase A).
+
+    DRAFT -> REVIEW -> APPROVED -> FROZEN. Editing rules:
+    - DRAFT/REVIEW: content freely editable.
+    - APPROVED: editing creates a new DRAFT revision (approved content preserved).
+    - FROZEN: immutable; participates in frozen benchmark versions.
+    """
+
+    DRAFT = "DRAFT"
+    REVIEW = "REVIEW"
+    APPROVED = "APPROVED"
+    FROZEN = "FROZEN"
+
+
+class BenchmarkStatus(str, enum.Enum):
+    """Status of a benchmark *version* (a set of questions)."""
+
+    DRAFT = "DRAFT"
+    REVIEWING = "REVIEWING"
+    APPROVED = "APPROVED"
+    FROZEN = "FROZEN"
+
+
 class BuildStage(str, enum.Enum):
     DOMAIN_ANALYSIS = "domain_analysis"
     SOURCE_DISCOVERY = "source_discovery"
@@ -68,6 +92,14 @@ class KnowledgeBaseCreate(BaseModel):
     purpose: str = Field(min_length=1, max_length=2000)
     target_audience: str = Field(min_length=1, max_length=500)
     depth: str = Field(default="intermediate", max_length=100)
+    vector_backend: str = Field(
+        default="qdrant", max_length=50,
+        description="Vector store backend id ('qdrant'; experimental backends later)",
+    )
+    chunking_strategy: str = Field(
+        default="section-aware", max_length=50,
+        description="Chunking strategy: 'section-aware' | 'fixed-size'",
+    )
 
 
 class KnowledgeBase(BaseModel):
@@ -82,6 +114,19 @@ class KnowledgeBase(BaseModel):
     # dimensions). Retrieval refuses to run against a mismatched model instead
     # of silently querying an incompatible vector space.
     embedding_identity: dict[str, Any] | None = None
+    # --- V3: pluggable infrastructure identifiers ---
+    vector_backend: str = Field(
+        default="qdrant",
+        description="Vector store backend id: 'qdrant' today; experimental backends later",
+    )
+    chunking_strategy: str = Field(
+        default="section-aware",
+        description="Chunking strategy name: 'section-aware' | 'fixed-size'",
+    )
+    chunking_config: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Chunking parameters (target_size, overlap) used for the last build",
+    )
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
 
@@ -191,6 +236,7 @@ class Chunk(BaseModel):
     kb_id: str
     chunk_index: int
     text: str
+    source_id: str | None = None
     # Provenance (first-class requirement)
     source_url: str | None = None
     source_title: str | None = None
@@ -206,6 +252,9 @@ class Chunk(BaseModel):
     content_hash: str = ""
     ingestion_timestamp: datetime | None = None
     char_count: int = 0
+    # --- V3: chunking provenance (strategy that produced this chunk) ---
+    chunking_strategy: str | None = None
+    chunking_config_version: str = "v1"
 
 
 # ---------------------------------------------------------------------------
@@ -281,6 +330,21 @@ class EvaluationQuestion(BaseModel):
     )
     generated_by: str = "manual"
     notes: str = ""
+    # --- V3 Phase A: benchmark lifecycle metadata ---
+    status: QuestionStatus = QuestionStatus.DRAFT
+    author: str = ""
+    reviewer: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+    reviewed_at: datetime | None = None
+    revision: int = 1
+    supersedes: str | None = Field(
+        default=None,
+        description="Question ID this DRAFT revision replaces (an APPROVED ancestor)",
+    )
+    provenance: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Structured ground-truth provenance: method, source_passages, justification",
+    )
 
 
 class EvaluationQuestionCreate(BaseModel):
@@ -293,6 +357,8 @@ class EvaluationQuestionCreate(BaseModel):
         max_length=2000,
         description="Ground-truth provenance: who authored it, from what evidence",
     )
+    provenance: dict[str, Any] = Field(default_factory=dict)
+    author: str = Field(default="", max_length=200)
 
 
 class EvaluationRunConfig(BaseModel):
@@ -308,6 +374,13 @@ class EvaluationRunConfig(BaseModel):
         default="",
         max_length=200,
         description="Free-text label for reproducibility, e.g. 'automobile-baseline-v1 k=5 strict'",
+    )
+    benchmark_version: str | None = Field(
+        default=None,
+        description=(
+            "BenchmarkVersion id to score against. When set, the run MUST reference a "
+            "FROZEN version and scores the immutable snapshot content, not live rows."
+        ),
     )
 
 
@@ -366,3 +439,66 @@ class EvaluationRun(BaseModel):
     embedding_model: str = ""
     started_at: datetime = Field(default_factory=utcnow)
     finished_at: datetime | None = None
+    # --- V3 Phase A: benchmark provenance for runs ---
+    benchmark_version: str | None = Field(
+        default=None,
+        description="Snapshot id of the frozen benchmark this run scored, if any",
+    )
+    question_statuses: dict[str, str] | None = Field(
+        default=None,
+        description="question_id -> lifecycle status at run time (integrity disclosure)",
+    )
+
+
+# ---------------------------------------------------------------------------
+# V3 Phase A: benchmark versions (frozen snapshots of evaluation questions)
+# ---------------------------------------------------------------------------
+
+class BenchmarkVersion(BaseModel):
+    """An immutable snapshot of a KB's evaluation questions.
+
+    Creation rules:
+    - A snapshot of a KB whose questions are all APPROVED/FROZEN can be FROZEN
+      immediately; snapshots containing DRAFT/REVIEW questions stay DRAFT.
+    - FROZEN snapshots can never be deleted or modified (freeze protection).
+    - Only FROZEN versions are usable for official experiments.
+    """
+
+    id: str
+    kb_id: str
+    version: str = Field(description="Human-readable, e.g. 'automobile-engineering-v1'")
+    label: str = ""
+    status: BenchmarkStatus = BenchmarkStatus.DRAFT
+    question_ids: list[str] = Field(default_factory=list)
+    questions_snapshot: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Deep copy of each question at freeze time (immutable audit copy)",
+    )
+    created_by: str = ""
+    created_at: datetime = Field(default_factory=utcnow)
+    frozen_at: datetime | None = None
+    notes: str = ""
+
+
+class BenchmarkVersionCreate(BaseModel):
+    version: str = Field(min_length=1, max_length=120)
+    label: str = Field(default="", max_length=300)
+    question_ids: list[str] = Field(default_factory=list, description="Empty = all questions")
+    created_by: str = Field(default="", max_length=200)
+    notes: str = Field(default="", max_length=2000)
+
+
+class QuestionStatusUpdate(BaseModel):
+    status: QuestionStatus
+    reviewer: str = Field(default="", max_length=200)
+
+
+class QuestionRevision(BaseModel):
+    """Edit payload; editing an APPROVED/FROZEN question creates a new DRAFT revision."""
+
+    question: str | None = Field(default=None, min_length=1, max_length=1000)
+    expected_chunk_ids: list[str] | None = None
+    expected_document_ids: list[str] | None = None
+    expected_keywords: list[str] | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+    provenance: dict[str, Any] | None = None

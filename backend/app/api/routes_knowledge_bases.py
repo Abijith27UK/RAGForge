@@ -36,12 +36,13 @@ def delete_kb(kb_id: str, repo: Repository = Depends(get_repo)):
     kb = repo.get_kb(kb_id)
     if not kb:
         raise HTTPException(404, "Knowledge base not found")
-    from app.services.vector_store.qdrant_store import QdrantVectorStore, VectorStoreError
+    from app.services.vector_store.factory import create_vector_store
+    from app.services.vector_store.qdrant_store import VectorStoreError
     from app.config import get_settings
 
     settings = get_settings()
     try:
-        store = QdrantVectorStore(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
+        store = create_vector_store(settings, backend=getattr(kb, "vector_backend", "qdrant"))
         store.delete_collection(kb_id)
     except Exception:
         pass  # Qdrant may be offline; DB cleanup still proceeds

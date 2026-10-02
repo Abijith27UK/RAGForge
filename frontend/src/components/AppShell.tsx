@@ -28,6 +28,7 @@ const NAV = {
     { suffix: "/retrieval", label: "Retrieval Lab", icon: Search, hint: "⌘K then query" },
     { suffix: "/evaluation", label: "Evaluation", icon: Sigma },
   ],
+  global: [{ href: "/experiments", label: "Experiments", icon: FlaskConical, hint: null }],
 } as const;
 
 const SYSTEM_ICON = { qdrant: Database, embedding: Boxes, llm: FlaskConical } as const;
@@ -313,6 +314,7 @@ function SidebarContent({
               {collapsed ? "…" : "Open or create a knowledge base to enable the research views."}
             </p>
           )}
+          {NAV.global.map((n) => item(n.href, n.label, n.icon, n.hint))}
         </div>
 
         {groupLabel("System")}

@@ -38,7 +38,7 @@ def _retriever(repo: Repository, kb_id: str | None = None):
         EmbeddingIdentity,
         create_embedding_provider,
     )
-    from app.services.vector_store.qdrant_store import QdrantVectorStore
+    from app.services.vector_store.factory import create_vector_store
 
     settings = get_settings()
     expected = None
@@ -51,7 +51,7 @@ def _retriever(repo: Repository, kb_id: str | None = None):
         identity = embedder.identity()
     except EmbeddingError as exc:
         raise HTTPException(503, str(exc)) from exc
-    store = QdrantVectorStore(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
+    store = create_vector_store(settings, backend=(kb.vector_backend if kb else "qdrant"))
     from app.services.retrieval.retriever import DenseRetriever
 
     return DenseRetriever(embedder, store, identity)
@@ -92,6 +92,8 @@ def add_question(
         expected_keywords=payload.expected_keywords,
         generated_by="manual",
         notes=payload.notes,
+        provenance=payload.provenance,
+        author=payload.author,
     )
     repo.create_evaluation_question(q)
     return q

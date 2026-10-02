@@ -197,6 +197,7 @@ class SectionAwareChunker(Chunker):
             kb_id=document.kb_id,
             chunk_index=chunk_index,
             text=text,
+            source_id=source.id,
             source_url=source.url,
             source_title=source.title,
             source_type=source.source_type.value,
@@ -211,6 +212,7 @@ class SectionAwareChunker(Chunker):
             content_hash=sha256_text(text),
             ingestion_timestamp=document.ingestion_timestamp,
             char_count=len(text),
+            chunking_strategy=self.name,
         )
 
 
@@ -251,9 +253,35 @@ class FixedSizeChunker(Chunker):
         return chunks
 
 
+class ChunkingStrategyRegistry:
+    """V3 Step 5: explicit registry for chunking strategies.
+
+    Existing strategies register here; future ones (e.g. DomainAwareChunker)
+    plug in without touching call sites. Names are stable strategy ids.
+    """
+
+    def __init__(self) -> None:
+        self._strategies: dict[str, type[Chunker]] = {}
+
+    def register(self, cls: type[Chunker]) -> type[Chunker]:
+        self._strategies[cls.name] = cls
+        return cls
+
+    def get(self, name: str) -> Chunker:
+        cls = self._strategies.get(name)
+        if cls is None:
+            raise ValueError(f"Unknown chunking strategy '{name}'. Available: {self.names()}")
+        return cls()
+
+    def names(self) -> list[str]:
+        return sorted(self._strategies)
+
+
+CHUNKING_REGISTRY = ChunkingStrategyRegistry()
+CHUNKING_REGISTRY.register(SectionAwareChunker)
+CHUNKING_REGISTRY.register(FixedSizeChunker)
+
+
 def get_chunker(name: str = "section-aware") -> Chunker:
-    chunkers = {c.name: c for c in (SectionAwareChunker(), FixedSizeChunker())}
-    chunker = chunkers.get(name)
-    if chunker is None:
-        raise ValueError(f"Unknown chunker '{name}'. Available: {list(chunkers)}")
-    return chunker
+    """Backward-compatible accessor (routes_build calls this)."""
+    return CHUNKING_REGISTRY.get(name)

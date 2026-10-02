@@ -1,0 +1,53 @@
+{
+  "experiment": "source-selection-experiment-v3",
+  "version": 1,
+  "status": "DESIGNED — NOT RUN",
+  "research_question": "Does content-aware source selection improve domain coverage and retrieval quality compared with random source selection when both are evaluated against the same human-reviewed (frozen) benchmark?",
+  "hypotheses": {
+    "H1_coverage": "QUALITY_SELECTED corpora answer more of the frozen benchmark's questions than RANDOM_BASELINE corpora at equal N.",
+    "H2_retrieval": "On the common answerable-question intersection of a QUALITY/RANDOM pair, QUALITY_SELECTED achieves equal or higher Recall@K / MRR / NDCG (paired comparison).",
+    "H3_efficiency": "QUALITY_SELECTED reaches a target coverage with fewer corpus characters than RANDOM_BASELINE."
+  },
+  "independent_variable": "source-selection strategy (QUALITY_SELECTED vs RANDOM_BASELINE) and corpus size N",
+  "controlled_variables": [
+    "candidate pool (36 URLs, reference below)",
+    "same ingestion pipeline",
+    "chunking strategy + parameters (section-aware, target 1200, overlap 150)",
+    "embedding model (all-MiniLM-L6-v2, 384d, cosine)",
+    "vector backend (qdrant)",
+    "retrieval configuration (dense, k in {3,5,10})",
+    "frozen benchmark version (pinned by id at run time)",
+    "evaluation protocol (strict, explicit ground truth only)"
+  ],
+  "dependent_variables": [
+    "coverage: answerable questions / 28",
+    "Recall@3/5/10", "Precision@3/5/10", "MRR", "NDCG",
+    "corpus character count", "chunk count", "build/index time"
+  ],
+  "candidate_pool": {
+    "urls_ref": "benchmarks/source-selection-experiment-v1.json#candidate_pool.urls",
+    "size": 36,
+    "note": "Same frozen pool as v1/v2 for comparability."
+  },
+  "seeds": [20260915, 20260916, 20260917, 20260918, 20260919],
+  "seed_note": "RANDOM_BASELINE selection uses random.Random(seed).sample(pool, N) — deterministic per seed. Each seed produces an independent random arm; QUALITY_SELECTED is seed-independent.",
+  "corpus_sizes": [5, 8, 11],
+  "benchmark_requirement": {
+    "frozen_benchmark_version_id_required": true,
+    "description": "The runner REFUSES to execute unless --benchmark-version names a FROZEN BenchmarkVersion of the KB. This enforces the Phase A rule: official experiments only on human-reviewed benchmarks.",
+    "ground_truth_caveat": "Superseded only when the frozen benchmark version is approved by a human reviewer; until then no v3 run may start."
+  },
+  "comparison_methodology": {
+    "paired_intersection": "Metrics are compared between two runs ONLY on the intersection of their answerable-question sets, recomputed per question from the run's per_question records.",
+    "coverage_separate": "Coverage is reported separately and is never mixed into retrieval metrics.",
+    "aggregate_caveat": "Raw aggregate metrics across runs with different answerable sets are reported but flagged as NOT directly comparable."
+  },
+  "recorded_per_run": [
+    "strategy", "n", "seed", "selected source ids/urls + v2 signals", "kb_id",
+    "documents", "chunks", "corpus_chars", "ingest/index seconds",
+    "chunking config", "embedding model", "vector backend",
+    "benchmark_version id", "answerable question ids",
+    "Recall/Precision@3/5/10, MRR, NDCG (run ids)", "per-question metrics"
+  ],
+  "planned_output": "benchmarks/source-selection-experiment-v3-results.json (not created until the experiment runs)"
+}

@@ -48,10 +48,35 @@ class Evaluator:
         config: EvaluationRunConfig,
         embedding_model: str = "",
     ) -> EvaluationRun:
-        questions = self._repo.list_evaluation_questions(kb_id)
-        if config.question_ids:
-            wanted = set(config.question_ids)
-            questions = [q for q in questions if q.id in wanted]
+        # --- V3 Phase A: frozen-benchmark runs ---
+        # When config.benchmark_version is set, the run scores the immutable
+        # snapshot content (never live rows) and refuses non-FROZEN versions.
+        benchmark_version_id: str | None = None
+        question_statuses: dict[str, str] | None = None
+        if config.benchmark_version:
+            bv = self._repo.get_benchmark_version(kb_id, config.benchmark_version)
+            if bv is None:
+                raise EvaluationError(f"Benchmark version {config.benchmark_version!r} not found")
+            if bv.status != "FROZEN":
+                raise EvaluationError(
+                    f"Benchmark version {bv.version!r} is {bv.status}, not FROZEN — "
+                    "only frozen versions are usable for official evaluation runs"
+                )
+            snapshot = [EvaluationQuestion.model_validate(qd) for qd in bv.questions_snapshot]
+            questions = snapshot
+            if config.question_ids:
+                wanted = set(config.question_ids)
+                questions = [q for q in questions if q.id in wanted]
+                if not questions:
+                    raise EvaluationError("None of the requested question ids are in the frozen benchmark")
+            benchmark_version_id = bv.id
+            question_statuses = {q.id: q.status.value for q in snapshot}
+        else:
+            questions = self._repo.list_evaluation_questions(kb_id)
+            if config.question_ids:
+                wanted = set(config.question_ids)
+                questions = [q for q in questions if q.id in wanted]
+            question_statuses = {q.id: q.status.value for q in questions}
         if not questions:
             raise EvaluationError(
                 "No evaluation questions defined for this knowledge base. "
@@ -193,6 +218,8 @@ class Evaluator:
             embedding_model=embedding_model,
             started_at=datetime.now(timezone.utc),
             finished_at=datetime.now(timezone.utc),
+            benchmark_version=benchmark_version_id,
+            question_statuses=question_statuses,
         )
         self._repo.create_evaluation_run(run)
         logger.info("Evaluation run %s for KB %s: %s", run.id, kb_id, aggregate)

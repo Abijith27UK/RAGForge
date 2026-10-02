@@ -174,3 +174,34 @@ QUALITY-vs-RANDOM performance statements.
 One integrity note: the first full-run attempt hit the 10-minute tool timeout after 5 of 6 corpora
 and results were not persisted; the runner was extended with mergeable per-corpus runs
 (`--only "STRATEGY\|N"`), the 5 orphan KBs deleted, and all six runs re-executed cleanly and saved.
+
+## V3 foundation: benchmark lifecycle, experiment framework, pluggable infrastructure
+
+**Commands and results**
+- `python -m pytest tests/ -q` → **95 passed, 1 skipped** (skip = live-Qdrant integration test
+  reporting honestly when the service is unreachable)
+- New test files: `tests/test_benchmark_lifecycle.py` (11 tests: lifecycle transitions, reviewer
+  requirement, approved-edit⇒new-revision, FROZEN immutability, snapshot freeze rules, freeze
+  protection on delete, frozen-version evaluation in the hermetic evaluator, refusal of unfrozen /
+  unknown versions), `tests/test_v3_infrastructure.py` (6 tests: seeded determinism + 5-seed
+  distinctness, chunking registry + hash reproducibility, strategy/config round-trip, vector
+  factory with unknown-backend rejection + experimental registration)
+- `npx tsc --noEmit` → clean; `npm run build` → clean (12 routes incl. new `/experiments`)
+- Live smoke: question → APPROVED (reviewer required, verified 422 without) → benchmark-version
+  snapshot (status APPROVED) → scratch KB deleted; `/api/experiments/*` serves frozen artifacts
+
+**What was implemented (all real, no mock data paths added)**
+- Phase A: question lifecycle + benchmark version snapshots + freeze protection + frozen-version
+  evaluation runs (`routes_benchmark.py`, `Evaluator`), full review UI on the Evaluation page
+- Phase B (infra only, NOT run): `benchmarks/source-selection-experiment-v3.json` +
+  `scripts/run_source_selection_experiment_v3.py` — multi-seed (20260915–20260919), gated on a
+  FROZEN benchmark version id; refuses to start otherwise
+- Phase C/D: chunking registry + strategy/config stamping; vector-backend factory +
+  `vector_backend` on KB (qdrant default, unchanged)
+- Read-only `/api/experiments` endpoints + `/experiments` page rendering frozen v1/v2 artifacts
+  verbatim (coverage bars, per-k strict metrics, paired analysis, subset-difference disclaimer)
+
+**Frozen artifacts re-verified untouched:** baseline benchmark/results, source-selection v1+v2
+results and paired analysis. The existing 28-question Automobile benchmark remains
+"agent-authored, human review pending" — lifecycle statuses were NOT auto-migrated; human review
+is the next gating step before any v3 experiment executes.

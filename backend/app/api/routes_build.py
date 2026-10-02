@@ -23,6 +23,7 @@ from app.schemas.models import (
     StageStatus,
 )
 from app.services.chunking.chunker import get_chunker
+from app.services.vector_store.factory import create_vector_store
 from app.services.ingestion.ingestion import IngestionError, ingest_source
 from app.services.vector_store.qdrant_store import QdrantVectorStore, VectorStoreError
 from app.utils.ids import new_id
@@ -156,7 +157,7 @@ def index_kb(kb_id: str, payload: IndexRequest, repo: Repository = Depends(get_r
     except EmbeddingError as exc:
         raise HTTPException(503, str(exc)) from exc
 
-    store = _qdrant_store()
+    store = create_vector_store(settings, backend=kb.vector_backend)
     run = BuildRun(
         id=new_id("build"),
         kb_id=kb_id,
@@ -166,7 +167,10 @@ def index_kb(kb_id: str, payload: IndexRequest, repo: Repository = Depends(get_r
     )
     repo.create_build_run(run)
 
-    chunker = get_chunker(payload.chunker)
+    try:
+        chunker = get_chunker(payload.chunker)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     doc_texts: dict[str, str] = {}
     for doc in documents:
         if not doc.file_path:
@@ -275,6 +279,13 @@ def index_kb(kb_id: str, payload: IndexRequest, repo: Repository = Depends(get_r
     # can refuse to run after a model change (no silent incompatible queries).
     kb.status = KBStatus.READY
     kb.embedding_identity = asdict(embedder.identity())
+    # V3: record the chunking configuration that produced the current index.
+    kb.chunking_strategy = chunker.name
+    kb.chunking_config = {
+        "target_size": payload.target_size,
+        "overlap": payload.overlap,
+        "config_version": "v1",
+    }
     kb.updated_at = datetime.now(timezone.utc)
     repo.update_kb(kb)
     return run

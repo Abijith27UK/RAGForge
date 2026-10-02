@@ -166,7 +166,7 @@ export default function ChunksPage() {
                     <ProvRow k="source url" v={selected.source_url} />
                     <ProvRow k="source type" v={selected.source_type} />
                     <ProvRow k="publisher" v={selected.publisher} />
-                    <ProvRow k="page" v={selected.page} />
+                    <ProvRow k="page" v={selected.page != null ? String(selected.page) : null} />
                     <ProvRow k="domain" v={selected.domain} />
                     <ProvRow k="subdomain" v={selected.subdomain} />
                     <ProvRow k="trust score" v={selected.trust_score != null ? fmtScore(selected.trust_score) : null} />

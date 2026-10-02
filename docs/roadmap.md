@@ -26,6 +26,27 @@
 5. **LLM-generated candidate evaluation questions** — labelled as generated, human-approved
    before use as ground truth.
 
+## V3 foundation (done)
+
+- ✅ **Phase A** — benchmark lifecycle (DRAFT→REVIEW→APPROVED→FROZEN, reviewer attribution,
+  revision-on-approved-edit, freeze protection) + immutable benchmark versions; only FROZEN
+  versions usable for official evaluation; full review UI on the Evaluation page
+- ✅ **Phase B (infra)** — multi-seed source-selection v3 runner + design JSON, gated on a frozen
+  benchmark version (NOT executed until human review completes)
+- ✅ **Phase C (arch)** — chunking strategy registry + strategy/config provenance on chunks and KBs
+- ✅ **Phase D (arch)** — vector-backend factory (`create_vector_store`) + `vector_backend` on KB;
+  qdrant unchanged as default
+- ✅ Experiments page rendering frozen v1/v2 artifacts verbatim via read-only endpoints
+
+## Next phases (planned, not implemented)
+
+- **Human review of the 28 agent-authored benchmark questions** — the gating step for Phase B runs
+- **Phase E — TurboVec** experimental vector backend behind the factory, with a controlled
+  Qdrant-vs-TurboVec comparison (quality metrics separated from latency/size metrics)
+- **Phase F** — BM25 → hybrid → optional reranking behind a common Retriever interface
+- **Phase G** — version/build architecture for build→evaluate→diagnose→rebuild optimization
+- **Phase H** — MCP server exposing RAGForge operations as external tools
+
 ## Later phases
 
 - BM25 + hybrid retrieval, reranking (cross-encoder or LLM-based) behind the retrieval interface

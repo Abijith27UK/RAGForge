@@ -9,6 +9,9 @@ export interface KnowledgeBase {
   target_audience: string;
   depth: string;
   status: string;
+  vector_backend?: string;
+  chunking_strategy?: string;
+  chunking_config?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -112,6 +115,8 @@ export interface RetrievalResponse {
   error: string | null;
 }
 
+export type QuestionLifecycle = "DRAFT" | "REVIEW" | "APPROVED" | "FROZEN";
+
 export interface EvaluationQuestion {
   id: string;
   kb_id: string;
@@ -121,12 +126,35 @@ export interface EvaluationQuestion {
   expected_keywords: string[];
   generated_by: string;
   notes?: string;
+  // --- V3 Phase A lifecycle ---
+  status: QuestionLifecycle;
+  author: string;
+  reviewer: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  revision: number;
+  supersedes: string | null;
+  provenance: Record<string, unknown>;
+}
+
+export interface BenchmarkVersion {
+  id: string;
+  kb_id: string;
+  version: string;
+  label: string;
+  status: "DRAFT" | "APPROVED" | "FROZEN";
+  question_ids: string[];
+  questions_snapshot: EvaluationQuestion[];
+  created_by: string;
+  created_at: string;
+  frozen_at: string | null;
+  notes: string;
 }
 
 export interface EvaluationRun {
   id: string;
   kb_id: string;
-  config: { top_k: number; question_ids?: string[] };
+  config: { top_k: number; question_ids?: string[]; benchmark_version?: string | null };
   aggregate: {
     recall_at_k: number | null;
     precision_at_k: number | null;
@@ -273,11 +301,47 @@ export const api = {
     request<EvaluationQuestion[]>(`/api/knowledge-bases/${id}/evaluation-questions`),
   deleteQuestion: (kbId: string, qId: string) =>
     request<void>(`/api/knowledge-bases/${kbId}/evaluation-questions/${qId}`, { method: "DELETE" }),
-  evaluate: (id: string, topK = 5, label = "", allowKeywordFallback = false) =>
+  evaluate: (id: string, topK = 5, label = "", allowKeywordFallback = false, benchmarkVersion?: string | null) =>
     request<EvaluationRun>(`/api/knowledge-bases/${id}/evaluate`, {
       method: "POST",
-      body: JSON.stringify({ top_k: topK, label, allow_keyword_fallback: allowKeywordFallback }),
+      body: JSON.stringify({
+        top_k: topK,
+        label,
+        allow_keyword_fallback: allowKeywordFallback,
+        ...(benchmarkVersion ? { benchmark_version: benchmarkVersion } : {}),
+      }),
     }),
   listEvaluationRuns: (id: string) =>
     request<EvaluationRun[]>(`/api/knowledge-bases/${id}/evaluation-runs`),
+
+  // --- V3 Phase A: benchmark lifecycle & versions ---
+  setQuestionStatus: (kbId: string, qId: string, status: QuestionLifecycle, reviewer = "") =>
+    request<EvaluationQuestion>(
+      `/api/knowledge-bases/${kbId}/evaluation-questions/${qId}/status`,
+      { method: "POST", body: JSON.stringify({ status, reviewer }) },
+    ),
+  editQuestion: (kbId: string, qId: string, patch: Partial<EvaluationQuestion>) =>
+    request<EvaluationQuestion>(
+      `/api/knowledge-bases/${kbId}/evaluation-questions/${qId}`,
+      { method: "PATCH", body: JSON.stringify(patch) },
+    ),
+  createBenchmarkVersion: (
+    kbId: string,
+    body: { version: string; label?: string; question_ids?: string[]; created_by?: string; notes?: string },
+  ) =>
+    request<BenchmarkVersion>(`/api/knowledge-bases/${kbId}/benchmark-versions`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  listBenchmarkVersions: (kbId: string) =>
+    request<BenchmarkVersion[]>(`/api/knowledge-bases/${kbId}/benchmark-versions`),
+  getBenchmarkVersion: (kbId: string, bvId: string) =>
+    request<BenchmarkVersion>(`/api/knowledge-bases/${kbId}/benchmark-versions/${bvId}`),
+  freezeBenchmarkVersion: (kbId: string, bvId: string, reviewer = "") =>
+    request<BenchmarkVersion>(
+      `/api/knowledge-bases/${kbId}/benchmark-versions/${bvId}/freeze${reviewer ? `?reviewer=${encodeURIComponent(reviewer)}` : ""}`,
+      { method: "POST" },
+    ),
+  deleteBenchmarkVersion: (kbId: string, bvId: string) =>
+    request<void>(`/api/knowledge-bases/${kbId}/benchmark-versions/${bvId}`, { method: "DELETE" }),
 };

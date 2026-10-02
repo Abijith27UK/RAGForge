@@ -12,6 +12,7 @@ import threading
 from typing import Any, Generic, TypeVar
 
 from app.schemas.models import (
+    BenchmarkVersion,
     BuildRun,
     Chunk,
     Document,
@@ -68,6 +69,12 @@ CREATE TABLE IF NOT EXISTS evaluation_runs (
 CREATE TABLE IF NOT EXISTS build_runs (
     id TEXT PRIMARY KEY,
     kb_id TEXT NOT NULL,
+    data TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS benchmark_versions (
+    id TEXT PRIMARY KEY,
+    kb_id TEXT NOT NULL,
+    version TEXT NOT NULL,
     data TEXT NOT NULL
 );
 """
@@ -264,6 +271,33 @@ class Repository:
             "SELECT data FROM evaluation_questions WHERE kb_id = ? AND id = ?", (kb_id, question_id)
         ).fetchone()
         return self._from_row(row, EvaluationQuestion)
+
+    # -- benchmark versions (V3 Phase A) -------------------------------------
+
+    def create_benchmark_version(self, bv: BenchmarkVersion) -> None:
+        self._execute(
+            "INSERT INTO benchmark_versions (id, kb_id, version, data) VALUES (?, ?, ?, ?)",
+            (bv.id, bv.kb_id, bv.version, self._to_row(bv)),
+        )
+
+    def get_benchmark_version(self, kb_id: str, bv_id: str) -> BenchmarkVersion | None:
+        row = self._conn.execute(
+            "SELECT data FROM benchmark_versions WHERE kb_id = ? AND id = ?", (kb_id, bv_id)
+        ).fetchone()
+        return self._from_row(row, BenchmarkVersion)
+
+    def list_benchmark_versions(self, kb_id: str) -> list[BenchmarkVersion]:
+        rows = self._conn.execute(
+            "SELECT data FROM benchmark_versions WHERE kb_id = ? ORDER BY data->>'$.created_at' DESC",
+            (kb_id,),
+        ).fetchall()
+        return [self._from_row(r, BenchmarkVersion) for r in rows]  # type: ignore[misc]
+
+    def update_benchmark_version(self, bv: BenchmarkVersion) -> None:
+        self._execute(
+            "UPDATE benchmark_versions SET data = ? WHERE id = ?",
+            (self._to_row(bv), bv.id),
+        )
 
     def create_evaluation_run(self, run: EvaluationRun) -> None:
         self._execute(

@@ -48,6 +48,8 @@ from app.api.routes_domain import router as domain_router
 from app.api.routes_sources import router as sources_router
 from app.api.routes_build import router as build_router
 from app.api.routes_retrieval import router as retrieval_router
+from app.api.routes_benchmark import router as benchmark_router
+from app.api.routes_experiments import router as experiments_router
 from app.api.routes_system import router as system_router
 
 app.include_router(kb_router)
@@ -55,6 +57,8 @@ app.include_router(domain_router)
 app.include_router(sources_router)
 app.include_router(build_router)
 app.include_router(retrieval_router)
+app.include_router(benchmark_router)
+app.include_router(experiments_router)
 app.include_router(system_router)
 
 

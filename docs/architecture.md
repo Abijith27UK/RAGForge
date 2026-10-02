@@ -88,6 +88,20 @@ GET  /api/knowledge-bases/{id}/evaluation-runs
 GET  /api/system/health | status
 ```
 
+## Extension points for experiments (V3)
+
+- **Benchmark lifecycle** — questions move DRAFT → REVIEW → APPROVED → FROZEN with reviewer
+  attribution (`routes_benchmark.py`); APPROVED edits spawn new DRAFT revisions (`supersedes`);
+  FROZEN questions/versions are immutable. Benchmark versions are snapshot objects
+  (`BenchmarkVersion`) whose FROZEN instances are the only valid basis for official evaluation runs
+  (enforced in `Evaluator.run_evaluation` via `config.benchmark_version`).
+- **Chunking strategy registry** — `CHUNKING_REGISTRY` / `get_chunker()`; chunks stamp
+  `chunking_strategy` + `chunking_config_version`; KB records the strategy used.
+- **Vector backend factory** — `create_vector_store(settings, kb.vector_backend)` with
+  `register_vector_backend()` for experimental backends (TurboVec, Phase E).
+- **Read-only experiment artifacts** — `routes_experiments.py` serves frozen results JSON verbatim;
+  the UI renders them without hardcoding metrics.
+
 ## Extension points for experiments
 
 - `Chunker` — add `SemanticChunker`; compare against `section-aware` / `fixed-size`.
