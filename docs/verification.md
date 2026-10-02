@@ -205,3 +205,229 @@ and results were not persisted; the runner was extended with mergeable per-corpu
 results and paired analysis. The existing 28-question Automobile benchmark remains
 "agent-authored, human review pending" — lifecycle statuses were NOT auto-migrated; human review
 is the next gating step before any v3 experiment executes.
+
+---
+
+## V4 — User knowledge ingestion, KB maturation, source-selection v3 readiness
+
+**Date:** 2026-10-02 · Machine: Windows, Git Bash · Python 3.14.7 (`backend/.venv`)
+**Product doc:** `docs/user-knowledge-workflow.md`
+
+### Commands and results
+
+| Check | Command | Result |
+|---|---|---|
+| Backend tests (all) | `cd backend && .venv/Scripts/python.exe -m pytest -q` | **177 passed** (was 96; +81 V4 tests) |
+| Pre-existing V1–V3 tests | same command, filtered to the original 11 files | **96 passed — zero regressions** |
+| Frontend typecheck | `cd frontend && npm run typecheck` | clean (script added; `tsc --noEmit`) |
+| Frontend build | `cd frontend && npm run build` | clean, 13 routes incl. new `/knowledge-bases/[id]/documents` |
+| Frozen-benchmark gate | `backend/scripts/verify_benchmark_integrity.py` | read-only; refuses any non-FROZEN benchmark; exercised by tests |
+
+### New test files (81 tests)
+
+| File | Tests | Covers |
+|---|---|---|
+| `tests/test_user_ingestion.py` | 28 | PPTX/DOCX/PDF/TXT/MD/HTML parsing on **real in-memory files**; slide numbers + slide titles; DOCX heading paths + table preservation; PDF page provenance; upload validation (traversal, size, magic bytes, mislabelled OOXML, corrupt ZIP, plain-ZIP-as-DOCX); legacy `.ppt` rejection; image-only PDF rejection; USER_PROVIDED integrity scoring; full provenance set on every supported format |
+| `tests/test_incremental_documents.py` | 21 | incremental indexing touches only the new document; stale vectors deleted on re-index; statuses/counts recorded; indexing **refuses** when the store cannot delete vectors; skip reasons are reported; document delete removes vectors + rows; replacement keeps history and drops the old version's vectors; source-mode round-trips; retrieval provenance incl. page/slide/section/version; absent keys omitted not invented; retriever registry; KB with no benchmark; frozen benchmark untouched by document work; ingestion performs **no network I/O** |
+| `tests/test_documents_api.py` | 32 | API contracts for all three source modes; multi-format upload; duplicate upload creates no second document; per-file rejection; traversal neutralisation; library/detail/text/chunks endpoints; incremental index endpoint; failed-document indexing refused; replacement versioning; identical-byte replacement refused; overview for a READY KB with **no benchmark**; evaluation never fabricates metrics; frozen benchmark immutable through V4 flows; the v3 runner's frozen gate; `ingest` explains user-provided sources; user URLs marked `user_provided` |
+
+### Product bugs found and fixed by these tests
+
+1. `upload_documents` treated the indexer outcome as an object when it returns a dict → 500 on
+   every indexed upload.
+2. `Source.quality` was left `None` for user-uploaded files, so the Sources page could not
+   render the integrity assessment uniformly → now set alongside `Source.integrity`.
+3. `UserProvidedIntegrityScorer` returned `REVIEW` for any file under 200 characters, which
+   downgraded perfectly valid short class notes → thin content is now `ACCEPT` + warning;
+   only hard technical failures reject.
+4. `POST /documents/{id}/replace` superseded a document **without deleting its vectors**, so
+   the replaced version stayed retrievable → vectors are now deleted on replacement.
+
+### Verified existing behaviour (not regressed)
+
+* All 96 pre-existing tests pass unchanged, including source-quality scoring, benchmark
+  lifecycle/freeze protection, chunking, metrics, live-Qdrant integration and API contracts.
+* `benchmarks/` frozen artifacts are byte-identical; no historical experiment result was read,
+  rewritten or deleted.
+* The frozen Automobile Engineering benchmark is never auto-migrated or mutated by any V4 code
+  path — proven by `test_frozen_benchmark_stays_immutable_across_document_work` and
+  `test_frozen_benchmark_cannot_be_edited_or_deleted_through_v4_flows`.
+
+### Explicitly NOT done in this phase
+
+TurboVec, BM25, hybrid retrieval, reranking, autonomous optimization, MCP, and LLM answering.
+The only preparation is the `Retriever` registry, the parser registry and the vector-backend
+factory. Source-selection v3 was **prepared but not executed** — it builds 18 corpora and must
+be a deliberate, conscious run.
+
+---
+
+## V4 final pass — stale-vector count honesty + end-to-end re-verification
+
+**Date:** 2026-10-02 · Same machine/venv as above. No new features; this pass fixed a
+**reporting** defect and re-ran every gate.
+
+### Defect found and fixed: "0 stale vectors removed" was always printed
+
+The installed `qdrant-client` returns `UpdateResult(operation_id, status)` for `delete()` —
+**no deleted-count field**. The old code read `len(result.operation.result)`, which always
+raised, was swallowed, and fell back to `0`. The delete itself worked, but *every* caller
+(build-run stage message, the incremental-index stage message, and the
+`DELETE /documents/{id}` response) reported `vectors_removed: 0` even when hundreds of points
+were deleted. That is exactly the kind of fabricated number this project must never show.
+
+Fix ([qdrant_store.py](../backend/app/services/vector_store/qdrant_store.py)):
+
+* `_delete_by_document_filter()` now measures the collection's `points_count` **before and
+  after** the delete and returns the real delta.
+* When the collection cannot be read, it returns **`-1` = unknown** — never a fabricated `0`.
+* `delete_document_vectors()` propagates `-1`; `delete_orphaned_points()` prefers the measured
+  delta and only falls back to the attempted count when the collection is unreadable.
+
+Fix ([document_indexer.py](../backend/app/services/indexing/document_indexer.py)):
+
+* `IndexOutcome.stale_label()` → `"unknown"` for `-1`; `as_dict()` also carries
+  `stale_vectors_removed_label`.
+* An orphan sweep returning `-1` **no longer cancels** a known count
+  (`if outcome.stale_vectors_removed >= 0 and swept >= 0`).
+
+Propagation: `routes_build.py`, `routes_documents.py` (stage messages, delete response now also
+returns `vectors_removed_label` and `vectors_removal_confirmed`), and the frontend
+(`api.ts`, Document Library page) render the label and warn honestly when a removal could not
+be confirmed.
+
+### Re-verification results
+
+| Check | Command | Result |
+|---|---|---|
+| Backend tests (all) | `cd backend && .venv/Scripts/python.exe -m pytest -q` | **181 passed, 7 warnings** (177 + 4 new honesty tests) |
+| Byte-compile | `.venv/Scripts/python.exe -m compileall -q app` | exit 0 |
+| Frontend typecheck | `cd frontend && npm run typecheck` | clean |
+| Frontend build | `cd frontend && npm run build` | clean, 13 routes |
+| Frozen artifacts | `git diff --stat HEAD -- benchmarks/` + canonical-hash compare | **all 10 files semantically identical to HEAD**; no untracked files in `benchmarks/` |
+| Secrets | `git grep -nIE "sk-…|AKIA…|PRIVATE KEY"` on tracked files | no matches; `backend/.env` untracked and ignored |
+| Live product sanity | `scripts/sanity_check_user_kb.py --base http://localhost:8011` (real Qdrant on :6333, real MiniLM) | **15/15 PASS** |
+
+### Live proof the count fix works
+
+Sanity step 12 against real Qdrant now reports a **confirmed non-zero** count:
+
+```
+PASS  12. Delete a document and its vectors
+        vectors_removed=1, store_error=None; Qdrant 9 -> 8, docs 7 -> 6
+```
+
+Before the fix this line printed `vectors_removed=0` for the same deletion.
+
+### Note on raw-bytes vs content (benchmarks/)
+
+Six benchmark files differ **raw-byte-wise** from HEAD while their canonical JSON hashes match
+exactly. Cause: `core.autocrlf=true` on this Windows checkout rewrites LF → CRLF on checkout.
+This is **not** a content change — verified per file by `json.dumps(..., sort_keys=True)`
+equality plus SHA-256 of the canonical form.
+
+### Known housekeeping (not changed unilaterally)
+
+`frontend/tsconfig.tsbuildinfo` is a **tracked generated file**, so `.gitignore` cannot help
+until it is untracked: `git rm --cached frontend/tsconfig.tsbuildinfo`. `.qdrant-initialized`
+is likewise a tracked marker file. Both were pre-existing; neither was removed here.
+
+### Not done in this phase (unchanged)
+
+TurboVec, BM25, hybrid retrieval, reranking, autonomous optimization, MCP, LLM answering, OCR,
+CSV/XLSX, auth, cloud deployment.
+
+---
+
+## V5 — Corpus reliability verification
+
+**Date:** 2026-10-02 · Windows, Git Bash · Python 3.14.7 (`backend/.venv`)
+
+### Commands and results
+
+| Check | Command | Result |
+|---|---|---|
+| Backend tests (chunk 1 of 2) | `pytest tests/test_api … test_incremental_documents -q` | **157 passed** |
+| Backend tests (chunk 2 of 2) | `pytest tests/test_llm_and_embeddings … test_v3_infrastructure -q` | **87 passed** |
+| **Backend total** | — | **244 passed, 0 failed** (181 pre-existing + 63 new corpus tests) |
+| Byte-compile | `python -m compileall -q app` | exit 0 |
+| Frontend typecheck | `npm run typecheck` | clean, exit 0 |
+| Frontend build | `npm run build` | exit 0, 14 routes incl. new `/knowledge-bases/[id]/corpus` |
+| Frozen artifacts | canonical-hash compare vs `HEAD` | **all 10 files semantically identical**; `git diff HEAD -- benchmarks/` empty |
+| Secrets | `git grep` for key patterns on tracked files | no matches; `backend/.env` untracked + ignored |
+| **Live integration** | `scripts/sanity_check_corpus.py --base http://localhost:8012` (live Qdrant, real MiniLM, isolated temp KB) | **20/20 PASS** |
+| Scale benchmark | `scripts/corpus_benchmark.py` | 10/50/100/200 docs — see below |
+
+### Corpus benchmark results (measured)
+
+| Documents | Chunks | docs/min | chunks/s | vectors/s | total s |
+|---:|---:|---:|---:|---:|---:|
+| 10 | 80 | 2700.3 | 360.0 | 360.0 | 0.22 |
+| 50 | 400 | 2409.9 | 321.3 | 321.3 | 1.24 |
+| 100 | 800 | 2209.9 | 294.7 | 294.7 | 2.71 |
+| 200 | 1600 | 2425.5 | 323.4 | 323.4 | 4.95 |
+
+Throughput is **flat from 10 to 200 documents** — no super-linear degradation at the
+target corpus size. Artifact: `backend/data/benchmarks/corpus-scale.json` (inside
+`data/`, never the repository's frozen `benchmarks/`).
+
+**Stated limits:** this measures RAGForge's own orchestration using the hashing
+embedding provider and the in-memory store. It does **not** measure transformer
+inference speed, real Qdrant network throughput, or retrieval quality of any kind.
+
+### Live integration evidence (20/20)
+
+Real Qdrant + real `all-MiniLM-L6-v2` against an isolated temporary KB
+(`SANITY-CORPUS-TEMP`), cleaned up afterwards:
+
+```
+PASS  Bulk batch ingestion                          7 files, HTTP 201
+PASS  Batch accounted for every file                total=7 completed=6 failed=1 status=partial
+PASS  One bad file does NOT fail the batch          6 ok / 1 failed / status=partial
+PASS  Failure carries an actionable reason          INVALID_FILE: not a readable ZIP container
+PASS  Manifest counts the corpus                    documents=6 chunks=8 vectors=8 confirmed=True
+PASS  Vector count is CONFIRMED against live Qdrant total_vectors=8
+PASS  PPTX slide provenance survives                slides=2 parser=pptx
+PASS  DOCX section provenance survives              sections=2 parser=docx
+PASS  Duplicate content detected, existing kept     duplicates=1 completed=0
+PASS  Resume is idempotent                          documents 6 -> 6; resumable=1
+PASS  Integrity scan ran against live vectors       WARNING docs=6 chunks=8 vectors=8
+PASS  Integrity scan is clean on a fresh corpus     orphans=0 missing=0 stale=0
+PASS  Destructive repair refused without confirm     HTTP 400: confirm_action required
+PASS  Corpus fingerprint is deterministic           631695cd54f2… (6 docs)
+PASS  Unchanged corpus reuses one version           v1
+PASS  New domain reports ground truth NOT_AVAILABLE status=NOT_AVAILABLE, no metrics
+PASS  Retrieval returns provenance-bearing results  3 results, score=0.5021
+```
+
+### Bugs found and fixed by this phase
+
+1. `process_item` built a `Source` but never persisted it → every indexed upload
+   failed with *"source … no longer exists"*.
+2. A batch with failures reported status `complete`. Now `partial` — a partially
+   failed corpus must never read as a complete ingestion.
+3. A failed parse **discarded the user's bytes**, forcing a re-upload of a
+   200-file corpus to fix one file. `IngestionError.raw_path` now carries the path
+   and the failed document keeps `raw_file_path`, so
+   `reindex_failed_documents` can retry from disk.
+4. `REINDEX_FAILED_DOCUMENTS` filtered out failed documents and could therefore
+   never retry one — a self-contradicting action. It now re-parses from stored
+   bytes first.
+5. A no-op repair reported `ok=False`. "Nothing to do" is now a plain message.
+6. The corpus fingerprint included `kb_id`, so two knowledge bases holding
+   identical corpora disagreed — defeating the point of a reproducible
+   fingerprint. Excluded (with the other non-deterministic fields).
+7. `routes_corpus` bound `create_vector_store` at import time, so the vector
+   factory could not be stubbed and the corpus API tests created ~28 real Qdrant
+   collections per run. Now resolved through the factory module at call time.
+8. `test_documents_api.py` also hit real Qdrant; now stubbed at the factory
+   boundary. A full suite run no longer pollutes the vector store.
+9. `MAX_UPLOAD_FILES_PER_REQUEST` was 50, which made the required 100-document
+   batch impossible. Raised to 200 to match the stated 50–200 corpus target.
+
+### Explicitly NOT done
+
+TurboVec, BM25, hybrid retrieval, reranking, autonomous optimisation, MCP, LLM
+answer generation, OCR, CSV/XLSX, auth, cloud deployment. The corpus reliability
+layer and its observability came first, because retrieval features cannot be
+honestly evaluated for a domain with no ground truth.

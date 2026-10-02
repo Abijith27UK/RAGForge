@@ -51,7 +51,19 @@ class InMemoryVectorStore(VectorStore):
 
     def upsert_chunks(self, kb_id: str, chunks: list[Chunk], vectors: list[list[float]]) -> None:
         for c, v in zip(chunks, vectors):
-            self.points[numeric_id(c.id)] = {"vector": v, "payload": {"chunk_id": c.id, "document_id": c.document_id, "text": c.text}}
+            self.points[numeric_id(c.id)] = {
+                "vector": v,
+                # Mirrors the real Qdrant payload closely enough that the
+                # integrity engine's provenance checks are exercised honestly.
+                "payload": {
+                    "chunk_id": c.id,
+                    "document_id": c.document_id,
+                    "kb_id": c.kb_id,
+                    "source_id": c.source_id,
+                    "content_hash": c.content_hash,
+                    "text": c.text,
+                },
+            }
 
     def delete_document_vectors(self, kb_id: str, document_ids: list[str]) -> int:
         ids = set(document_ids)
@@ -82,6 +94,17 @@ class InMemoryVectorStore(VectorStore):
 
     def collection_info(self, kb_id: str) -> dict[str, Any]:
         return {"name": kb_id, "points_count": len(self.points), "vector_size": 0, "status": "green"}
+
+    def count_points_for_documents(self, kb_id: str, document_ids: list[str]) -> int:
+        ids = set(document_ids)
+        return sum(1 for p in self.points.values() if p["payload"].get("document_id") in ids)
+
+    def all_point_payloads(self, kb_id: str) -> dict[str, dict[str, Any]]:
+        return {
+            str(p["payload"]["chunk_id"]): dict(p["payload"])
+            for p in self.points.values()
+            if p["payload"].get("chunk_id")
+        }
 
     def delete_collection(self, kb_id: str) -> None:
         self.points.clear()

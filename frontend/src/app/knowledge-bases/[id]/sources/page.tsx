@@ -55,9 +55,15 @@ export default function SourcesPage() {
     return [...sources].sort((a, b) => (b.trust_score ?? -1) - (a.trust_score ?? -1));
   }, [sources]);
 
+  const userProvided = ranked.filter((s) => s.user_provided);
+  const discovered = ranked.filter((s) => !s.user_provided);
+
+  // The authority x relevance map only makes sense for externally discovered
+  // web sources. User files are scored on integrity instead.
   const scatterPoints = useMemo(
     () =>
       ranked
+        .filter((s) => !s.user_provided)
         .map((s) => ({
           s,
           relevance: s.quality?.signals?.relevance ?? null,
@@ -107,7 +113,7 @@ export default function SourcesPage() {
 
       {sources && sources.length > 0 && (
         <div className="space-y-4">
-          {/* Quality map */}
+          {/* Quality map — external sources only */}
           {scatterPoints.length >= 3 && (
             <Panel>
               <PanelHeader title="Source quality map" right={<span className="text-2xs text-ink-faint">authority × relevance — click a point</span>} />
@@ -117,11 +123,86 @@ export default function SourcesPage() {
             </Panel>
           )}
 
-          {/* Ranking */}
+          {/* User-provided */}
+          {userProvided.length > 0 && (
+            <Panel>
+              <PanelHeader
+                title="User provided"
+                right={<span className="data-value text-2xs text-ink-faint">{userProvided.length} sources</span>}
+              />
+              <div className="divide-y divide-line/60">
+                {userProvided.map((s) => (
+                  <div key={s.id}>
+                    <button
+                      onClick={() => setExpanded(expanded === s.id ? null : s.id)}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-3"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-xs font-medium text-ink">{s.title ?? s.url}</span>
+                          <Badge tone="violet">user provided</Badge>
+                          <StatusPill status={s.decision} />
+                        </span>
+                        <span className="mt-0.5 block truncate text-2xs text-ink-faint">{s.url}</span>
+                      </span>
+                      <span className="data-value w-12 shrink-0 text-right text-sm text-ink">
+                        {s.trust_score != null ? fmtScore(s.trust_score, 2) : "—"}
+                      </span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-ink-ghost transition-transform", expanded === s.id && "rotate-180")} />
+                    </button>
+                    {expanded === s.id && (
+                      <div className="space-y-3 border-t border-line/60 bg-surface-1 px-4 py-3">
+                        <p className="text-2xs leading-4 text-ink-faint">
+                          Assessed for <span className="text-ink-muted">file integrity</span>, not publication
+                          authority: a document you supplied is not penalised for lacking a website, an HTTP
+                          status or a publication date.
+                        </p>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-4">
+                          <SignalBar label="file validity" value={s.quality?.signals?.file_validity} tone="ok" />
+                          <SignalBar label="content extraction" value={s.quality?.signals?.content_extraction} tone="accent" />
+                          <SignalBar label="structure" value={s.quality?.signals?.structure} tone="violet" />
+                          <SignalBar label="duplication" value={s.quality?.signals?.duplication} tone="warn" />
+                          <div>
+                            <div className="section-label mb-0.5">integrity</div>
+                            <div className="data-value text-lg text-ink">{s.trust_score != null ? fmtScore(s.trust_score) : "—"}</div>
+                          </div>
+                        </div>
+                        {s.quality?.reasons?.length ? (
+                          <ul className="space-y-0.5">
+                            {s.quality.reasons.map((r, j) => (
+                              <li key={j} className="text-2xs leading-4 text-ink-muted">· {r}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        {s.quality?.warnings?.length ? (
+                          <ul className="space-y-0.5">
+                            {s.quality.warnings.map((w, j) => (
+                              <li key={j} className="text-2xs leading-4 text-warn">· {w}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        <p className="text-2xs text-ink-faint">assessed_by: {s.quality?.assessed_by ?? "—"}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
+
+          {/* Externally discovered ranking */}
           <Panel>
-            <PanelHeader title="Candidate ranking" right={<span className="data-value text-2xs text-ink-faint">{sources.length} sources</span>} />
+            <PanelHeader
+              title="Externally discovered candidates"
+              right={<span className="data-value text-2xs text-ink-faint">{discovered.length} sources</span>}
+            />
+            {!discovered.length ? (
+              <p className="px-4 py-6 text-center text-xs text-ink-faint">
+                No externally discovered sources yet. Use the discovery form above.
+              </p>
+            ) : (
             <div className="divide-y divide-line/60">
-              {ranked.map((s, i) => (
+              {discovered.map((s, i) => (
                 <div key={s.id}>
                   <button
                     onClick={() => setExpanded(expanded === s.id ? null : s.id)}
@@ -201,6 +282,7 @@ export default function SourcesPage() {
                 </div>
               ))}
             </div>
+            )}
           </Panel>
         </div>
       )}

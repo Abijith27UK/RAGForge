@@ -1,8 +1,22 @@
 # RAGForge — V3 Product Architecture (Phase A–D foundation)
 
-**Status:** implemented and tested (95 backend tests + 1 honest skip, `tsc --noEmit` clean, production build clean).
+**Status:** implemented and tested. Superseded in product scope by **V4 — User Knowledge
+Ingestion** (see `docs/user-knowledge-workflow.md`); the V3 foundation below is unchanged and
+still verified. 177 backend tests pass, `npm run typecheck` and `npm run build` are clean.
+
 This document records what V3 added to the product foundation, what it deliberately does *not*
 implement, and where the extension points live.
+
+> **V4 status note.** The 28 Automobile Engineering benchmark questions are now HUMAN-REVIEWED
+> and the benchmark is APPROVED/FROZEN. V4 does not recreate, modify or invalidate it: frozen
+> questions, frozen `BenchmarkVersion` snapshots and every historical experiment artifact are
+> untouched, and `verify_benchmark_integrity.py` verifies that read-only before any official
+> experiment is allowed to run.
+>
+> **This does not generalise.** The Automobile benchmark is a domain-specific research artifact
+> produced by hand. A new knowledge base ships with **no** benchmark, so its retrieval quality
+> is unmeasured until the same human authoring/review/freeze process is repeated for that
+> domain. See §1.1 of `docs/user-knowledge-workflow.md`.
 
 ## What V3 adds on top of the verified baseline
 
@@ -51,6 +65,16 @@ Schema additions (backward compatible — JSON-blob storage deserializes with de
 
 TurboVec (Phase E), BM25 / hybrid / reranking (F), autonomous optimization (G), MCP (H),
 domain-aware chunking algorithm (C scaffold only). The interfaces above are the only preparation.
+
+## V4 additions that touch this foundation
+
+| V4 concern | Relationship to V3 |
+|---|---|
+| **User knowledge ingestion** | Additive. External discovery, the `SourceQualityScorer` and all benchmark machinery are unchanged. User files go through a *separate* integrity scorer. |
+| **Benchmark stays optional** | Reinforces Phase A's separation: a benchmark version is an evaluation instrument, never a prerequisite for a KB to reach `READY`. |
+| **Incremental indexing** | Refactors the build route to call the shared `index_documents()` helper. The stale-vector contract documented in V3 is preserved verbatim and is now exercised by both the full build and the per-document path. |
+| **Retriever registry** | Formalises the V3 note that runs should be "self-describing": `Retriever` ABC + registry, with dense as the baseline and no new strategies implemented. |
+| **Source-selection v3 runner** | Unblocked by the human review, **but still not executed**. `verify_benchmark_integrity.py --prepare-v3` prints the plan and the exact command; the run is deliberately a manual, conscious step because it builds 18 corpora. |
 
 ## Reproducibility contract
 

@@ -1,34 +1,64 @@
 """Document ingestion: download, validate, parse, clean, hash.
 
-Formats supported in MVP: PDF (pypdf), HTML/web pages (BeautifulSoup),
-TXT/Markdown. DOCX deliberately deferred. All external fetches go through
-SSRF-checked URLs with timeouts, and failures are per-document: one bad
-document must not abort the batch.
+Two entry points share one parser registry (app/services.ingestion.parsers):
+
+* ``ingest_source``  - EXTERNAL knowledge: download a discovered URL (SSRF-safe,
+  size-capped, per-document error isolation) and parse it.
+* ``ingest_uploaded_bytes`` - USER knowledge: parse a file the user supplied,
+  with no network access at all (privacy: private course material never leaves
+  the machine unless explicitly configured).
+
+Every parser failure raises IngestionError with a user-facing message; one bad
+document must never abort a batch.
 """
 from __future__ import annotations
 
 import logging
-from abc import ABC, abstractmethod
 from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
-from bs4 import BeautifulSoup
-from pypdf import PdfReader
 
 from app.schemas.models import Document, Source, SourceType
+from app.services.ingestion.parsers import (
+    PARSER_REGISTRY,
+    DocumentParser,
+    HtmlParser,
+    IngestionError,
+    MarkdownParser,
+    PdfParser,
+    TextParser,
+    get_parser,
+    supported_upload_extensions,
+)
 from app.utils.ids import new_id
 from app.utils.text import clean_text, sha256_bytes, sha256_text
 from app.utils.url_validation import validate_public_http_url
 
 logger = logging.getLogger(__name__)
 
-MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024  # 50 MB cap
+MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024  # 50 MB cap for downloaded sources
 USER_AGENT = "RAGForge/0.1 (+local research tool)"
 
+_DOWNLOADABLE_EXT = (".pdf", ".html", ".htm", ".txt", ".md", ".markdown")
 
-class IngestionError(RuntimeError):
-    """Per-document ingestion failure with a human-readable message."""
+__all__ = [
+    "IngestionError",
+    "MAX_DOWNLOAD_BYTES",
+    "PARSER_REGISTRY",
+    "DocumentParser",
+    "HtmlParser",
+    "MarkdownParser",
+    "PdfParser",
+    "TextParser",
+    "download_document",
+    "get_parser",
+    "ingest_source",
+    "ingest_uploaded_bytes",
+    "parsed_text_path",
+    "store_raw_bytes",
+    "supported_upload_extensions",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -56,7 +86,7 @@ def download_document(source: Source, documents_dir: Path) -> tuple[Path, bytes]
     content_type = resp.headers.get("content-type", "").lower()
     parsed = urlparse(url)
     ext = Path(parsed.path).suffix.lower()
-    if ext not in (".pdf", ".html", ".htm", ".txt", ".md", ".markdown") and "pdf" not in content_type:
+    if ext not in _DOWNLOADABLE_EXT and "pdf" not in content_type:
         ext = ".html" if "html" in content_type else ".txt"
 
     filename = f"{source.id}{ext}"
@@ -68,104 +98,61 @@ def download_document(source: Source, documents_dir: Path) -> tuple[Path, bytes]
 
 
 # ---------------------------------------------------------------------------
-# Parsers (one per supported format, selected by extension/content type)
+# Raw + parsed file storage
 # ---------------------------------------------------------------------------
 
-class DocumentParser(ABC):
-    extensions: tuple[str, ...] = ()
-
-    @abstractmethod
-    def parse(self, path: Path, data: bytes) -> tuple[str, dict]:
-        """Return (text, metadata). Raise IngestionError on failure."""
+def store_raw_bytes(path: Path, data: bytes) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    return path
 
 
-class TextParser(DocumentParser):
-    extensions = (".txt", ".md", ".markdown")
-
-    def parse(self, path: Path, data: bytes) -> tuple[str, dict]:
-        try:
-            text = data.decode("utf-8")
-        except UnicodeDecodeError:
-            try:
-                text = data.decode("latin-1")
-            except Exception as exc:
-                raise IngestionError(f"Could not decode {path.name} as text") from exc
-        return clean_text(text), {"format": "text"}
+def parsed_text_path(raw_path: Path) -> Path:
+    """Sidecar file holding the normalized text extracted from ``raw_path``."""
+    return raw_path.with_suffix(raw_path.suffix + ".parsed.txt")
 
 
-class HtmlParser(DocumentParser):
-    extensions = (".html", ".htm")
-
-    def parse(self, path: Path, data: bytes) -> tuple[str, dict]:
-        try:
-            text = data.decode("utf-8", errors="replace")
-        except Exception as exc:
-            raise IngestionError(f"Could not decode {path.name}: {exc}") from exc
-        soup = BeautifulSoup(text, "lxml")
-        for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form", "noscript"]):
-            tag.decompose()
-        title = None
-        if soup.title and soup.title.string:
-            title = soup.title.string.strip()
-        # Use heading structure for readability; get_text keeps natural flow.
-        body = soup.body or soup
-        lines = [line.strip() for line in body.get_text("\n").split("\n")]
-        cleaned = clean_text("\n".join(lines))
-        if len(cleaned) < 40:
-            raise IngestionError(f"Page {path.name} contained no extractable text")
-        meta = {"format": "html"}
-        if title:
-            meta["title"] = title
-        return cleaned, meta
+def _write_parsed_text(raw_path: Path, text: str) -> Path:
+    text_path = parsed_text_path(raw_path)
+    text_path.write_text(text, encoding="utf-8")
+    return text_path
 
 
-class PdfParser(DocumentParser):
-    extensions = (".pdf",)
-
-    def parse(self, path: Path, data: bytes) -> tuple[str, dict]:
-        import io
-
-        try:
-            reader = PdfReader(io.BytesIO(data))
-        except Exception as exc:
-            raise IngestionError(f"Could not parse PDF {path.name}: {exc}") from exc
-        if reader.is_encrypted:
-            try:
-                reader.decrypt("")
-            except Exception as exc:
-                raise IngestionError(f"PDF {path.name} is encrypted and cannot be parsed") from exc
-        pages: list[str] = []
-        for i, page in enumerate(reader.pages):
-            try:
-                page_text = page.extract_text() or ""
-            except Exception as exc:
-                logger.warning("PDF %s page %d extraction failed: %s", path.name, i + 1, exc)
-                page_text = ""
-            # Page marker: consumed by the section-aware chunker so every chunk
-            # derived from this page carries page=i+1 in its provenance.
-            pages.append(f"\n\f[PAGE {i + 1}]\n{page_text}")
-        text = clean_text("\n\n".join(pages))
-        if not text.replace("[PAGE", "").strip():
-            raise IngestionError(f"PDF {path.name} contained no extractable text (scanned/image PDF?)")
-        meta = {"format": "pdf", "page_count": len(reader.pages)}
-        if reader.metadata and reader.metadata.title:
-            meta["title"] = str(reader.metadata.title)
-        return text, meta
-
-
-PARSERS: list[DocumentParser] = [PdfParser(), HtmlParser(), TextParser()]
-
-
-def get_parser(path: Path, content_type: str = "") -> DocumentParser:
-    ext = path.suffix.lower()
-    for parser in PARSERS:
-        if ext in parser.extensions:
-            return parser
-    if "pdf" in content_type:
-        return PdfParser()
-    if "html" in content_type:
-        return HtmlParser()
-    return TextParser()
+def _document_from_parse(
+    *,
+    kb_id: str,
+    source: Source,
+    raw_path: Path,
+    data: bytes,
+    text: str,
+    meta: dict,
+    file_name: str,
+    mime_type: str | None,
+    user_provided: bool,
+) -> Document:
+    return Document(
+        id=new_id("doc"),
+        kb_id=kb_id,
+        source_id=source.id,
+        url=source.url,
+        title=meta.get("title") or source.title or file_name,
+        source_type=source.source_type,
+        publisher=source.publisher,
+        file_path=str(_write_parsed_text(raw_path, text)),
+        content_hash=sha256_bytes(data) or sha256_text(text),
+        text_length=len(text),
+        page_count=meta.get("page_count"),
+        parse_metadata=dict(meta),
+        parser=meta.get("format"),
+        file_name=file_name,
+        file_size=len(data),
+        mime_type=mime_type,
+        raw_file_path=str(raw_path),
+        slide_count=meta.get("slide_count"),
+        section_count=meta.get("section_count"),
+        user_provided=user_provided,
+        status="parsed",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -177,29 +164,78 @@ def ingest_source(
     kb_id: str,
     documents_dir: Path,
 ) -> Document:
-    """Download + parse one source into a Document record.
+    """Download + parse one EXTERNAL source into a Document record.
 
     Raises IngestionError with a user-facing message on failure.
     """
     file_path, data = download_document(source, documents_dir)
     parser = get_parser(file_path)
     text, meta = parser.parse(file_path, data)
-    doc = Document(
-        id=new_id("doc"),
+    return _document_from_parse(
         kb_id=kb_id,
-        source_id=source.id,
-        url=source.url,
-        title=meta.get("title") or source.title,
-        source_type=source.source_type,
-        publisher=source.publisher,
-        file_path=str(file_path),
-        content_hash=sha256_bytes(data) or sha256_text(text),
-        text_length=len(text),
-        page_count=meta.get("page_count"),
-        ingestion_timestamp=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+        source=source,
+        raw_path=file_path,
+        data=data,
+        text=text,
+        meta=meta,
+        file_name=file_path.name,
+        mime_type=None,
+        user_provided=False,
     )
-    # Keep the parsed text alongside for chunking (stored as .txt next to raw file)
-    text_path = file_path.with_suffix(file_path.suffix + ".parsed.txt")
-    text_path.write_text(text, encoding="utf-8")
-    doc.file_path = str(text_path)
-    return doc
+
+
+def ingest_uploaded_bytes(
+    *,
+    kb_id: str,
+    source: Source,
+    upload_dir: Path,
+    file_name: str,
+    data: bytes,
+    mime_type: str | None = None,
+) -> Document:
+    """Parse bytes the user supplied. No network access is performed.
+
+    ``file_name`` is used only for the on-disk extension and as a display
+    title; callers must have already sanitized it (see upload.validate_upload).
+    """
+    extension = Path(file_name).suffix.lower()
+    raw_path = upload_dir / f"{new_id('raw')}{extension}"
+    store_raw_bytes(raw_path, data)
+    parser = get_parser(raw_path, mime_type or "")
+    try:
+        text, meta = parser.parse(raw_path, data)
+    except IngestionError as exc:
+        # The bytes are on disk; say where, so the document can be retried
+        # without the user re-uploading it.
+        if exc.raw_path is None:
+            exc.raw_path = str(raw_path)
+        raise
+    return _document_from_parse(
+        kb_id=kb_id,
+        source=source,
+        raw_path=raw_path,
+        data=data,
+        text=text,
+        meta=meta,
+        file_name=file_name,
+        mime_type=mime_type,
+        user_provided=True,
+    )
+
+
+def reparse_document(doc: Document) -> tuple[str, dict]:
+    """Re-run the parser over a document's stored original bytes.
+
+    Used by the document library "rebuild" action. Raises IngestionError.
+    """
+    if not doc.raw_file_path or not Path(doc.raw_file_path).exists():
+        raise IngestionError(
+            f"Original file for document {doc.id} is no longer on disk; "
+            "re-upload the document instead of rebuilding it."
+        )
+    raw = Path(doc.raw_file_path)
+    data = raw.read_bytes()
+    parser = get_parser(raw, doc.mime_type or "")
+    text, meta = parser.parse(raw, data)
+    _write_parsed_text(raw, text)
+    return clean_text(text), meta

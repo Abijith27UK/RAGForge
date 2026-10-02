@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI):
     setup_logging("DEBUG" if settings.debug else "INFO")
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     settings.documents_dir.mkdir(parents=True, exist_ok=True)
+    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
     logger.info("RAGForge starting; data dir: %s", settings.data_dir)
     yield
 
@@ -47,6 +48,8 @@ from app.api.routes_knowledge_bases import router as kb_router
 from app.api.routes_domain import router as domain_router
 from app.api.routes_sources import router as sources_router
 from app.api.routes_build import router as build_router
+from app.api.routes_documents import router as documents_router
+from app.api.routes_corpus import router as corpus_router
 from app.api.routes_retrieval import router as retrieval_router
 from app.api.routes_benchmark import router as benchmark_router
 from app.api.routes_experiments import router as experiments_router
@@ -56,6 +59,8 @@ app.include_router(kb_router)
 app.include_router(domain_router)
 app.include_router(sources_router)
 app.include_router(build_router)
+app.include_router(documents_router)
+app.include_router(corpus_router)
 app.include_router(retrieval_router)
 app.include_router(benchmark_router)
 app.include_router(experiments_router)

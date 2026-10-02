@@ -11,6 +11,7 @@ import sqlite3
 import threading
 from typing import Any, Generic, TypeVar
 
+from app.schemas.corpus import CorpusVersion, IngestionBatch, IngestionItem
 from app.schemas.models import (
     BenchmarkVersion,
     BuildRun,
@@ -47,6 +48,8 @@ CREATE TABLE IF NOT EXISTS documents (
     content_hash TEXT NOT NULL DEFAULT '',
     data TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_documents_kb ON documents(kb_id);
+CREATE INDEX IF NOT EXISTS idx_documents_hash ON documents(kb_id, content_hash);
 CREATE TABLE IF NOT EXISTS chunks (
     id TEXT PRIMARY KEY,
     kb_id TEXT NOT NULL,
@@ -77,6 +80,46 @@ CREATE TABLE IF NOT EXISTS benchmark_versions (
     version TEXT NOT NULL,
     data TEXT NOT NULL
 );
+
+-- ---------------------------------------------------------------------------
+-- V5 corpus engineering: resumable ingestion + corpus snapshots.
+-- `item_key` is UNIQUE per batch so a resume can never create a second row
+-- for the same upload slot, which is what makes resume idempotent at the
+-- database level rather than only in application code.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ingestion_batches (
+    id TEXT PRIMARY KEY,
+    kb_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT NOT NULL,
+    data TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_batches_kb ON ingestion_batches(kb_id, created_at);
+CREATE TABLE IF NOT EXISTS ingestion_items (
+    id TEXT PRIMARY KEY,
+    batch_id TEXT NOT NULL,
+    kb_id TEXT NOT NULL,
+    item_key TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    stage TEXT NOT NULL DEFAULT 'queued',
+    content_hash TEXT,
+    document_id TEXT,
+    created_at TEXT NOT NULL,
+    data TEXT NOT NULL,
+    UNIQUE (batch_id, item_key)
+);
+CREATE INDEX IF NOT EXISTS idx_items_batch ON ingestion_items(batch_id);
+CREATE INDEX IF NOT EXISTS idx_items_kb ON ingestion_items(kb_id, status);
+CREATE TABLE IF NOT EXISTS corpus_versions (
+    id TEXT PRIMARY KEY,
+    kb_id TEXT NOT NULL,
+    version TEXT NOT NULL,
+    fingerprint TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    data TEXT NOT NULL,
+    UNIQUE (kb_id, fingerprint)
+);
+CREATE INDEX IF NOT EXISTS idx_corpus_versions_kb ON corpus_versions(kb_id, created_at);
 """
 
 
@@ -140,6 +183,10 @@ class Repository:
             ("DELETE FROM evaluation_questions WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM evaluation_runs WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM build_runs WHERE kb_id = ?", (kb_id,)),
+            ("DELETE FROM benchmark_versions WHERE kb_id = ?", (kb_id,)),
+            ("DELETE FROM ingestion_items WHERE kb_id = ?", (kb_id,)),
+            ("DELETE FROM ingestion_batches WHERE kb_id = ?", (kb_id,)),
+            ("DELETE FROM corpus_versions WHERE kb_id = ?", (kb_id,)),
         ]:
             self._execute(sql, params)
 
@@ -210,6 +257,40 @@ class Repository:
             "SELECT data FROM documents WHERE kb_id = ? AND content_hash = ?", (kb_id, content_hash)
         ).fetchone()
         return self._from_row(row, Document)
+
+    def update_document(self, doc: Document) -> None:
+        self._execute(
+            "UPDATE documents SET data = ?, content_hash = ? WHERE id = ?",
+            (self._to_row(doc), doc.content_hash, doc.id),
+        )
+
+    def delete_document(self, kb_id: str, document_id: str) -> bool:
+        row = self._conn.execute(
+            "SELECT id FROM documents WHERE kb_id = ? AND id = ?", (kb_id, document_id)
+        ).fetchone()
+        if row is None:
+            return False
+        self.delete_chunks_for_document(kb_id, document_id)
+        self._execute("DELETE FROM documents WHERE kb_id = ? AND id = ?", (kb_id, document_id))
+        return True
+
+    def count_documents(self, kb_id: str) -> int:
+        row = self._conn.execute(
+            "SELECT COUNT(*) AS n FROM documents WHERE kb_id = ?", (kb_id,)
+        ).fetchone()
+        return int(row["n"]) if row else 0
+
+    def delete_source(self, kb_id: str, source_id: str) -> bool:
+        row = self._conn.execute(
+            "SELECT id FROM sources WHERE kb_id = ? AND id = ?", (kb_id, source_id)
+        ).fetchone()
+        if row is None:
+            return False
+        self._execute("DELETE FROM sources WHERE kb_id = ? AND id = ?", (kb_id, source_id))
+        return True
+
+    def find_source_by_id(self, kb_id: str, source_id: str) -> Source | None:
+        return self.get_source(kb_id, source_id)
 
     # -- chunks ---------------------------------------------------------------
 
@@ -328,3 +409,134 @@ class Repository:
             (kb_id,),
         ).fetchall()
         return self._from_row(rows[0], BuildRun) if rows else None
+
+    # -- ingestion batches (V5 Phase 1) -------------------------------------
+    # Idempotency is enforced by UNIQUE(batch_id, item_key) at the schema level,
+    # so a resume can never double-insert even if the service retries.
+
+    def create_ingestion_batch(self, batch: IngestionBatch) -> None:
+        self._execute(
+            "INSERT INTO ingestion_batches (id, kb_id, status, created_at, data) VALUES (?, ?, ?, ?, ?)",
+            (batch.id, batch.kb_id, batch.status, batch.created_at.isoformat(), self._to_row(batch)),
+        )
+
+    def get_ingestion_batch(self, batch_id: str) -> IngestionBatch | None:
+        row = self._conn.execute(
+            "SELECT data FROM ingestion_batches WHERE id = ?", (batch_id,)
+        ).fetchone()
+        return self._from_row(row, IngestionBatch)
+
+    def list_ingestion_batches(self, kb_id: str, limit: int = 50) -> list[IngestionBatch]:
+        rows = self._conn.execute(
+            "SELECT data FROM ingestion_batches WHERE kb_id = ? ORDER BY created_at DESC LIMIT ?",
+            (kb_id, limit),
+        ).fetchall()
+        return [self._from_row(r, IngestionBatch) for r in rows]  # type: ignore[misc]
+
+    def update_ingestion_batch(self, batch: IngestionBatch) -> None:
+        self._execute(
+            "UPDATE ingestion_batches SET data = ?, status = ? WHERE id = ?",
+            (self._to_row(batch), batch.status, batch.id),
+        )
+
+    def create_ingestion_item(self, item: IngestionItem) -> None:
+        self._execute(
+            "INSERT INTO ingestion_items "
+            "(id, batch_id, kb_id, item_key, status, stage, content_hash, document_id, created_at, data) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                item.id, item.batch_id, item.kb_id, item.item_key, item.status.value,
+                item.stage.value, item.content_hash, item.document_id,
+                item.created_at.isoformat(), self._to_row(item),
+            ),
+        )
+
+    def get_ingestion_item(self, item_id: str) -> IngestionItem | None:
+        row = self._conn.execute(
+            "SELECT data FROM ingestion_items WHERE id = ?", (item_id,)
+        ).fetchone()
+        return self._from_row(row, IngestionItem)
+
+    def find_ingestion_item_by_key(self, batch_id: str, item_key: str) -> IngestionItem | None:
+        row = self._conn.execute(
+            "SELECT data FROM ingestion_items WHERE batch_id = ? AND item_key = ?",
+            (batch_id, item_key),
+        ).fetchone()
+        return self._from_row(row, IngestionItem)
+
+    def list_ingestion_items(self, batch_id: str) -> list[IngestionItem]:
+        rows = self._conn.execute(
+            "SELECT data FROM ingestion_items WHERE batch_id = ? ORDER BY item_key", (batch_id,)
+        ).fetchall()
+        return [self._from_row(r, IngestionItem) for r in rows]  # type: ignore[misc]
+
+    def update_ingestion_item(self, item: IngestionItem) -> None:
+        self._execute(
+            "UPDATE ingestion_items SET data = ?, status = ?, stage = ?, content_hash = ?, document_id = ? "
+            "WHERE id = ?",
+            (
+                self._to_row(item), item.status.value, item.stage.value,
+                item.content_hash, item.document_id, item.id,
+            ),
+        )
+
+    def count_items_by_status(self, kb_id: str) -> dict[str, int]:
+        rows = self._conn.execute(
+            "SELECT status, COUNT(*) AS n FROM ingestion_items WHERE kb_id = ? GROUP BY status",
+            (kb_id,),
+        ).fetchall()
+        return {r["status"]: int(r["n"]) for r in rows}
+
+    def count_batch_items_by_status(self, batch_id: str) -> dict[str, int]:
+        """Per-status counts for ONE batch, aggregated in SQL.
+
+        Batch progress is recomputed after every file during a 200-file upload.
+        Loading and re-validating every item each time would be O(n^2) Pydantic
+        work, so the counts come straight from SQLite instead.
+        """
+        rows = self._conn.execute(
+            "SELECT status, COUNT(*) AS n FROM ingestion_items WHERE batch_id = ? GROUP BY status",
+            (batch_id,),
+        ).fetchall()
+        return {r["status"]: int(r["n"]) for r in rows}
+
+    # -- corpus versions (V5 Phase 5) ----------------------------------------
+
+    def create_corpus_version(self, version: CorpusVersion) -> CorpusVersion:
+        """Insert a corpus version, returning the existing one for a known fingerprint.
+
+        Two snapshots with identical metadata must share one fingerprint; this
+        keeps `versions/` append-only and makes determinism observable.
+        """
+        existing = self._conn.execute(
+            "SELECT data FROM corpus_versions WHERE kb_id = ? AND fingerprint = ?",
+            (version.kb_id, version.fingerprint),
+        ).fetchone()
+        if existing is not None:
+            return self._from_row(existing, CorpusVersion)  # type: ignore[return-value]
+        self._execute(
+            "INSERT INTO corpus_versions (id, kb_id, version, fingerprint, created_at, data) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                version.id, version.kb_id, version.version, version.fingerprint,
+                version.created_at.isoformat(), self._to_row(version),
+            ),
+        )
+        return version
+
+    def get_corpus_version(self, kb_id: str, version_id: str) -> CorpusVersion | None:
+        row = self._conn.execute(
+            "SELECT data FROM corpus_versions WHERE kb_id = ? AND id = ?", (kb_id, version_id)
+        ).fetchone()
+        return self._from_row(row, CorpusVersion)
+
+    def list_corpus_versions(self, kb_id: str, limit: int = 100) -> list[CorpusVersion]:
+        rows = self._conn.execute(
+            "SELECT data FROM corpus_versions WHERE kb_id = ? ORDER BY created_at DESC LIMIT ?",
+            (kb_id, limit),
+        ).fetchall()
+        return [self._from_row(r, CorpusVersion) for r in rows]  # type: ignore[misc]
+
+    def latest_corpus_version(self, kb_id: str) -> CorpusVersion | None:
+        versions = self.list_corpus_versions(kb_id, limit=1)
+        return versions[0] if versions else None

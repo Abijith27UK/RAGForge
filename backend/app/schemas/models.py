@@ -37,8 +37,40 @@ class SourceType(str, enum.Enum):
     WEB_PAGE = "web_page"
     PDF = "pdf"
     ARXIV = "arxiv"
-    USER_UPLOAD = "user_upload"
+    USER_UPLOAD = "user_upload"  # legacy alias kept for pre-V4 rows
+    USER_PROVIDED = "user_provided"  # V4: a file/URL the user supplied
+    PRESENTATION = "presentation"  # V4: ppt / pptx
+    DOCUMENT = "document"  # V4: docx
     TEXT = "text"
+
+
+class SourceMode(str, enum.Enum):
+    """How a knowledge base obtains its knowledge (V4 Phase 1).
+
+    A Knowledge Base is a PRODUCT artifact; an evaluation benchmark is a
+    separate, OPTIONAL instrument. SourceMode therefore describes only where
+    documents come from and never implies ground truth exists.
+
+    EXTERNAL     - RAGForge discovers and scores authoritative public sources.
+    USER_PROVIDED- The user uploads documents and/or supplies URLs.
+    MIXED        - User documents plus externally discovered sources.
+    """
+
+    EXTERNAL = "external"
+    USER_PROVIDED = "user_provided"
+    MIXED = "mixed"
+
+
+class DocumentStatus(str, enum.Enum):
+    """Per-document lifecycle inside the document library (V4 Phase 5)."""
+
+    UPLOADED = "uploaded"
+    PARSING = "parsing"
+    PARSED = "parsed"
+    CHUNKING = "chunking"
+    INDEXING = "indexing"
+    READY = "ready"
+    FAILED = "failed"
 
 
 class SourceDecision(str, enum.Enum):
@@ -61,6 +93,35 @@ class QuestionStatus(str, enum.Enum):
     REVIEW = "REVIEW"
     APPROVED = "APPROVED"
     FROZEN = "FROZEN"
+
+
+class GroundTruthStatus(str, enum.Enum):
+    """Availability of human-reviewed ground truth for a knowledge base (V5).
+
+    A DOMAIN DOES NOT AUTOMATICALLY HAVE GROUND TRUTH. Entering a domain name,
+    analysing it, indexing a corpus, or reaching READY never produces ground
+    truth. It only exists once humans author questions, review them, approve
+    them and freeze them into a benchmark version.
+
+    Until then it is ``NOT_AVAILABLE`` and no retrieval-quality metric may be
+    reported for this knowledge base.
+    """
+
+    NOT_AVAILABLE = "NOT_AVAILABLE"
+    DRAFT = "DRAFT"
+    IN_REVIEW = "IN_REVIEW"
+    APPROVED = "APPROVED"
+    FROZEN = "FROZEN"
+
+
+#: Sent with the API so the UI never has to invent this wording.
+GROUND_TRUTH_UNAVAILABLE_EXPLANATION = (
+    "This knowledge base has no human-reviewed ground truth, so no retrieval-quality "
+    "metric (Recall@K, Precision@K, MRR, NDCG) can be reported for it. Corpus coverage "
+    "and retrieval quality are different questions: the corpus may contain the "
+    "information while nothing has verified that retrieval can find it. A domain name "
+    "never produces ground truth — questions must be authored, reviewed and frozen."
+)
 
 
 class BenchmarkStatus(str, enum.Enum):
@@ -92,6 +153,14 @@ class KnowledgeBaseCreate(BaseModel):
     purpose: str = Field(min_length=1, max_length=2000)
     target_audience: str = Field(min_length=1, max_length=500)
     depth: str = Field(default="intermediate", max_length=100)
+    source_mode: SourceMode = Field(
+        default=SourceMode.EXTERNAL,
+        description=(
+            "Where the knowledge comes from. EXTERNAL = discovered public sources; "
+            "USER_PROVIDED = user uploads documents/URLs; MIXED = both. Ground truth "
+            "is never required regardless of mode."
+        ),
+    )
     vector_backend: str = Field(
         default="qdrant", max_length=50,
         description="Vector store backend id ('qdrant'; experimental backends later)",
@@ -110,6 +179,21 @@ class KnowledgeBase(BaseModel):
     target_audience: str
     depth: str = "intermediate"
     status: KBStatus = KBStatus.DRAFT
+    # --- V4: knowledge-source mode and build versioning ---
+    source_mode: SourceMode = Field(
+        default=SourceMode.EXTERNAL,
+        description="How this KB obtains knowledge. Does NOT imply a benchmark exists.",
+    )
+    version: int = Field(
+        default=1,
+        description=(
+            "Knowledge-base build version, incremented on every successful index. "
+            "Historical experiment artifacts keep referencing their own kb_id/version."
+        ),
+    )
+    last_build_at: datetime | None = Field(
+        default=None, description="When the current index was last written"
+    )
     # Identity of the embedding model the KB was indexed with (provider/model/
     # dimensions). Retrieval refuses to run against a mismatched model instead
     # of silently querying an incompatible vector space.
@@ -129,6 +213,64 @@ class KnowledgeBase(BaseModel):
     )
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+class KBOverview(BaseModel):
+    """Everything the KB overview screen needs, in one honest payload.
+
+    A knowledge base is READY on indexing alone. `evaluation_status` reports
+    "not_configured" when no benchmark exists, which is a VALID state — ground
+    truth is optional by design (Benchmark = evaluation instrument,
+    KnowledgeBase = product artifact).
+    """
+
+    kb: KnowledgeBase
+    documents: int = 0
+    documents_ready: int = 0
+    documents_failed: int = 0
+    user_provided_documents: int = 0
+    external_documents: int = 0
+    chunks: int = 0
+    vectors: int | None = Field(
+        default=None, description="Point count reported by the vector store; null when unreachable"
+    )
+    sources: int = 0
+    sources_user_provided: int = 0
+    sources_discovered: int = 0
+    embedding_model: str = ""
+    vector_backend: str = "qdrant"
+    vector_store_status: str = "unknown"
+    chunking_strategy: str = ""
+    chunking_config: dict[str, Any] = Field(default_factory=dict)
+    last_build_at: datetime | None = None
+    last_build_status: str = ""
+    version: int = 1
+    build_status: str = "not_built"
+    evaluation_status: str = Field(
+        default="not_configured",
+        description="not_configured | questions_only | benchmark_draft | benchmark_frozen | evaluated",
+    )
+    benchmark_versions: int = 0
+    frozen_benchmark_versions: int = 0
+    evaluation_questions: int = 0
+    evaluation_runs: int = 0
+    last_evaluation: dict[str, Any] | None = None
+    evaluation_required: bool = Field(
+        default=False,
+        description="Always false: ground truth is optional and never blocks READY",
+    )
+    ground_truth_status: GroundTruthStatus = Field(
+        default=GroundTruthStatus.NOT_AVAILABLE,
+        description=(
+            "Whether human-reviewed ground truth exists for this KB. NOT_AVAILABLE is "
+            "the honest default for every new domain, including ones with large corpora."
+        ),
+    )
+    ground_truth_explanation: str = Field(
+        default=GROUND_TRUTH_UNAVAILABLE_EXPLANATION,
+        description="Why the current ground-truth status is what it is",
+    )
+    ground_truth_question_count: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +325,22 @@ class Source(BaseModel):
     )
     notes: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
+    # --- V4: user-provided provenance ---
+    # A user-supplied file/URL must NOT be scored down for lacking public
+    # authority signals (no website, no HTTP status, no publication date). The
+    # user asserting relevance is recorded here and assessed by the separate
+    # integrity model (app/services/source_quality/user_scorer.py).
+    user_provided: bool = False
+    provenance: str = Field(
+        default="discovered",
+        description="'discovered' (external discovery) | 'user_upload' (file) | 'user_url'",
+    )
+    file_name: str | None = None
+    file_size: int | None = None
+    integrity: dict[str, Any] | None = Field(
+        default=None,
+        description="User-file integrity assessment (validity, parser, duplication, extraction)",
+    )
 
 
 class SourceDecisionUpdate(BaseModel):
@@ -190,13 +348,21 @@ class SourceDecisionUpdate(BaseModel):
 
 
 class QualitySignals(BaseModel):
-    authority: float = Field(ge=0, le=1, description="Domain authority of publisher/URL")
-    relevance: float = Field(ge=0, le=1, description="Match against domain spec")
-    recency: float = Field(ge=0, le=1, description="Freshness of content")
-    source_type: float = Field(ge=0, le=1, description="Trustworthiness of the type")
-    accessibility: float = Field(ge=0, le=1, description="Fetchable / parseable")
-    duplication: float = Field(ge=0, le=1, description="1 = unique, lower = duplicated")
-    evidence_quality: float = Field(ge=0, le=1, description="Citations, standards refs, etc.")
+    # External-web signals (used by SourceQualityScorer).
+    authority: float = Field(default=0.5, ge=0, le=1, description="Domain authority of publisher/URL")
+    relevance: float = Field(default=0.5, ge=0, le=1, description="Match against domain spec")
+    recency: float = Field(default=0.5, ge=0, le=1, description="Freshness of content")
+    source_type: float = Field(default=0.5, ge=0, le=1, description="Trustworthiness of the type")
+    accessibility: float = Field(default=0.5, ge=0, le=1, description="Fetchable / parseable")
+    duplication: float = Field(default=1.0, ge=0, le=1, description="1 = unique, lower = duplicated")
+    evidence_quality: float = Field(default=0.5, ge=0, le=1, description="Citations, standards refs, etc.")
+    # --- V4 user-file integrity signals ---
+    # Defaults are 1.0 ("not applicable, therefore not penalized") so a missing
+    # signal can never lower a score. The user-file scorer sets these explicitly.
+    file_validity: float = Field(default=1.0, ge=0, le=1, description="File is readable and not corrupt")
+    content_extraction: float = Field(default=1.0, ge=0, le=1, description="Meaningful text was extracted")
+    structure: float = Field(default=1.0, ge=0, le=1, description="Pages/slides/headings were recovered")
+    user_relevance: float = Field(default=1.0, ge=0, le=1, description="Relevance asserted by the uploader")
 
 
 class QualityAssessment(BaseModel):
@@ -228,6 +394,74 @@ class Document(BaseModel):
     page_count: int | None = None
     parse_error: str | None = None
     ingestion_timestamp: datetime = Field(default_factory=utcnow)
+    # --- V4 document library ---
+    status: DocumentStatus = Field(
+        default=DocumentStatus.PARSED,
+        description="uploaded | parsing | parsed | chunking | indexing | ready | failed",
+    )
+    user_provided: bool = False
+    document_version: int = Field(
+        default=1, description="Incremented when the file is replaced by a new version"
+    )
+    replaces_document_id: str | None = Field(
+        default=None, description="Previous document version this one supersedes (kept in history)"
+    )
+    file_name: str | None = Field(default=None, description="Original file name as uploaded")
+    file_size: int | None = Field(default=None, description="Original size in bytes")
+    mime_type: str | None = None
+    raw_file_path: str | None = Field(
+        default=None,
+        description="Path of the original binary/text file; file_path points at the parsed text",
+    )
+    parser: str | None = Field(default=None, description="Parser that produced the normalized text")
+    slide_count: int | None = Field(default=None, description="PPTX slides (never inferred)")
+    section_count: int | None = Field(default=None, description="DOCX heading sections (never inferred)")
+    chunk_count: int = Field(default=0, description="Chunks currently indexed for this document")
+    parse_metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Original parser metadata (never discarded)"
+    )
+    indexed_at: datetime | None = None
+
+
+class DocumentDetail(BaseModel):
+    """Document + its source + library state, for the Document Library UI."""
+
+    document: Document
+    source: Source | None = None
+    chunk_count: int = 0
+    integrity: dict[str, Any] | None = None
+    kb_version: int = 1
+    retrieval_enabled: bool = False
+
+
+class UploadedFileResult(BaseModel):
+    file_name: str
+    size_bytes: int = 0
+    status: str = Field(
+        default="uploaded",
+        description="uploaded | duplicate | rejected | failed | indexed",
+    )
+    message: str = ""
+    document: Document | None = None
+    source: Source | None = None
+    duplicate_of: str | None = Field(
+        default=None, description="Existing document with the same content hash (never silently replaced)"
+    )
+    integrity: dict[str, Any] | None = None
+
+
+class UploadResult(BaseModel):
+    kb_id: str
+    source_mode: SourceMode = SourceMode.USER_PROVIDED
+    files: list[UploadedFileResult] = Field(default_factory=list)
+    uploaded: int = 0
+    duplicates: int = 0
+    rejected: int = 0
+    failed: int = 0
+    indexed: bool = False
+    indexing: dict[str, Any] | None = Field(
+        default=None, description="Incremental index outcome when index=true"
+    )
 
 
 class Chunk(BaseModel):
@@ -246,6 +480,8 @@ class Chunk(BaseModel):
     section: str | None = None
     section_path: str | None = None
     page: int | None = None
+    slide: int | None = None
+    slide_title: str | None = None
     domain: str | None = None
     subdomain: str | None = None
     trust_score: float | None = None
@@ -255,6 +491,13 @@ class Chunk(BaseModel):
     # --- V3: chunking provenance (strategy that produced this chunk) ---
     chunking_strategy: str | None = None
     chunking_config_version: str = "v1"
+    chunking_config: dict[str, Any] = Field(
+        default_factory=dict, description="Exact chunking parameters that produced this chunk"
+    )
+    # --- V4: document/build provenance ---
+    document_version: int | None = None
+    user_provided: bool = False
+    kb_version: int | None = None
 
 
 # ---------------------------------------------------------------------------

@@ -1,10 +1,14 @@
-"""Build pipeline routes: ingestion -> chunking -> embedding -> indexing."""
+"""Build pipeline routes: ingestion -> chunking -> embedding -> indexing.
+
+The chunk/embed/index work lives in app.services.indexing.document_indexer so
+the full build here and the per-document incremental path in routes_documents
+cannot drift apart in how stale vectors are handled.
+"""
 from __future__ import annotations
 
 import logging
 from dataclasses import asdict
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -22,27 +26,22 @@ from app.schemas.models import (
     SourceDecision,
     StageStatus,
 )
-from app.services.chunking.chunker import get_chunker
-from app.services.vector_store.factory import create_vector_store
+from app.services.embeddings.provider import EmbeddingError, create_embedding_provider
+from app.services.indexing.document_indexer import IndexingError, index_documents
 from app.services.ingestion.ingestion import IngestionError, ingest_source
-from app.services.vector_store.qdrant_store import QdrantVectorStore, VectorStoreError
+from app.services.vector_store.factory import create_vector_store
 from app.utils.ids import new_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/knowledge-bases", tags=["build"])
 
-_QDRANT_NOT_RUNNING = (
-    "Qdrant is not reachable. Start it (see README: qdrant/qdrant.exe) and try again."
-)
-
-
-def _qdrant_store():
-    settings = get_settings()
-    return QdrantVectorStore(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
-
 
 class IngestRequest(BaseModel):
     source_ids: list[str] = Field(default_factory=list, description="Empty = all ACCEPTED sources")
+    document_ids: list[str] = Field(
+        default_factory=list,
+        description="Restrict ingestion to documents whose source is in source_ids",
+    )
 
 
 class IndexRequest(BaseModel):
@@ -53,6 +52,11 @@ class IndexRequest(BaseModel):
 
 @router.post("/{kb_id}/ingest", response_model=BuildRun)
 def ingest(kb_id: str, payload: IngestRequest, repo: Repository = Depends(get_repo)):
+    """Download + parse ACCEPTED EXTERNAL sources.
+
+    USER_PROVIDED sources are already parsed at upload time and are therefore
+    skipped here — they are (re)indexed through /documents/{id}/index.
+    """
     kb = repo.get_kb(kb_id)
     if not kb:
         raise HTTPException(404, "Knowledge base not found")
@@ -63,6 +67,15 @@ def ingest(kb_id: str, payload: IngestRequest, repo: Repository = Depends(get_re
         sources = [s for s in sources if s.id in wanted]
     else:  # default: all ACCEPTED sources
         sources = [s for s in sources if s.decision == SourceDecision.ACCEPT]
+
+    user_provided = [s for s in sources if s.user_provided]
+    external = [s for s in sources if not s.user_provided]
+    if user_provided and not external:
+        raise HTTPException(
+            400,
+            "All selected sources are user-provided and were already parsed at upload time. "
+            "Use POST /documents/{document_id}/index to index them.",
+        )
     if not sources:
         raise HTTPException(400, "No ACCEPTED sources to ingest. Accept sources first.")
 
@@ -79,7 +92,7 @@ def ingest(kb_id: str, payload: IngestRequest, repo: Repository = Depends(get_re
     repo.create_build_run(run)
 
     ingested, skipped, failed = 0, 0, 0
-    for source in sources:
+    for source in external:
         try:
             doc = ingest_source(source, kb_id, settings.documents_dir)
             existing = repo.find_document_by_hash(kb_id, doc.content_hash)
@@ -134,158 +147,107 @@ def list_chunks(
 
 @router.post("/{kb_id}/index", response_model=BuildRun)
 def index_kb(kb_id: str, payload: IndexRequest, repo: Repository = Depends(get_repo)):
-    """Chunk + embed + index all ingested documents into Qdrant.
+    """Full re-index: chunk + embed + index every READY/PARSED document.
 
-    Stale-vector handling: vectors for every re-indexed document are deleted
-    from Qdrant BEFORE new ones are upserted (re-chunking generates new chunk
-    IDs, so upserting alone would leave orphaned points retrievable forever),
-    and any leftover orphans (e.g. from deleted documents or older partial
-    builds) are swept at the end via delete_orphaned_points.
+    Stale-vector handling (unchanged contract, now implemented by the shared
+    indexer): vectors for every re-indexed document are deleted from Qdrant
+    BEFORE new ones are upserted — re-chunking generates new chunk IDs, so
+    upserting alone would leave orphaned points retrievable forever — and any
+    leftover orphans are swept at the end via delete_orphaned_points.
     """
     kb = repo.get_kb(kb_id)
     if not kb:
         raise HTTPException(404, "Knowledge base not found")
     documents = repo.list_documents(kb_id)
     if not documents:
-        raise HTTPException(400, "No documents ingested yet. Run ingestion first.")
+        raise HTTPException(400, "No documents ingested yet. Upload files or run ingestion first.")
 
     settings = get_settings()
-    from app.services.embeddings.provider import EmbeddingError, create_embedding_provider
-
     try:
         embedder = create_embedding_provider(settings)
     except EmbeddingError as exc:
         raise HTTPException(503, str(exc)) from exc
 
     store = create_vector_store(settings, backend=kb.vector_backend)
+    started = datetime.now(timezone.utc)
     run = BuildRun(
         id=new_id("build"),
         kb_id=kb_id,
         stages=[
-            StageStatus(stage=BuildStage.CHUNKING, status="running", started_at=datetime.now(timezone.utc)),
+            StageStatus(stage=BuildStage.CHUNKING, status="running", started_at=started),
+            StageStatus(stage=BuildStage.EMBEDDING, status="pending"),
+            StageStatus(stage=BuildStage.INDEXING, status="pending"),
         ],
     )
     repo.create_build_run(run)
 
     try:
-        chunker = get_chunker(payload.chunker)
-    except ValueError as exc:
-        raise HTTPException(422, str(exc)) from exc
-    doc_texts: dict[str, str] = {}
-    for doc in documents:
-        if not doc.file_path:
-            continue
-        try:
-            text = Path(doc.file_path).read_text(encoding="utf-8")
-        except OSError as exc:
-            logger.warning("Could not read parsed text for %s: %s", doc.id, exc)
-            continue
-        doc_texts[doc.id] = text
-
-    chunks: list[Chunk] = []
-    for doc in documents:
-        if doc.id not in doc_texts:
-            continue
-        source = repo.get_source(kb_id, doc.source_id)
-        if source is None:
-            logger.warning("Document %s references missing source %s; skipped", doc.id, doc.source_id)
-            continue
-        doc_chunks = chunker.chunk(
-            document=doc,
-            text=doc_texts[doc.id],
-            source=source,
+        outcome = index_documents(
+            repo=repo,
+            kb=kb,
+            documents=documents,
+            store=store,
+            embedder=embedder,
+            chunker_name=payload.chunker,
             target_size=payload.target_size,
             overlap=payload.overlap,
-            domain=kb.domain,
+            full_build=True,
+            kb_version=kb.version + 1,
         )
-        chunks.extend(doc_chunks)
-    if not chunks:
-        raise HTTPException(400, "No chunks produced; check that parsed document text exists on disk.")
+    except ValueError as exc:  # unknown chunking strategy
+        for stage in run.stages:
+            stage.status = "error"
+            stage.message = str(exc)
+        run.status = "error"
+        run.finished_at = datetime.now(timezone.utc)
+        repo.update_build_run(run)
+        raise HTTPException(422, str(exc)) from exc
+    except IndexingError as exc:
+        message = str(exc)
+        for stage in run.stages:
+            if stage.status == "running":
+                stage.status = "error"
+                stage.message = message
+            stage.finished_at = datetime.now(timezone.utc)
+        run.status = "error"
+        run.finished_at = datetime.now(timezone.utc)
+        repo.update_build_run(run)
+        kb.status = KBStatus.ERROR
+        repo.update_kb(kb)
+        status = 503 if "Qdrant" in message or "vector" in message.lower() else 400
+        raise HTTPException(status, message) from exc
 
+    finished = datetime.now(timezone.utc)
     run.stages[0].status = "done"
-    run.stages[0].items_processed = len(chunks)
-    run.stages[0].message = f"{len(chunks)} chunks from {len(doc_texts)} document(s)"
-    run.stages[0].finished_at = datetime.now(timezone.utc)
-    run.stages.append(
-        StageStatus(stage=BuildStage.EMBEDDING, status="running", started_at=datetime.now(timezone.utc))
-    )
-
-    try:
-        store.ensure_collection(kb_id, embedder.dimensions)
-    except VectorStoreError as exc:
-        raise HTTPException(503, f"{_QDRANT_NOT_RUNNING} ({exc})") from exc
-
-    # Delete existing vectors for these documents BEFORE upserting new ones:
-    # re-chunking generates new chunk IDs, so upserting alone would leave
-    # orphaned points retrievable forever.
-    try:
-        store.delete_document_vectors(kb_id, list(doc_texts.keys()))
-    except VectorStoreError as exc:
-        run.stages[1].status = "error"
-        run.stages[1].message = str(exc)
-        run.status = "error"
-        repo.update_build_run(run)
-        raise HTTPException(503, f"{_QDRANT_NOT_RUNNING} ({exc})") from exc
-
-    texts = [c.text for c in chunks]
-    try:
-        vectors = embedder.embed_texts(texts)
-    except Exception as exc:
-        run.stages[1].status = "error"
-        run.stages[1].message = str(exc)
-        run.status = "error"
-        repo.update_build_run(run)
-        raise HTTPException(503, f"Embedding failed: {exc}") from exc
-
+    run.stages[0].items_processed = outcome.chunk_count
+    run.stages[0].message = f"{outcome.chunk_count} chunks from {outcome.documents_indexed} document(s)"
+    run.stages[0].finished_at = finished
     run.stages[1].status = "done"
-    run.stages[1].items_processed = len(vectors)
-    run.stages[1].message = f"{len(vectors)} vectors via {embedder.identity().describe()}"
-    run.stages[1].finished_at = datetime.now(timezone.utc)
-    run.stages.append(
-        StageStatus(stage=BuildStage.INDEXING, status="running", started_at=datetime.now(timezone.utc))
-    )
-    try:
-        store.upsert_chunks(kb_id, chunks, vectors)
-    except VectorStoreError as exc:
-        run.stages[2].status = "error"
-        run.stages[2].message = str(exc)
-        run.status = "error"
-        repo.update_build_run(run)
-        raise HTTPException(503, f"{_QDRANT_NOT_RUNNING} ({exc})") from exc
-
-    # Persist chunks per-document AFTER successful upsert (SQLite then holds
-    # exactly the chunks that are actually indexed in Qdrant).
-    for doc_id in doc_texts:
-        repo.delete_chunks_for_document(kb_id, doc_id)
-    repo.create_chunks(chunks)
-
-    # Sweep any remaining orphans (deleted documents, partial earlier builds,
-    # or points whose document_id payload was missing).
-    valid_chunk_ids = {c.id for c in chunks}
-    try:
-        swept = store.delete_orphaned_points(kb_id, valid_chunk_ids)
-    except VectorStoreError as exc:
-        logger.warning("Orphan sweep failed (non-fatal): %s", exc)
-        swept = 0
-
+    run.stages[1].items_processed = outcome.vectors_indexed
+    run.stages[1].message = f"{outcome.vectors_indexed} vectors via {embedder.identity().describe()}"
+    run.stages[1].finished_at = finished
     run.stages[2].status = "done"
-    run.stages[2].items_processed = len(chunks)
-    run.stages[2].message = f"{len(chunks)} indexed; {swept} stale vectors removed"
-    run.stages[2].finished_at = datetime.now(timezone.utc)
+    run.stages[2].items_processed = outcome.chunk_count
+    run.stages[2].message = (
+        f"{outcome.chunk_count} indexed; {outcome.stale_label()} stale vectors removed"
+    )
+    run.stages[2].finished_at = finished
     run.status = "done"
-    run.finished_at = datetime.now(timezone.utc)
+    run.finished_at = finished
     repo.update_build_run(run)
+
     # Record WHICH embedding model produced the current vectors so retrieval
     # can refuse to run after a model change (no silent incompatible queries).
     kb.status = KBStatus.READY
     kb.embedding_identity = asdict(embedder.identity())
-    # V3: record the chunking configuration that produced the current index.
-    kb.chunking_strategy = chunker.name
+    kb.chunking_strategy = payload.chunker
     kb.chunking_config = {
         "target_size": payload.target_size,
         "overlap": payload.overlap,
         "config_version": "v1",
     }
-    kb.updated_at = datetime.now(timezone.utc)
+    kb.version += 1
+    kb.last_build_at = finished
+    kb.updated_at = finished
     repo.update_kb(kb)
     return run

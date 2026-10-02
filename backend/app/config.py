@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     def documents_dir(self) -> Path:
         return self.data_dir / "documents"
 
+    @property
+    def uploads_dir(self) -> Path:
+        """Root for user-uploaded originals (V4). Never sent externally."""
+        return self.data_dir / "uploads"
+
+    def kb_upload_dir(self, kb_id: str) -> Path:
+        return self.uploads_dir / kb_id
+
     # Qdrant
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str | None = None
@@ -47,6 +55,15 @@ class Settings(BaseSettings):
 
     # Retrieval defaults
     default_top_k: int = 5
+
+    # --- V4: user document ingestion ---
+    max_upload_bytes: int = 100 * 1024 * 1024  # 100 MB per uploaded file
+    max_upload_files_per_request: int = 200
+
+    # Privacy: user-provided files may be private course material. Parsing,
+    # chunking and embedding are LOCAL by default. Set this to True only after
+    # explicitly deciding that uploaded content may leave the machine.
+    allow_external_llm_for_user_documents: bool = False
 
     model_config = {
         "env_file": str(Path(__file__).resolve().parent.parent / ".env"),

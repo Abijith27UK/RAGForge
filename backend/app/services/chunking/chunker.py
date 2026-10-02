@@ -30,9 +30,12 @@ _HEADING_MD = re.compile(r"^(#{1,6})\s+(.+)$")
 _HEADING_NUMBERED = re.compile(r"^(\d+(\.\d+)*)\s+([A-Z].{2,120})$")
 _HEADING_CAPS = re.compile(r"^([A-Z][A-Z0-9 ,\-/&]{4,80})$")
 
-# Page markers emitted by the PDF parser: "\f[PAGE 12]". Stripped from chunk
-# text but recorded so every chunk carries its source page for provenance.
-_PAGE_MARKER = re.compile(r"^[\f\s]*\[PAGE (\d+)\]\s*$")
+# Structural markers emitted by the parsers:
+#   PDF  -> "\f[PAGE 12]"    PPTX -> "\f[SLIDE 17]"
+# They are stripped from chunk text but recorded so every chunk carries the
+# real page/slide it came from. A section spanning pages reports its FIRST
+# page; markers are never invented.
+_STRUCTURAL_MARKER = re.compile(r"^[\f\s]*\[(PAGE|SLIDE) (\d+)\]\s*$")
 
 
 @dataclass
@@ -41,35 +44,50 @@ class Section:
     level: int
     path: str  # e.g. "3. Vehicle Dynamics > 3.2 Suspension"
     page: int | None
+    slide: int | None
+    slide_title: str | None
     text: str
 
 
 def split_into_sections(text: str) -> list[Section]:
     """Split flat text into sections using heading heuristics.
 
-    PDF page markers ([PAGE n]) are removed from section text and recorded as
-    the page number of every section started after the marker (a section that
-    spans pages reports its FIRST page).
+    PDF page markers ([PAGE n]) and PPTX slide markers ([SLIDE n]) are removed
+    from section text and recorded as the page/slide of every section started
+    after the marker (a section that spans units reports its FIRST unit).
     """
     sections: list[Section] = []
-    current = Section(title="Introduction", level=0, path="", page=None, text="")
+    current = Section(title="Introduction", level=0, path="", page=None, slide=None,
+                      slide_title=None, text="")
     stack: list[tuple[int, str]] = []  # (level, title)
     current_page: int | None = None
+    current_slide: int | None = None
+    current_slide_title: str | None = None
 
     def flush():
         if current.text.strip():
-            sections.append(Section(current.title, current.level, current.path, current.page, current.text))
+            sections.append(
+                Section(current.title, current.level, current.path, current.page,
+                        current.slide, current_slide_title, current.text)
+            )
 
     for raw in text.split("\n"):
         line = raw.strip()
         if not line:
             current.text += "\n"
             continue
-        m_page = _PAGE_MARKER.match(line)
-        if m_page:
+        m_marker = _STRUCTURAL_MARKER.match(line)
+        if m_marker:
             flush()
-            current_page = int(m_page.group(1))
-            current = Section(title=current.title, level=current.level, path=current.path, page=current_page, text="")
+            kind, number = m_marker.group(1), int(m_marker.group(2))
+            if kind == "PAGE":
+                current_page = number
+            else:
+                current_slide = number
+                current_slide_title = None
+            current = Section(title=current.title, level=current.level, path=current.path,
+                              page=current_page, slide=current_slide,
+                              slide_title=current_slide_title, text="")
             continue
         m_md = _HEADING_MD.match(line)
         m_num = _HEADING_NUMBERED.match(line)
@@ -88,7 +106,12 @@ def split_into_sections(text: str) -> list[Section]:
                 stack.pop()
             stack.append((level, title))
             path = " > ".join(t for _, t in stack)
-            current = Section(title=title, level=level, path=path, page=current_page, text="")
+            # For a slide deck the level-1 heading IS the slide title, so the
+            # chunk can report "Slide 17 — Free Surface Effect" without guessing.
+            if current_slide is not None and level == 1 and not current_slide_title:
+                current_slide_title = title
+            current = Section(title=title, level=level, path=path, page=current_page,
+                              slide=current_slide, slide_title=current_slide_title, text="")
         else:
             current.text += line + "\n"
     flush()
@@ -139,6 +162,8 @@ class Chunker(ABC):
         target_size: int = DEFAULT_TARGET_SIZE,
         overlap: int = DEFAULT_OVERLAP,
         domain: str | None = None,
+        chunking_config: dict | None = None,
+        kb_version: int | None = None,
     ) -> list[Chunk]:
         ...
 
@@ -156,11 +181,14 @@ class SectionAwareChunker(Chunker):
         target_size: int = DEFAULT_TARGET_SIZE,
         overlap: int = DEFAULT_OVERLAP,
         domain: str | None = None,
+        chunking_config: dict | None = None,
+        kb_version: int | None = None,
     ) -> list[Chunk]:
         chunks: list[Chunk] = []
         sections = split_into_sections(text)
         if not sections:
-            sections = [Section(title=document.title or "Document", level=0, path="", page=None, text=text)]
+            sections = [Section(title=document.title or "Document", level=0, path="",
+                                page=None, slide=None, slide_title=None, text=text)]
 
         for section in sections:
             idx = 0
@@ -175,7 +203,11 @@ class SectionAwareChunker(Chunker):
                     section_title=section.title,
                     section_path=section.path,
                     page=section.page,
+                    slide=section.slide,
+                    slide_title=section.slide_title,
                     domain=domain,
+                    chunking_config=chunking_config,
+                    kb_version=kb_version,
                 ))
                 idx += 1
         return chunks
@@ -186,10 +218,14 @@ class SectionAwareChunker(Chunker):
         source: Source,
         chunk_index: int,
         text: str,
-        section_title: str,
-        section_path: str,
+        section_title: str | None,
+        section_path: str | None,
         page: int | None,
         domain: str | None,
+        slide: int | None = None,
+        slide_title: str | None = None,
+        chunking_config: dict | None = None,
+        kb_version: int | None = None,
     ) -> Chunk:
         return Chunk(
             id=new_id("chk"),
@@ -206,6 +242,8 @@ class SectionAwareChunker(Chunker):
             section=section_title,
             section_path=section_path or None,
             page=page,
+            slide=slide,
+            slide_title=slide_title,
             domain=domain,
             subdomain=None,
             trust_score=source.trust_score,
@@ -213,6 +251,10 @@ class SectionAwareChunker(Chunker):
             ingestion_timestamp=document.ingestion_timestamp,
             char_count=len(text),
             chunking_strategy=self.name,
+            chunking_config=dict(chunking_config or {}),
+            document_version=document.document_version,
+            user_provided=document.user_provided or source.user_provided,
+            kb_version=kb_version,
         )
 
 
@@ -229,6 +271,8 @@ class FixedSizeChunker(Chunker):
         target_size: int = DEFAULT_TARGET_SIZE,
         overlap: int = DEFAULT_OVERLAP,
         domain: str | None = None,
+        chunking_config: dict | None = None,
+        kb_version: int | None = None,
         **kwargs,
     ) -> list[Chunk]:
         chunks: list[Chunk] = []
@@ -248,6 +292,8 @@ class FixedSizeChunker(Chunker):
                 section_path=None,
                 page=None,
                 domain=domain,
+                chunking_config=chunking_config,
+                kb_version=kb_version,
             ))
             idx += 1
         return chunks

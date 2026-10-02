@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Boxes, ChevronRight, Database, FileSearch, FlaskConical, GitBranch,
-  LayoutDashboard, ListTree, Menu, PanelLeftClose, PanelLeftOpen,
-  Plus, Search, Sigma, Workflow, X,
+  Boxes, ChevronRight, Database, FileSearch, Files, FlaskConical, GitBranch,
+  HardDriveDownload, LayoutDashboard, ListTree, Menu, PanelLeftClose, PanelLeftOpen,
+  Plus, Search, ShieldCheck, Sigma, Workflow, X,
 } from "lucide-react";
 import CommandPalette from "@/components/CommandPalette";
 import { StatusDot } from "@/components/ui";
@@ -23,6 +23,8 @@ const NAV = {
   research: [
     { suffix: "/domain", label: "Domain Analysis", icon: GitBranch },
     { suffix: "/sources", label: "Sources", icon: FileSearch },
+    { suffix: "/corpus", label: "Corpus Command Center", icon: ShieldCheck },
+    { suffix: "/documents", label: "Documents", icon: Files },
     { suffix: "/processing", label: "Processing", icon: Workflow },
     { suffix: "/chunks", label: "Chunks", icon: ListTree },
     { suffix: "/retrieval", label: "Retrieval Lab", icon: Search, hint: "⌘K then query" },
@@ -203,8 +205,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <main className="min-w-0 flex-1 px-4 py-6 md:px-8">{children}</main>
 
         <footer className="border-t border-line px-4 py-3 text-2xs leading-4 text-ink-ghost md:px-8">
-          RAGForge — research tool. Every score, metric, and status shown comes from real pipeline
-          executions or is explicitly labelled dev/mock. Never fabricated.
+          RAGForge — knowledge engineering tool. Every score, metric, provenance field and status
+          shown comes from a real pipeline execution or is explicitly labelled dev/mock. Never
+          fabricated. Uploaded documents are processed locally.
         </footer>
       </div>
 

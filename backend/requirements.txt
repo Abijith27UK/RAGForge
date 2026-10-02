@@ -7,6 +7,9 @@ qdrant-client>=1.11
 pypdf>=4.0
 beautifulsoup4>=4.12
 lxml>=5.0
+python-docx>=1.1      # DOCX parsing (headings, paragraphs, tables)
+python-pptx>=1.0      # PPTX parsing (slides, slide titles, speaker notes)
+python-multipart>=0.0.9  # multipart/form-data uploads
 python-dotenv>=1.0
 
 # Testing

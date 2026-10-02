@@ -14,6 +14,8 @@ qdrant/
 node_modules/
 .next/
 out/
+*.tsbuildinfo
+next-env.d.ts.timestamp
 
 # Env & secrets
 .env

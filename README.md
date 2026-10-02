@@ -2,17 +2,46 @@
 
 ## Automated Domain-Specific RAG Knowledge Base Engineering
 
-RAGForge is a platform for **automatically constructing, evaluating, and managing domain-specific knowledge bases for Retrieval-Augmented Generation (RAG) systems**.
+RAGForge is a platform for **constructing, evaluating, and managing domain-specific knowledge bases for Retrieval-Augmented Generation (RAG) systems**.
 
-Instead of requiring users to manually collect documents, select sources, process them, generate embeddings, and build a vector database, RAGForge aims to automate this process starting from a high-level domain specification.
+It supports two fundamentally different workflows:
 
-For example:
+| Workflow | You give it | It builds |
+|---|---|---|
+| **External knowledge** | a domain description | a KB from discovered, scored, authoritative public sources |
+| **User knowledge** | your own lecture decks, PDFs, notes, URLs | a private KB from your material, with per-page/per-slide citations |
 
 ```text
-"Underwater Marine Robotics"
+"Build a knowledge base about automobile engineering."        → EXTERNAL
+"Build a Naval Architecture KB from my lecture notes."        → USER_PROVIDED
+"Use my documents plus discovered sources."                  → MIXED
 ```
 
-RAGForge works toward transforming this domain description into a structured, searchable, and evaluated knowledge base that can subsequently be used by RAG applications and AI agents.
+**A knowledge base needs no ground truth.** A KB becomes `READY` once it is
+indexed. An evaluation benchmark is a *separate, optional* instrument you can add
+later to measure retrieval quality. See [docs/user-knowledge-workflow.md](docs/user-knowledge-workflow.md).
+
+> ### ⚠️ A new domain does not automatically get ground truth
+>
+> RAGForge does **not** generate verified ground truth for you, and no benchmark
+> ships with a new knowledge base.
+>
+> The only benchmark here is the **Automobile Engineering** one (28 questions),
+> and it exists because a human read the indexed chunks, recorded the passage
+> answering each question, and reviewed the set before freezing it.
+>
+> A brand-new knowledge base — a Naval Architecture one, say — is fully usable for
+> retrieval, but its retrieval quality is **unmeasured**, not "good". The UI says
+> `Evaluation: Not configured`, metrics are `null` rather than placeholders, and
+> building the benchmark is a deliberate human process:
+>
+> ```
+> author questions → human review → APPROVED → snapshot → human review
+>                  → FROZEN benchmark → run evaluation → real metrics
+> ```
+>
+> Auto-generated "ground truth" would be a fabricated evaluation instrument, which
+> is the exact failure mode RAGForge exists to avoid.
 
 ---
 
@@ -291,23 +320,30 @@ This allows the system to construct a more focused corpus rather than simply col
 
 RAGForge processes supported documents into a common internal representation.
 
-Current document types include:
+| Format | Parser | Structural provenance |
+|---|---|---|
+| PDF | `PdfParser` (pypdf) | `page` |
+| PPTX | `PptxParser` (python-pptx) | `slide`, `slide_title`, speaker notes, tables |
+| DOCX | `DocxParser` (python-docx) | `section_path` (heading hierarchy), tables as pipe rows |
+| HTML | `HtmlParser` (BeautifulSoup) | cleaned text |
+| Markdown | `MarkdownParser` | heading structure preserved |
+| TXT | `TextParser` | normalized text |
 
-* PDF
-* HTML
-* TXT
-* Markdown
+Legacy binary `.ppt` is accepted by the uploader but explicitly rejected by the
+parser with an actionable message ("Re-save the deck as .pptx").
 
 The ingestion pipeline includes:
 
-* Content hashing
-* Duplicate detection
-* Size limits
-* Timeout handling
-* Graceful failure handling
-* Provenance preservation
+* Upload validation: file-name sanitisation, size caps, magic-byte sniffing,
+  OOXML container integrity (a `.docx` renamed to `.pptx` is rejected)
+* Content hashing and duplicate detection
+* Timeout handling and graceful per-document failure
+* Provenance preservation at document / page / slide / section / chunk level
 
-For PDF documents, page information can be propagated through the processing pipeline to the final retrieved chunks.
+**Page, slide and section numbers are read from the file, never inferred.** A
+deck with no title placeholder yields `slide_title = None`; a scanned PDF fails
+with an explicit "OCR is not implemented" message rather than producing an empty
+document.
 
 ---
 
@@ -377,12 +413,41 @@ Vector
 ├── Chunk
 ├── Document
 ├── Source
-├── Section
-├── Page
-└── Metadata
+├── Section / Slide / Page
+├── Document version
+├── Knowledge-base version
+└── Chunking strategy + config
 ```
 
-Qdrant is currently the primary production/development vector backend.
+Qdrant is currently the primary production/development vector backend. A
+`VectorStore` abstraction and a backend factory exist so an experimental backend
+(e.g. TurboVec) can be registered without changing call sites; none is
+implemented yet.
+
+---
+
+## 7b. Document Library & Incremental Ingestion
+
+Every knowledge base has a **document library** with per-document status:
+
+```text
+UPLOADED → PARSING → PARSED → CHUNKING → INDEXING → READY
+                   ↘ FAILED
+```
+
+Adding the 101st document to a 100-document knowledge base does **not** re-embed
+the other 100:
+
+```text
+add document 101 → parse → chunk → embed → index (only that document)
+replace a document → delete old vectors → ingest new version → index new chunks
+delete a document → remove its vectors (never leave stale points behind)
+```
+
+Both the full build and the incremental path call one shared function, so
+stale-vector handling cannot drift between them. `Document.document_version` and
+`KnowledgeBase.version` are stamped onto every chunk, so any retrieved chunk can
+be traced back to the exact index that produced it.
 
 ---
 
@@ -406,9 +471,13 @@ The retrieved context can then be supplied to an external LLM-based RAG applicat
 
 ---
 
-## 9. Retrieval Evaluation
+## 9. Retrieval Evaluation (OPTIONAL)
 
 RAGForge evaluates the resulting knowledge base rather than assuming that successful indexing means successful retrieval.
+
+**Evaluation is never required.** A knowledge base with no questions, no benchmark
+and no runs is a valid, fully usable artifact; the UI reports
+`Evaluation: Not configured` and the KB is still `READY`.
 
 Current evaluation metrics include:
 
@@ -421,11 +490,16 @@ The evaluation framework supports:
 
 * Chunk-level ground truth
 * Document-level ground truth
-* Benchmark questions
-* Strict evaluation
-* Diagnostic keyword evaluation
+* Question lifecycle DRAFT → REVIEW → APPROVED → FROZEN with reviewer attribution
+* Immutable benchmark snapshots; only FROZEN versions are usable for official runs
+* Strict evaluation (explicit ground truth only)
+* Diagnostic keyword evaluation (opt-in and labelled)
 * Provenance tracking
 * Experiment artifacts
+
+Metrics are `null` when ground truth is missing — never `0`, never a fabricated
+percentage. **See the warning at the top of this file: a new domain has no
+benchmark until a human builds one.**
 
 ---
 
@@ -799,6 +873,8 @@ RAGForge/
 ├── backend/
 │   ├── README.md
 │   ├── app/
+│   ├── scripts/
+│   ├── tests/
 │   ├── requirements.txt
 │   ├── .env.example
 │   └── ...
@@ -807,6 +883,15 @@ RAGForge/
 │   ├── README.md
 │   ├── package.json
 │   └── ...
+│
+├── docs/
+│   ├── architecture.md
+│   ├── user-knowledge-workflow.md
+│   ├── v3-product-architecture.md
+│   ├── roadmap.md
+│   └── verification.md
+│
+├── benchmarks/            frozen benchmark + experiment artifacts (read-only)
 │
 └── qdrant/
     └── qdrant.exe
@@ -835,6 +920,7 @@ RAGForge/
 * Qdrant
 * arXiv
 * `sentence-transformers/all-MiniLM-L6-v2`
+* `python-pptx` / `python-docx` / `pypdf` / BeautifulSoup for document parsing
 
 ### Planned / Experimental
 
@@ -982,36 +1068,42 @@ npm run dev
 
 ---
 
-# Typical Workflow
+# Typical Workflows
 
-Once the application is running:
+## A. External knowledge
 
 ```text
-1. Enter a target domain
+1. Create a knowledge base (source mode: External)
         ↓
 2. Analyze the domain
         ↓
-3. Generate knowledge requirements
+3. Discover candidate sources (user URLs / arXiv)
         ↓
-4. Discover candidate sources
+4. Review explainable quality scores; accept sources
         ↓
-5. Assess source quality
+5. Ingest → chunk → embed → index
         ↓
-6. Select relevant sources
+6. Retrieve and inspect provenance
         ↓
-7. Ingest documents
+7. (optional) Author questions, freeze a benchmark, evaluate
+```
+
+## B. Your own knowledge
+
+```text
+1. Create a knowledge base (source mode: My files)
         ↓
-8. Chunk documents
+2. Drag & drop lecture PPTs / PDFs / notes
         ↓
-9. Generate embeddings
+3. Files are validated, parsed and de-duplicated locally
         ↓
-10. Build vector index
+4. Documents become chunks → embeddings → vectors
         ↓
-11. Retrieve relevant information
+5. KB status: READY  ← no benchmark required
         ↓
-12. Evaluate retrieval quality
+6. Retrieval Lab returns passages with document / slide / page / section
         ↓
-13. Inspect provenance and results
+7. (later) Add documents any time — only the new one is indexed
 ```
 
 ---
@@ -1020,37 +1112,52 @@ Once the application is running:
 
 ## Implemented
 
-* Domain analysis
-* Domain knowledge mapping
-* Source discovery
-* Source validation
-* Source quality assessment
-* Content-aware source selection
-* PDF / HTML / TXT / Markdown ingestion
-* Duplicate detection
-* Content hashing
-* Section-aware chunking
-* Sentence Transformer embeddings
-* Qdrant vector indexing
-* Dense retrieval
-* Retrieval evaluation
-* Ground-truth benchmarks
-* Provenance tracking
-* Experiment artifacts
-* Web interface
+**Knowledge building**
+
+* Domain analysis (LLM provider abstraction, structured DomainSpec, labelled dev mock)
+* Source discovery (user URLs, arXiv) with SSRF-safe validation and HTTP probing
+* Content-aware source selection (v2) with explainable, overridable quality decisions
+* **Source modes: `EXTERNAL` / `USER_PROVIDED` / `MIXED`**
+* **User document upload**: drag & drop, progress, validation, duplicate detection, failure reporting
+* **Parsers**: PDF, PPTX, DOCX, HTML, Markdown, TXT (+ explicit legacy `.ppt` rejection)
+* **Document library** with statuses, inspection, rebuild, replace and delete
+* **Incremental ingestion** with stale-vector safety
+* Duplicate detection and content hashing
+* Section-aware + fixed-size chunking (registry)
+
+**Retrieval & index**
+
+* Sentence Transformers `all-MiniLM-L6-v2` embeddings (384d)
+* Qdrant vector indexing via a `VectorStore` abstraction + backend factory
+* Dense retrieval via a `Retriever` abstraction + registry
+* Provenance across document / page / slide / section / chunk / versions
+
+**Evaluation (optional)**
+
+* Recall@K, Precision@K, MRR, NDCG — chunk- and document-level
+* Question lifecycle with reviewer attribution, revision-on-approved-edit, freeze protection
+* Immutable frozen benchmark snapshots; only FROZEN versions usable for official runs
+* Experiment artifacts, rendered read-only
+
+**Interface**
+
+* Next.js dashboard: guided Create KB wizard, KB overview, Document Library,
+  Sources (user-provided vs discovered), Processing, Chunks, Retrieval Lab, Evaluation, Experiments
+
+*Verification: 177 backend tests, `npm run typecheck` clean, `npm run build` clean.*
 
 ## In Development / Planned
 
-* Larger human-reviewed evaluation benchmarks
-* Improved source-selection experiments
+* Source-selection experiment v3 (infrastructure ready; **prepared, not executed**)
+* Background/queued ingestion for very large uploads
+* OCR for scanned PDFs
+* CSV / XLSX ingestion (the parser registry already accepts them)
 * Domain-aware chunking
-* BM25 retrieval
-* Hybrid retrieval
-* Reranking
-* TurboVec vector-index backend
-* Automated RAG optimization
+* BM25 → hybrid → reranking (the `Retriever` registry is the extension point; nothing is implemented)
+* TurboVec vector-index backend (the factory is the extension point; Qdrant stays the default)
+* Automated RAG optimization loop
 * MCP integration
-* AI-agent-driven knowledge-base construction
+* Optional LLM answering layer with citations — deliberately later: retrieval quality and provenance come first
 
 ---
 
@@ -1108,3 +1215,73 @@ This provides a framework for studying **automated, measurable, reproducible, an
 **RAGForge — Automated Domain-Specific RAG Knowledge Base Engineering**
 
 > Build the knowledge layer. Evaluate it. Improve it. Make it usable by AI.
+
+---
+
+## Corpus engineering (V5)
+
+RAGForge is a **corpus-engineering platform**, not a chatbot with an upload box.
+The product is the knowledge base; the job is to make that corpus trustworthy,
+inspectable, reproducible and repairable.
+
+Full documentation: **[docs/corpus-reliability.md](docs/corpus-reliability.md)**.
+
+### Corpus Command Center
+
+`/knowledge-bases/{id}/corpus` — bulk ingestion for 50–200 file corpora, a corpus
+map, a read-only integrity scan, explicit repair, and corpus version fingerprints.
+
+### What is guaranteed
+
+| Guarantee | How |
+|---|---|
+| Every file is processed or clearly reported as failed | persistent per-file batch items with `error_code` / `error_message` |
+| Nothing silently disappears | a rejected file stays a batch item with a reason; a failed parse keeps a `FAILED` document row **and** its bytes |
+| Duplicates are detected | content-hash match against the corpus; the existing document is kept, never replaced silently |
+| Documents can be replaced safely | superseded versions kept as history, old vectors removed |
+| Indexing can resume after interruption | `POST .../ingestion-batches/{id}/resume` — idempotent by `UNIQUE(batch_id, item_key)` |
+| Vectors stay consistent with chunk versions | vectors deleted *before* upsert, chunk rows written *after* |
+| Provenance is preserved | page / slide / section / version / hash on every chunk and vector |
+| Orphan and stale vectors are detectable | integrity checks B and C |
+| The user can inspect what entered the KB | corpus manifest, per document and per corpus totals |
+| Results trace back to the source | provenance on every retrieval hit |
+| Corpus changes can be audited | corpus versions, fingerprints, document diffs |
+
+### Corpus coverage vs retrieval quality
+
+These are different questions and are never conflated:
+
+- **Coverage** — *does the corpus contain the information?* (manifest, corpus map)
+- **Retrieval quality** — *can retrieval find it?* (only measurable against ground truth)
+
+> **A domain does not automatically have ground truth.** Entering a domain,
+> analysing it, and indexing 200 documents produces **no** ground truth.
+> `ground_truth_status` stays `NOT_AVAILABLE` until humans author, review, approve
+> and freeze benchmark questions. No Recall@K / MRR / NDCG is reported until then.
+> The Automobile Engineering benchmark is a hand-built research artifact.
+
+### Integrity checks (read-only)
+
+`missing_vectors` · `orphan_vectors` · `stale_vectors` · `embedding_mismatches` ·
+`chunking_mismatches` · `duplicate_documents` · `duplicate_chunks` ·
+`failed_documents` · `partial_documents` · `provenance_gaps` ·
+`broken_source_references`
+
+A scan **never** modifies anything. Repair is a separate, explicit operation, and
+destructive repairs require `confirm_action`.
+
+### Honesty conventions
+
+Any count that could not be *measured* is reported as `unknown` / `-1`, never `0`.
+This applies to vector totals, deletion counts and expected repair blast radius.
+
+### Scale benchmark
+
+```bash
+cd backend && .venv/Scripts/python.exe scripts/corpus_benchmark.py
+```
+
+Measures the real pipeline at 10/50/100/200 documents using deterministic synthetic
+fixtures and writes `backend/data/benchmarks/corpus-scale.json`. It measures
+RAGForge's orchestration — **not** transformer inference, Qdrant throughput, or
+retrieval quality.
