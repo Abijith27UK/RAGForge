@@ -439,19 +439,41 @@ def test_missing_provenance_keys_are_omitted_not_invented(kb_with_docs):
 
 
 def test_retriever_registry_exposes_dense_and_accepts_new_strategies():
+    """Registering a strategy must not leak into other tests.
+
+    The registry is process-global, so this test temporarily REPLACES the
+    built-in `bm25` strategy and must restore it afterwards — otherwise every
+    later test (in this file or any other) silently receives the stub instead of
+    the real retriever.
+    """
     assert "dense" in available_retrievers()
     assert "qdrant-dense" in available_retrievers()
 
     class StubRetriever(DenseRetriever):
         backend = "bm25-stub"
 
-    from app.services.retrieval.retriever import register_retriever
+    from app.services.retrieval.retriever import (
+        register_retriever,
+        restore_retrievers,
+        snapshot_retrievers,
+    )
 
-    register_retriever("bm25", lambda e, s, i: StubRetriever(e, s, i))
-    assert "bm25" in available_retrievers()
-    store = InMemoryVectorStore()
-    built = get_retriever("bm25", HashingEmbeddingProvider(), store)
-    assert built.retrieve(KB_ID, "x", top_k=1).retrieval_backend == "bm25-stub"
+    snapshot = snapshot_retrievers()
+    try:
+        register_retriever("bm25", lambda e, s, i: StubRetriever(e, s, i))
+        assert "bm25" in available_retrievers()
+        store = InMemoryVectorStore()
+        built = get_retriever("bm25", HashingEmbeddingProvider(), store)
+        assert built.retrieve(KB_ID, "x", top_k=1).retrieval_backend == "bm25-stub"
+    finally:
+        restore_retrievers(snapshot)
+
+    # The real built-in must be back in place for everyone else.
+    from app.services.retrieval.retriever import describe_retrievers
+
+    described = {spec["name"]: spec for spec in describe_retrievers()}
+    assert described["bm25"]["needs_embedding"] is False
+    assert described["bm25"]["requires_repo"] is True
 
 
 def test_unknown_retriever_is_rejected():

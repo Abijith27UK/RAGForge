@@ -1,0 +1,57 @@
+{
+  "artifact_type": "answer-evaluation-experiment-spec",
+  "experiment": "answer-evaluation-v1",
+  "version": 1,
+  "created_at": "2026-10-06",
+  "description": "Specification for the v1 answer-quality RELIABILITY experiment: run the shipping answering pipeline against the human-selected evidence of the Automobile retrieval corpus under several retrieval strategies, score every answer with the deterministic answer evaluator, and compare strategies on identical question subsets. This file is an experiment spec, NOT a benchmark: it contains no questions and no ground truth of its own, so no new domain and no new artifact silently receives answer labels.",
+  "source_benchmark": "benchmarks/answer-quality-automobile-v1.json",
+  "source_benchmark_fingerprint": "f72c30eb5c0c363a",
+  "kb_id": "kb_f278c283c748",
+  "kb_name": "Automobile Engineering KB (E2E)",
+  "official": false,
+  "official_reason": "The source answer benchmark has lifecycle 'draft' and human_review 'pending' (inherited from its own authorship block). Official answer-quality results require a FROZEN benchmark; these numbers are an experiment record and must be reported as non-official.",
+  "strategies": ["dense", "bm25", "hybrid"],
+  "answer_mode": "abstain_if_unsupported",
+  "evaluator": {
+    "name": "deterministic-evidence",
+    "model_based": false,
+    "entailment": "heuristic-lexical-coverage",
+    "relevance": "idf-weighted-question-term-coverage (corpus lexical index), plain fallback labelled when absent"
+  },
+  "generator_expected": {
+    "is_mock": true,
+    "note": "The mock extractive generator is the V8 baseline. Its 5-claim budget structurally limits citation recall when required evidence ranks low; that is a generator defect, recorded here so experiment numbers are not read as generator capability."
+  },
+  "measured_metrics": [
+    "citation_precision",
+    "citation_recall",
+    "citation_completeness",
+    "evidence_support_rate",
+    "unsupported_claim_rate",
+    "unsupported_claim_ratio",
+    "supported_claim_ratio",
+    "partial_claim_ratio",
+    "fabricated_citation_rate",
+    "unsupported_citation_rate",
+    "contradiction_rate",
+    "retrieval_hit_rate",
+    "question_answer_relevance",
+    "relevance_failure_rate",
+    "excess_information",
+    "abstention_accuracy",
+    "grounding_state_accuracy",
+    "false_supported_rate",
+    "false_unsupported_rate",
+    "hallucination_rate",
+    "pass_rate"
+  ],
+  "expected_unknown": {
+    "correctness": "no human-authored reference answers exist on the source benchmark; lexical similarity would be a proxy, not correctness",
+    "key_point_recall": "no human-authored key points exist",
+    "expected_information_coverage": "same — requires human key points",
+    "reference_answer_similarity": "no human reference answer exists"
+  },
+  "comparability": "All strategies run the SAME 28-question source benchmark, so pairwise comparisons must come back verdict COMPARABLE (mode 'identical'). Any other verdict invalidates the experiment and the script fails.",
+  "data_impact": "Read-only on documents, chunks, Qdrant vectors and frozen artifacts. Each strategy run persists 28 answer rows, their retrieval runs/traces, and one immutable answer_evaluation_runs row. Qdrant collection count is asserted unchanged before/after.",
+  "reproduced_by": "backend/scripts/run_answer_evaluation_v1.py"
+}

@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Boxes, ChevronRight, Database, FileSearch, Files, FlaskConical, GitBranch,
-  HardDriveDownload, LayoutDashboard, ListTree, Menu, PanelLeftClose, PanelLeftOpen,
-  Plus, Search, ShieldCheck, Sigma, Workflow, X,
+  Activity, Boxes, ChevronRight, Database, FileSearch, Files, FlaskConical, GitBranch,
+  HardDriveDownload, LayoutDashboard, ListTree, Menu, MessagesSquare, PanelLeftClose,
+  PanelLeftOpen, Plus, Quote, Search, ShieldAlert, ShieldCheck, Sigma, Workflow, X,
 } from "lucide-react";
 import CommandPalette from "@/components/CommandPalette";
 import { StatusDot } from "@/components/ui";
@@ -28,7 +28,11 @@ const NAV = {
     { suffix: "/processing", label: "Processing", icon: Workflow },
     { suffix: "/chunks", label: "Chunks", icon: ListTree },
     { suffix: "/retrieval", label: "Retrieval Lab", icon: Search, hint: "⌘K then query" },
+    { suffix: "/answer", label: "Answer", icon: Quote },
+    { suffix: "/chat", label: "Grounded Chat", icon: MessagesSquare, hint: "inspect every claim" },
     { suffix: "/evaluation", label: "Evaluation", icon: Sigma },
+    { suffix: "/answer-quality", label: "Answer Quality", icon: ShieldAlert, hint: "citations, grounding, abstention" },
+    { suffix: "/reliability", label: "Reliability", icon: Activity, hint: "strategies compared, no combined score" },
   ],
   global: [{ href: "/experiments", label: "Experiments", icon: FlaskConical, hint: null }],
 } as const;

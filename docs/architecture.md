@@ -144,6 +144,23 @@ POST   /api/knowledge-bases/{id}/documents/{did}/replace  # new document_version
 DELETE /api/knowledge-bases/{id}/documents/{did}          # removes chunks AND vectors
 
 POST /api/knowledge-bases/{id}/retrieve              {query, top_k, filters}
+
+# --- V6 retrieval (see retrieval-architecture.md) ---
+GET  /api/knowledge-bases/{id}/retrieval-strategies
+GET/PUT /api/knowledge-bases/{id}/retrieval-config
+GET  /api/knowledge-bases/{id}/retrieval-runs[/{run_id}]
+GET  /api/knowledge-bases/{id}/bm25-index
+
+# --- V7 grounded answers (see answering-architecture.md) ---
+POST /api/knowledge-bases/{id}/answer                 {question, answer_mode?, retrieval_strategy?, retrieval_params?}
+GET  /api/knowledge-bases/{id}/answers/{answer_id}
+GET  /api/knowledge-bases/{id}/answer-traces/{trace_id}
+
+# --- V7.2 grounded chat (see chat-architecture.md) ---
+POST   /api/knowledge-bases/{id}/chat                 {message, retrieval_strategy?, retrieval_params?, conversation_id?, answer_mode?}
+GET/POST /api/knowledge-bases/{id}/conversations
+GET/DELETE /api/knowledge-bases/{id}/conversations/{cid}
+GET    /api/knowledge-bases/{id}/answer-runs[/{run_id}]
 POST/GET/DELETE /api/knowledge-bases/{id}/evaluation-questions[/{qid}]
 POST /api/knowledge-bases/{id}/evaluate              {top_k, question_ids?, benchmark_version?}
 GET  /api/knowledge-bases/{id}/evaluation-runs
@@ -219,9 +236,232 @@ Key decisions:
     is the honest default for every new domain. Corpus coverage and retrieval quality
     are reported by different surfaces and must never be substituted for one another.
 
+## Retrieval intelligence layer (V6, in progress)
+
+Full detail: [retrieval-architecture.md](retrieval-architecture.md).
+
+| module | responsibility |
+|---|---|
+| `retrieval/retriever.py` | `Retriever` ABC, provenance helpers, the **registry** (`RetrieverSpec`, lazy built-ins), `DenseRetriever` |
+| `retrieval/lexical.py` | deterministic tokenizer + a real BM25 scorer (pure functions) |
+| `retrieval/bm25.py` | `Bm25Retriever` + `LexicalIndexStore` (persisted index, exact staleness check) |
+| `retrieval/fusion.py` | `Candidate`, min-max/rank normalization, weighted fusion, RRF |
+| `retrieval/diversity.py` | document cap + MMR |
+| `retrieval/rerank.py` | `Reranker` ABC, `NoReranker`, `CrossEncoderReranker` |
+| `retrieval/hybrid.py` | `HybridRetriever`, `HybridRerankedRetriever` |
+| `retrieval/trace.py` | stage statuses, measured timings, notes |
+| `retrieval/service.py` | configuration resolution, strategy construction, run recording |
+
+Key decisions:
+
+18. **Fusion normalizes before combining.** Dense cosine and BM25 are not
+    comparable; every fusion path normalizes first and records the method. Weights
+    that do not sum to 1 keep their RATIO, and the applied weights are recorded with
+    the run, so a configuration is never ambiguous after the fact.
+19. **A strategy that needs no embeddings loads no embedding model.** `bm25` runs
+    without SentenceTransformers; the response states that no embedding model was
+    involved instead of showing a misleading model name.
+20. **Derived indexes are derived.** The BM25 index is built from `chunks` and
+    persisted as statistics only (no copied text, no provenance). Staleness is
+    decided by a corpus revision counter bumped on every chunk write — exact and
+    O(1) — and a mismatch forces a rebuild that is *reported* on the response.
+21. **Reranking is never silently faked.** A requested-but-unavailable reranker
+    yields the unreranked order plus `status = unavailable_fallback`, the reason and
+    a response note. Cross-encoder logits are reported separately from the
+    comparable fused score and drive the ordering only.
+22. **Diversification demotes, it does not delete.** A document cap moves extra
+    chunks to the end instead of dropping them, and MMR reports when candidate
+    vectors were unavailable for it.
+23. **Configuration and observability are first-class.** `RetrievalParams` is
+    persisted per KB (request override > stored config > defaults) and every run
+    writes a `RetrievalRun` (params, applied weights, corpus version, stage counts,
+    measured timings). Every retrieval response carries `retrieval_run_id`.
+
+### Why retrieval configurations and runs are persisted separately
+
+A configuration is a *decision* (what the KB should do by default); a run is an
+*observation* (what actually happened, with which exact parameters). Mixing them
+would let a later configuration edit rewrite the meaning of an earlier result. They
+therefore live in separate tables (`retrieval_configs`, `retrieval_runs`) and a run
+never changes after it is written.
+
 ### Why the fingerprint excludes `kb_id`
 
 A fingerprint answers *"which exact corpus produced these vectors?"*. If it included
 the knowledge-base ID, two KBs holding byte-identical corpora under identical
 chunking/embedding configuration would disagree, and the fingerprint could never be
 compared across environments or machines. The corpus is the thing being identified.
+
+## Grounded answer layer (V7)
+
+Full detail: [answering-architecture.md](answering-architecture.md).
+
+| module | responsibility |
+|---|---|
+| `schemas/answer.py` | all V7 schemas: `QueryPlan`, `Evidence`, `EvidenceAssessment`, `Answer`/`Claim`/`Citation`, `AnswerPolicy`, `AnswerTrace` |
+| `answering/query_processor.py` | deterministic, heuristic-labelled query processing (Phase 9) |
+| `answering/evidence.py` | provenance-preserving assembly + dedup with recorded reasons (Phase 10); `EvidenceSelector` ABC (V7.2) |
+| `answering/gate.py` | multi-signal sufficiency gate → `ANSWER / PARTIAL_ANSWER / ABSTAIN / ASK_CLARIFICATION` (Phase 11); `GroundingGate` + five states (V7.2) |
+| `answering/generator.py` | `AnswerGenerator` ABC, `LLMAnswerGenerator` (wraps any `LLMProvider`), deterministic extractive mock, explicit `FallbackAnswerGenerator` (Phase 12) |
+| `answering/prompting.py` | strict system prompt, `<EVIDENCE>` wrapping, prompt-injection marker scan |
+| `answering/validation.py` | `ClaimExtractor → CitationValidator → GroundingValidator → AnswerPolicy` (Phase 13) |
+| `answering/trace.py` | `AnswerTraceRecorder` — canonical stage list, raw generator output, no secrets |
+| `answering/chat.py` | `GroundedChatService` — conversation memory + `AnswerRun` observability, delegates to `AnsweringService` (V7.2) |
+| `answering/service.py` | orchestration: gate BEFORE generation, registry-based retrieval, persistence |
+| `api/routes_answer.py` | `POST /answer`, `GET /answers/{id}`, `GET /answer-traces/{id}` |
+| `api/routes_chat.py` | `POST /chat`, conversations, answer runs (V7.2) |
+
+Key decisions:
+
+24. **The gate runs before the generator.** In `abstain_if_unsupported` mode an
+    insufficient assessment makes no model call at all — abstention is a
+    deterministic code path, not a model's opinion. Original questions are
+    preserved byte-for-byte; everything else in the `QueryPlan` is derived.
+25. **Evidence is copied, never re-derived.** Assembly copies the chunk's provenance
+    dict verbatim (absent stays absent), keeps BOTH the original retrieval rank and
+    the final evidence rank, and drops only true duplicates — identical text in a
+    *different* document is never deduplicated, because independent sources
+    agreeing is evidence the gate wants to see.
+26. **No numeric grounding confidence, ever.** Confidence is categorical
+    (`high/moderate/low/none`) with a human-readable basis. Signal measurements
+    that could not be made are reported as *not performed* with the reason, never
+    as 0 or a made-up percentage.
+27. **Validation is deterministic and honest about its ceiling.** Citations are
+    checked for existence, KB ownership, retrieval membership, provenance and
+    lexical overlap; semantic entailment is NOT IMPLEMENTED and every validation
+    detail says "Semantic support check: NOT PERFORMED". Failure actions
+    (remove/downgrade/abstain/regenerate) are recorded per problem.
+28. **Answer generation is provider-agnostic and mockable.** The generator wraps
+    the existing `LLMProvider` abstraction; `LLM_PROVIDER=mock` exercises the real
+    prompt path with no key/network (required by tests), and total provider failure
+    falls back to a clearly-labelled extractive mock instead of a 500. Retrieved
+    document text is untrusted data wrapped in `<EVIDENCE>`; injection markers are
+    recorded as warnings (HEURISTIC, never claimed as perfect protection).
+
+---
+
+## Grounded chat layer (V7.2)
+
+Full detail: [chat-architecture.md](chat-architecture.md) and
+[grounding-and-citations.md](grounding-and-citations.md).
+
+| module | responsibility |
+|---|---|
+| `answering/query_processor.py` | adds `QueryTrace` + `QueryNature` (conversational / non-knowledge / underspecified / multi-hop); pass-through when disabled (V7.2) |
+| `answering/chat.py` | `GroundedChatService`: reference resolution, conversation persistence, `AnswerRun` record |
+| `api/routes_chat.py` | `POST /chat`, conversation CRUD, answer-run history |
+| `repositories/sqlite_repo.py` | tables `conversations`, `messages`, `answer_runs` (all cleaned in `delete_kb`) |
+| `frontend/.../chat/page.tsx` | three-pane investigation UI: corpus / conversation / evidence |
+
+Key decisions:
+
+29. **Chat is a thin front end, not a second pipeline.** Every turn delegates to
+    `AnsweringService.answer`, so chat and `/answer` cannot drift apart: an answer
+    reached through chat is grounded identically. Chat adds only conversation
+    memory and an `AnswerRun` record.
+30. **Conversation history is never knowledge.** It is stored separately from
+    documents and chunks, never chunked, embedded, indexed or retrieved, and
+    `Message.used_as_knowledge` is permanently `False` — the field exists so an
+    audit can assert this rather than trust it. History is used for ONE purpose:
+    resolving references like "What about the previous case?" into a standalone
+    question, and the borrowed source is recorded in `Message.resolved_from`.
+31. **A conversation is scoped to exactly one knowledge base.** Using a
+    conversation id against a different KB returns 404 rather than answering from
+    the wrong corpus.
+32. **Five explicit grounding states, not a collapsed score.** `ANSWERED`,
+    `PARTIALLY_SUPPORTED`, `INSUFFICIENT_EVIDENCE`, `CONFLICTING_EVIDENCE`,
+    `NO_RELEVANT_EVIDENCE` map onto the coarser internal `GateDecision` through an
+    exhaustive, unit-tested table, so the two vocabularies cannot drift apart.
+33. **Never fall back silently.** When the configured generator cannot be
+    constructed, `FallbackAnswerGenerator` sets `unavailable=True` with the reason
+    and the answer carries a warning naming the fallback. `LLM_PROVIDER=mock`
+    (the prompt path genuinely ran against a deterministic stand-in) is reported
+    separately from a fallback (the configured provider could not be built at all).
+34. **Unmeasured is `null`, never `0`.** A skipped generation stage records no
+    latency; reporting `0 ms` would imply a measurement that never happened. The
+    same rule governs page numbers: absent stays absent and renders as
+    "not recorded".
+
+---
+
+## Answer-quality evaluation layer (V8)
+
+Everything above produces answers. This layer **scores** them.
+
+```
+benchmarks/answer-quality-automobile-v1.json   (evidence-based ground truth)
+        │
+        │  validate_against_corpus()  ── content-hash re-chunk detection
+        ▼
+answer_eval/service.py    ── for each question: retrieve → answer → evaluate
+        │                     (IDF relevance weights injected from the lexical index)
+        ▼
+answer_eval/evaluator.py  DeterministicAnswerEvaluator (v8.3)
+        │  ├── claim-level citation audit        → ClaimCitationVerdict
+        │  │     five-state evaluated_state (SUPPORTED / PARTIALLY_SUPPORTED /
+        │  │     UNSUPPORTED / CONTRADICTED / UNVERIFIABLE)
+        │  ├── question↔answer relevance         → relevance.py (IDF-weighted;
+        │  │     plain fallback labelled, abstentions exempt)
+        │  ├── completeness from human labels    → key_point_recall /
+        │  │     expected_information_coverage (labels required, else UNKNOWN)
+        │  └── answer-level completeness checks   → problems[]
+        │     HumanAnswerEvaluator  → correctness from append-only reviews
+        │     LLMAnswerEvaluator    → model-based judge, labelled, degrades
+        ▼
+answer_eval/metrics.py    Measured(value | reason, sample_size)
+        ▼
+answer_eval/run.py        immutable AnswerEvaluationRun + aggregate
+        │                    compare_with(): COMPARABLE / INCONCLUSIVE /
+        │                    NOT_COMPARABLE over shared questions
+        ▼
+sqlite `answer_evaluation_runs`  →  GET /answer-evaluation/runs
+        + `answer_reviews` (append-only) → human-evaluation derivation pass
+```
+
+### Key decisions
+
+35. **`Measured` carries a value OR a reason, never both — and never `0` by
+    default.** `Measured.unknown("no human-authored reference answer")` and
+    `Measured.of(0.0)` are different facts. The UI renders UNKNOWN as the word
+    UNKNOWN, visually distinct from any number.
+36. **Answer ground truth is evidence-based, not answer-based.** The frozen
+    retrieval benchmark has 28 `expected_chunk_ids` and zero expected answers.
+    Rather than generate reference answers (an LLM grading an LLM), the answer
+    benchmark inherits the evidence and leaves the answer fields empty.
+    Consequently `correctness` and `key_point_recall` are UNKNOWN by
+    construction.
+37. **`final_score` may not accompany an unmeasured input.** A model validator on
+    `AnswerQualityResult` rejects a score whose `final_score_computable` is
+    False, so a partial measurement can never be dressed as a complete one.
+38. **`required_evidence` is a NECESSITY label, not an exhaustive whitelist.**
+    Enforced per **answer** (a correct answer must use the necessary evidence),
+    never per **claim** — a claim about alternative fuels has no reason to cite
+    the engine-definition chunk. Extra retrieved context lowers
+    `citation_precision` (documented as a lower bound) and is reported as an
+    observation, never a failure, because the benchmark never established that
+    unlabelled chunks are irrelevant.
+39. **Retrieval misses are scored separately from citation quality.** Folding
+    "the evidence was never retrieved" into the answerer's score blames the
+    wrong component. Both are reported; they are never summed into one verdict.
+40. **A benchmark that does not match the live corpus is refused, not scored.**
+    `validate_against_corpus()` compares content hashes; a re-chunked corpus
+    raises `BenchmarkCorpusMismatch` (HTTP 409) instead of silently scoring
+    against shifted chunks.
+41. **Runs are immutable and carry their producers.** Generator, model, mock
+    flag, prompt/answerer/evaluator versions, entailment provider and
+    model-based flag, benchmark fingerprint, and the exact `question_ids`
+    covered. `is_comparable_with()` refuses to compare runs over different
+    question subsets, because attributing a question-mix difference to a
+    strategy is a way to invent a result.
+42. **The benchmark path guard allows the repository OR `DATA_DIR`,** and nothing
+    else — the endpoint must not become an arbitrary-file reader. Both are
+    legitimate benchmark locations (versioned artifact vs. per-installation).
+43. **`persist=false` is honestly documented as not meaning read-only.** It
+    suppresses only the evaluation-run row; every question still goes through
+    the normal answering path and writes an `Answer` row. A flag named `persist`
+    that silently leaves side effects is a trap, so the OpenAPI description and
+    the runner script both state it.
+44. **`passed` is a serialized computed field, not a bare property.** It is the
+    input to `pass_rate`; if it is absent from the response, a client filtering
+    on it classifies every question as failed while the metric says otherwise.
+    Two API tests assert `pass_rate == mean(per_question[].passed)`.

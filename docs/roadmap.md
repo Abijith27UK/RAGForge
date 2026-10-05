@@ -119,15 +119,196 @@ voice, mobile, elaborate visualizations.
 | 12 | Test suite: 63 corpus tests, hermetic, no live Qdrant | **done** |
 | 13 | Documentation incl. `docs/corpus-reliability.md` | **done** |
 
+## V6 — Retrieval intelligence + grounded answering (in progress)
+
+Planned in 20 phases; status below reflects what is actually in the repository.
+
+| phase | item | status |
+|---|---|---|
+| 1 | Repository audit (read-only) | **done** |
+| 2 | Registry cleanup (`RetrieverSpec`, lazy built-ins, no hard-coded strategy) | **done** |
+| 3 | Real BM25 + persistent index + exact staleness detection | **done** |
+| 4 | Hybrid retrieval with score normalization + weighted fusion | **done** |
+| 5 | Reciprocal Rank Fusion behind the same interface | **done** |
+| 6 | Optional reranking (cross-encoder + honest fallback + status) | **done** |
+| 7 | Diversity: per-document cap + MMR | **done** |
+| 8 | Retrieval configuration + retrieval run persistence | **done** |
+| 9 | Query processing (lightweight, deterministic) | **done in V7** |
+| 10 | Grounded `AnsweringService` (OpenAI-compatible, provider-agnostic) | **done in V7** |
+| 11 | Citation validation (no invalid citation can appear trusted) | **done in V7** |
+| 12 | Evidence gating + abstention | **done in V7** |
+| 13 | Answer API (`POST /api/knowledge-bases/{kb_id}/answer`) | **done in V7** |
+| 14 | Answer UI + evidence panel (reusing the V5 design system) | **done in V7** |
+| 15 | Retrieval Lab V2 (strategy/fusion/param selection + pipeline trace) | partial — strategy selection + retrieval-vs-answer comparison done; fusion/rerank parameter controls not started |
+| 16 | Evaluation extension comparing the four strategies on frozen benchmarks | planned |
+| 17 | Retrieval experiment runner producing immutable artifacts | planned |
+| 18 | TurboVec (optional, experimental, only if locally verifiable) | not started |
+| 19 | Security / prompt-injection tests for the answering layer | **done in V7** |
+| 20 | Documentation + final verification | ongoing |
+
+Observability groundwork shipped with phase 8 (`retrieval_runs` + `retrieval_run_id`).
+
+## V7 — Grounded answer engine (delivered)
+
+Full detail: [answering-architecture.md](answering-architecture.md).
+
+| # | Item | Status |
+|---|---|---|
+| 1 | `QueryPlan` + deterministic `QueryProcessor` (heuristic-labelled) | **done** |
+| 2 | `Evidence` model + provenance-preserving assembly + dedup with reasons | **done** |
+| 3 | `EvidenceGate` → `ANSWER / PARTIAL_ANSWER / ABSTAIN / ASK_CLARIFICATION` (8 signals) | **done** |
+| 4 | `AnswerGenerator` ABC + LLM impl + deterministic mock (no key needed) | **done** |
+| 5 | Structured `Answer` / `Claim` / `Citation` with Claim → Evidence → Source chain | **done** |
+| 6 | CitationValidator + validation pipeline with recorded failure actions | **done** |
+| 7 | Abstention + partial answers (first-class, no model call when abstaining) | **done** |
+| 8 | `AnswerTrace` audit trail + persistence (`answers`, `answer_traces`) | **done** |
+| 9 | `POST /answer`, `GET /answers/{id}`, `GET /answer-traces/{id}` | **done** |
+| 10 | Prompt-injection defense (`<EVIDENCE>` wrapping + marker scan) | **done** (HEURISTIC) |
+| 11 | Answer UI + "How was this answer produced?" trace panel | **done** |
+| 12 | Retrieval Lab strategy selection + retrieval-vs-answer comparison | **done** |
+| 13 | Tests: 96 V7 tests (query/evidence/gate/generator/citation/security/trace/API) | **done** |
+| 14 | Docs: `answering-architecture.md` + checkpoint | **done** |
+
+Not implemented in V7 (explicitly): semantic/entailment validation, answer-level
+benchmark, query decomposition/multi-query retrieval, calculation tools, answer
+modes beyond `grounded`/`abstain_if_unsupported`, streaming.
+
+---
+
+## V7.2 — Grounded knowledge assistant
+
+Extends V7 into a grounded assistant: the chat layer, the five-state grounding
+vocabulary, explicit query traces, full citation provenance and answer-run
+observability.
+
+| # | deliverable | status |
+|---|---|---|
+| 1 | `QueryTrace` (rewritten_query / subqueries / processor_version / timing_ms) + `QueryNature` detection | **done** |
+| 2 | `EvidenceSelector` ABC + provenance-preserving implementation | **done** |
+| 3 | `FallbackAnswerGenerator` — fallback exposed, never silent | **done** |
+| 4 | `Citation` provenance fields (`source_title`, `source_type`, `page_number`, `slide_number`, `section_path`, `content_hash`) | **done** |
+| 5 | `GroundingGate` + five explicit states (`ANSWERED`, `PARTIALLY_SUPPORTED`, `INSUFFICIENT_EVIDENCE`, `CONFLICTING_EVIDENCE`, `NO_RELEVANT_EVIDENCE`) | **done** |
+| 6 | `Conversation` / `Message` — memory for reference resolution only, never knowledge | **done** |
+| 7 | `POST /chat` + conversation + answer-run endpoints | **done** |
+| 8 | `AnswerRun` observability record (measured latencies, versions, reasons) | **done** |
+| 9 | 3-pane grounded chat UI (corpus / conversation / evidence) | **done** |
+| 10 | Tests: 99 new (65 unit + 34 API); full suite **511 passed** | **done** |
+| 11 | Docs: `grounding-and-citations.md`, `chat-architecture.md`, checkpoint | **done** |
+
+Not implemented in V7.2 (explicitly): semantic/entailment validation,
+answer-level benchmark or any answer-quality metric, query decomposition,
+streaming, regeneration UI, multi-turn answer reuse, prompt-injection filtering
+(detection is a heuristic scan), conversation history as a retrievable source.
+
+
+## V8 — Answer-quality evaluation (delivered)
+
+Extends V7.2 with the measurement that was missing: groundedness can now be
+**scored rather than asserted**.
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Audit of existing ground truth → discovered the frozen benchmark has **no expected answers** | **done** |
+| 2 | Answer benchmark with **evidence-based** ground truth (`answer-quality-automobile-v1.json`) | **done** |
+| 3 | `AnswerEvaluator` framework, deterministic offline evaluator (`deterministic-evidence`) | **done** |
+| 4 | Citation entailment + claim-level audit, incl. polarity/negation conflicts | **done** |
+| 5 | Grounding-gate, abstention and answerable-vs-unanswerable evaluation | **done** |
+| 6 | Immutable evaluation runs with full producer identity + comparability rules | **done** |
+| 7 | Comparison matrix refusing cross-subset comparison | **done** |
+| 8 | Failure-analysis UI (Answer Quality page) with claim audits | **done** |
+| 9 | Regression tests: 83 new (63 unit + 20 API); suite 596 passed | **done** |
+| 10 | Docs: `answer-evaluation.md`, `answer-benchmark-design.md`, checkpoint | **done** |
+| 11 | Human-authored reference answers | **not done — blocks `correctness`** |
+
+### What V8 could NOT measure, and why
+
+`correctness` and `key_point_recall` are **UNKNOWN for all 28 questions**. The
+frozen benchmark defines which *chunk* answers each question, not what the
+answer should *say*. Fuzzy-matching an answer against retrieved text would
+re-measure retrieval and relabel it answer quality, so it is not implemented.
+The shipped benchmark also contains **0 unanswerable questions**, so
+abstention-on-unanswerable cannot be measured on the real corpus.
+
+Not implemented in V8 (explicitly): model-based entailment as the default,
+autonomous optimization loops, giant benchmark generation, LLM fine-tuning,
+TurboVec, MCP, OCR, CSV/XLSX, auth, cloud deployment, multi-user.
+
 ### Next candidates (not started)
 
-1. **Benchmark authoring UI** — make the `DRAFT → IN_REVIEW → APPROVED → FROZEN`
+1. **Author human reference answers** for a ~10-question subset of the Automobile
+   benchmark, plus ~5 genuinely unanswerable questions. This is the **single
+   highest-value next step**: it is the only thing that converts `correctness`
+   and `key_point_recall` from UNKNOWN into measured numbers, and it cannot be
+   automated without becoming circular (an LLM grading an LLM).
+2. **Fix the extractive mock generator's rank truncation.** It walks evidence in
+   rank order with a fixed 5-claim budget, so evidence ranked 4th or lower is
+   structurally uncitable. Measured: the required chunk was retrieved at rank 5
+   and never cited in 4 of 5 real failures. Deliberately not fixed inside V8 —
+   changing the generator and then re-reporting the metric it affects is how a
+   benchmark gets tuned to look good.
+3. **Benchmark authoring UI** — make the `DRAFT → IN_REVIEW → APPROVED → FROZEN`
    lifecycle usable for a non-Automobile domain, so Naval Architecture can acquire
    real ground truth. This is the only route to ever reporting retrieval quality for
    a new domain.
-2. **Watch mode** — detect a changed source document and offer a targeted
+4. **Model-based entailment** — `LLMCitationEntailment` exists and refuses to run
+   without a provider rather than degrading silently, but the heuristic remains
+   the default so every verdict stays reproducible.
+5. **Query decomposition** — the multi-part question path is a recorded warning
+   today; implementing it needs multi-query retrieval plus fusion.
+6. **Watch mode** — detect a changed source document and offer a targeted
    re-index, using the document diff machinery that now exists.
-3. **Retrieval-side corpora** — BM25/hybrid, measured against a frozen benchmark so
-   the comparison is real rather than anecdotal. Blocked on (1).
-4. **Streaming ingest** — process a 200-file batch progressively instead of
+
+
+## V8 continuation — answer evaluation & reliability (2026-10-06, delivered)
+
+Extends the V8 layer against the 20-step V8 continuation spec: audited first,
+then extended (no duplicated stack, no UI-first rewrite, frozen artifacts
+untouched). Architecture: [`answer-evaluation-architecture.md`](./answer-evaluation-architecture.md);
+experiment: [`answer-evaluation-v1.md`](./answer-evaluation-v1.md).
+
+| Step | Item | Status |
+|---|---|---|
+| 1 | Audit of repo vs 20-step spec | **done** |
+| 2 | Schema: claim ratios, fabricated/unsupported citation rates, relevance, completeness metrics — all `Measured` | **done** |
+| 3 | Benchmark lifecycle `draft → approved → frozen` + `official` gating (FROZEN required) + per-question review metadata | **done** |
+| 4 | Human review workflow: append-only `answer_reviews`, attributed, closed vocabularies, history never overwritten | **done** |
+| 5 | `AnswerEvaluator` ABC → deterministic / **human** / **LLM** implementations, provider-optional, graceful degradation | **done** |
+| 6 | Claim-level five-state `evaluated_state` (SUPPORTED/PARTIALLY_SUPPORTED/UNSUPPORTED/CONTRADICTED/UNVERIFIABLE) + ratios | **done** |
+| 7 | Citation evaluation: precision/recall + `fabricated_citation_rate` + `unsupported_citation_rate` | **done** |
+| 8 | Answer relevance: IDF-weighted coverage (measured: plain coverage is inverted), threshold 0.30 from data, abstention exempt | **done** |
+| 9 | Groundedness & abstention — extended (existing V8 layer) | done (prior) |
+| 10 | Top-level `/api/answer-evaluation-runs` endpoints | **done** |
+| 11 | Comparability: strict refusal + intersection plan with `INCONCLUSIVE` / `NOT_COMPARABLE` verdicts | **done** |
+| 12 | Experiment artifacts: spec + runner + **real results** + report | **done** (non-official by design) |
+| 13/15 | UI: claim states, relevance + method labels, completeness, review form + history, derive-human-run, lifecycle/official badges | **done** |
+| 14 | `HumanAnswerEvaluator` + `LLMAnswerEvaluator` with provider/model/prompt metadata + `judge_raw` audit | **done** |
+| 16 | Reliability dashboard (separate page, **no combined score**, verdict-first comparison) | **done** |
+| 17 | 20/20 listed test cases + live scratch-KB smoke (Qdrant 14→14, scratch cleaned) | **done** |
+| 18 | Data safety: Qdrant count asserted, frozen artifacts 0 written, impact reported | **done** |
+| 19 | Docs: architecture + experiment report + README/architecture/roadmap/verification updates | **done** |
+| 20 | Not implemented (as specified): TurboVec, MCP, OCR, CSV/XLSX, auth, cloud, multi-user, … | respected |
+
+Tests: **693 backend passed** (596 prior + 97 new V8-continuation tests: 6 new
+test files plus additions to the two existing V8 files), frontend
+`tsc --noEmit` clean, `npm run build` clean.
+
+### Discrepancies surfaced (not silently accepted)
+
+1. The spec claimed **513 tests** — the pre-continuation suite was already
+   **596**.
+2. The spec claimed the Automobile 28-question benchmark is **HUMAN REVIEWED**
+   — both frozen artifact JSONs still read `authorship.human_review = PENDING`
+   (roadmap/APPROVED notes refer to the *retrieval* benchmark lifecycle; the
+   answer artifact's own string was never updated). The artifacts were left
+   untouched, so the answer benchmark loads as `lifecycle=draft` and official
+   runs against it are refused by design.
+
+### Still not measured
+
+`correctness`, `key_point_recall` / `expected_information_coverage` and
+`reference_answer_similarity` remain UNKNOWN on the real corpus — no human
+reference answers exist. The new human-review workflow (STEP 4) + derived
+human-evaluation runs are the path to measuring correctness; LLM-as-judge is
+available as an explicitly model-based, non-ground-truth option.
+7. **Streaming ingest** — process a 200-file batch progressively instead of
    synchronously, for genuinely large corpora.

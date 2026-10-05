@@ -34,10 +34,17 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    # The configured frontend origin is honoured rather than hardcoded, so a
+    # developer running the UI on a different port does not get a silent
+    # "Failed to fetch" with no server-side hint. The two loopback dev origins
+    # stay allowed because FRONTEND_URL usually names only one of them.
+    allow_origins=sorted(
+        {
+            get_settings().frontend_url,
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        }
+    ),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -51,6 +58,10 @@ from app.api.routes_build import router as build_router
 from app.api.routes_documents import router as documents_router
 from app.api.routes_corpus import router as corpus_router
 from app.api.routes_retrieval import router as retrieval_router
+from app.api.routes_answer import router as answer_router
+from app.api.routes_chat import router as chat_router
+from app.api.routes_answer_eval import router as answer_eval_router
+from app.api.routes_answer_eval import global_router as answer_eval_global_router
 from app.api.routes_benchmark import router as benchmark_router
 from app.api.routes_experiments import router as experiments_router
 from app.api.routes_system import router as system_router
@@ -62,6 +73,10 @@ app.include_router(build_router)
 app.include_router(documents_router)
 app.include_router(corpus_router)
 app.include_router(retrieval_router)
+app.include_router(answer_router)
+app.include_router(chat_router)
+app.include_router(answer_eval_router)
+app.include_router(answer_eval_global_router)
 app.include_router(benchmark_router)
 app.include_router(experiments_router)
 app.include_router(system_router)

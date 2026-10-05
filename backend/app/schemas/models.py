@@ -14,6 +14,14 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.retrieval import (
+    RerankerReport,
+    RetrievalParams,
+    RetrievalStage,
+    RetrievalTimings,
+    ScoreBreakdown,
+)
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -545,11 +553,33 @@ class RetrievalRequest(BaseModel):
 
 
 class RetrievalResult(BaseModel):
+    """One retrieved chunk with full provenance and score provenance.
+
+    ``score`` is the score this strategy ranks by (dense cosine similarity,
+    normalized BM25, or a fused score). ``score_breakdown`` records where that
+    number came from so "why was this chunk retrieved?" is answerable from the
+    response alone — deterministically, without an LLM.
+    """
+
     chunk_id: str
     document_id: str
     text: str
     score: float
     provenance: dict[str, Any] = Field(default_factory=dict)
+    # --- V6: retrieval intelligence (all defaulted; V1-V5 callers unaffected) ---
+    rank: int | None = Field(default=None, ge=1, description="1-based position in the final list")
+    retrieval_method: str = Field(
+        default="", description="strategy that produced this result, e.g. 'hybrid:weighted'"
+    )
+    retrieval_score: float | None = Field(
+        default=None, description="raw strategy score before normalization/reranking"
+    )
+    rerank_score: float | None = None
+    score_breakdown: ScoreBreakdown = Field(default_factory=ScoreBreakdown)
+    why: str = Field(default="", description="deterministic explanation of how it was selected")
+    stages: list[str] = Field(
+        default_factory=list, description="pipeline stages this chunk survived"
+    )
 
 
 class RetrievalResponse(BaseModel):
@@ -559,6 +589,16 @@ class RetrievalResponse(BaseModel):
     embedding_model: str = ""
     retrieval_backend: str = "qdrant-dense"
     error: str | None = None
+    # --- V6: strategy + configuration provenance ---
+    strategy: str = "dense"
+    params: RetrievalParams | None = None
+    retrieval_run_id: str | None = None
+    reranker: RerankerReport | None = None
+    stages: list[RetrievalStage] = Field(default_factory=list)
+    timings: RetrievalTimings | None = None
+    corpus_version: str | None = None
+    corpus_fingerprint: str | None = None
+    notes: list[str] = Field(default_factory=list)
 
 
 class EvaluationQuestion(BaseModel):
@@ -607,6 +647,12 @@ class EvaluationQuestionCreate(BaseModel):
 class EvaluationRunConfig(BaseModel):
     top_k: int = Field(default=5, ge=1, le=50)
     question_ids: list[str] = Field(default_factory=list, description="Empty = all")
+    strategy: str | None = Field(
+        default=None,
+        max_length=40,
+        description="V6: registry strategy to score (dense | bm25 | hybrid | "
+        "hybrid_reranked); None = the KB's persisted retrieval configuration",
+    )
     allow_keyword_fallback: bool = Field(
         default=False,
         description="False (strict): questions without explicit chunk/document ground truth "
@@ -682,6 +728,13 @@ class EvaluationRun(BaseModel):
     embedding_model: str = ""
     started_at: datetime = Field(default_factory=utcnow)
     finished_at: datetime | None = None
+    # --- V6: which retrieval strategy produced these metrics ---
+    retrieval_strategy: str = Field(
+        default="", description="registry strategy name used for this run"
+    )
+    retrieval_params: RetrievalParams | None = Field(
+        default=None, description="exact retrieval configuration scored by this run"
+    )
     # --- V3 Phase A: benchmark provenance for runs ---
     benchmark_version: str | None = Field(
         default=None,

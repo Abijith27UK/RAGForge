@@ -53,15 +53,37 @@ class InMemoryVectorStore(VectorStore):
         for c, v in zip(chunks, vectors):
             self.points[numeric_id(c.id)] = {
                 "vector": v,
-                # Mirrors the real Qdrant payload closely enough that the
-                # integrity engine's provenance checks are exercised honestly.
+                # Mirrors the REAL Qdrant payload (same keys as
+                # QdrantVectorStore.upsert_chunks) so dense-path provenance is as
+                # rich here as in production. A thinner fake would let provenance
+                # regressions pass the test suite unnoticed.
                 "payload": {
                     "chunk_id": c.id,
                     "document_id": c.document_id,
                     "kb_id": c.kb_id,
-                    "source_id": c.source_id,
-                    "content_hash": c.content_hash,
+                    "chunk_index": c.chunk_index,
                     "text": c.text,
+                    "source_id": c.source_id,
+                    "source_url": c.source_url,
+                    "source_title": c.source_title,
+                    "source_type": c.source_type,
+                    "publisher": c.publisher,
+                    "document_title": c.document_title,
+                    "section": c.section,
+                    "section_path": c.section_path,
+                    "page": c.page,
+                    "slide": c.slide,
+                    "slide_title": c.slide_title,
+                    "domain": c.domain,
+                    "subdomain": c.subdomain,
+                    "trust_score": c.trust_score,
+                    "content_hash": c.content_hash,
+                    "char_count": c.char_count,
+                    "chunking_strategy": c.chunking_strategy,
+                    "chunking_config": c.chunking_config,
+                    "document_version": c.document_version,
+                    "user_provided": c.user_provided,
+                    "kb_version": c.kb_version,
                 },
             }
 
@@ -104,6 +126,15 @@ class InMemoryVectorStore(VectorStore):
             str(p["payload"]["chunk_id"]): dict(p["payload"])
             for p in self.points.values()
             if p["payload"].get("chunk_id")
+        }
+
+    def fetch_vectors(self, kb_id: str, chunk_ids: list[str]) -> dict[str, list[float]]:
+        """Stored vectors by chunk id (mirrors the Qdrant capability; V6 MMR)."""
+        wanted = set(chunk_ids)
+        return {
+            str(p["payload"]["chunk_id"]): list(p["vector"])
+            for p in self.points.values()
+            if p["payload"].get("chunk_id") in wanted
         }
 
     def delete_collection(self, kb_id: str) -> None:

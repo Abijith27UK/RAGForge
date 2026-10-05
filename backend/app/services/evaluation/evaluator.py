@@ -21,6 +21,7 @@ from app.schemas.models import (
     EvaluationRunConfig,
     PerQuestionMetrics,
 )
+from app.schemas.retrieval import RetrievalParams
 from app.services.evaluation.metrics import (
     average_metrics,
     mrr,
@@ -28,7 +29,7 @@ from app.services.evaluation.metrics import (
     precision_at_k,
     recall_at_k,
 )
-from app.services.retrieval.retriever import DenseRetriever
+from app.services.retrieval.retriever import Retriever
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,15 @@ class EvaluationError(RuntimeError):
 
 
 class Evaluator:
-    def __init__(self, retriever: DenseRetriever, repo: Repository) -> None:
+    """Scores a retrieval strategy against REAL ground truth.
+
+    V6: accepts any `Retriever` (not just the dense baseline), so the four V6
+    strategies can be compared on the same frozen benchmark. The strategy name and
+    the exact retrieval configuration are recorded on the run, because a metric
+    without its configuration is not reproducible.
+    """
+
+    def __init__(self, retriever: Retriever, repo: Repository) -> None:
         self._retriever = retriever
         self._repo = repo
 
@@ -47,6 +56,8 @@ class Evaluator:
         kb_id: str,
         config: EvaluationRunConfig,
         embedding_model: str = "",
+        strategy: str = "",
+        retrieval_params: RetrievalParams | None = None,
     ) -> EvaluationRun:
         # --- V3 Phase A: frozen-benchmark runs ---
         # When config.benchmark_version is set, the run scores the immutable
@@ -83,6 +94,14 @@ class Evaluator:
                 "Add questions with expected evidence first."
             )
         k = config.top_k
+        # The metric cut-off k and the retrieval cut-off must be the SAME number,
+        # otherwise Recall@k would be computed over a different depth than the one
+        # that produced the ranking.
+        scored_params = (
+            retrieval_params.model_copy(update={"top_k": k})
+            if retrieval_params is not None
+            else None
+        )
 
         per_question: list[PerQuestionMetrics] = []
         n_explicit = 0
@@ -91,7 +110,13 @@ class Evaluator:
 
         for q in questions:
             has_explicit = bool(q.expected_chunk_ids or q.expected_document_ids)
-            response = self._retriever.retrieve(kb_id, q.question, top_k=k)
+            # Score exactly the configuration under test. Passing params keeps the
+            # strategy's own fusion/reranking/diversity settings in force, instead of
+            # silently scoring plain top-k retrieval.
+            if scored_params is not None:
+                response = self._retriever.retrieve_with_params(kb_id, q.question, scored_params)
+            else:
+                response = self._retriever.retrieve(kb_id, q.question, top_k=k)
             ranked_chunk_ids = [r.chunk_id for r in response.results]
             ranked_doc_ids = [r.document_id for r in response.results]
 
@@ -220,6 +245,8 @@ class Evaluator:
             finished_at=datetime.now(timezone.utc),
             benchmark_version=benchmark_version_id,
             question_statuses=question_statuses,
+            retrieval_strategy=strategy or getattr(self._retriever, "strategy_name", ""),
+            retrieval_params=scored_params,
         )
         self._repo.create_evaluation_run(run)
         logger.info("Evaluation run %s for KB %s: %s", run.id, kb_id, aggregate)

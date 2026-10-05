@@ -1,0 +1,490 @@
+{
+  "artifact_type": "answer-evaluation-results",
+  "experiment": "answer-evaluation-v1",
+  "version": 1,
+  "created_at": "2026-10-05T21:55:35.549607+00:00",
+  "spec_path": "benchmarks/answer-evaluation-v1.json",
+  "kb_id": "kb_f278c283c748",
+  "source_benchmark": "benchmarks/answer-quality-automobile-v1.json",
+  "source_benchmark_fingerprint": "f72c30eb5c0c363a",
+  "official": false,
+  "official_reason": "The source answer benchmark has lifecycle 'draft' and human_review 'pending' (inherited from its own authorship block). Official answer-quality results require a FROZEN benchmark; these numbers are an experiment record and must be reported as non-official.",
+  "evaluator": {
+    "name": "deterministic-evidence",
+    "model_based": false,
+    "entailment": "heuristic-lexical-coverage",
+    "relevance": "idf-weighted-question-term-coverage (corpus lexical index), plain fallback labelled when absent"
+  },
+  "generator_observed": {
+    "generator": "llm",
+    "model": "mock/mock-1",
+    "is_mock": true
+  },
+  "runs": [
+    {
+      "strategy": "dense",
+      "run_id": "aerun_d2694d87bd46",
+      "created_at": "2026-10-05T21:54:15.296253Z",
+      "question_count": 28,
+      "failed_question_ids": [
+        "auto-eng-003",
+        "auto-eng-011",
+        "auto-eng-015",
+        "auto-eng-023",
+        "auto-eng-028"
+      ],
+      "aggregate": {
+        "citation_precision": {
+          "value": 0.285714,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "citation_recall": {
+          "value": 0.821429,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "evidence_support_rate": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "unsupported_claim_ratio": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "supported_claim_ratio": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "fabricated_citation_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "unsupported_citation_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "contradiction_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "retrieval_hit_rate": {
+          "value": 0.964286,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "question_answer_relevance": {
+          "value": 0.615845,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "relevance_failure_rate": {
+          "value": 0.035714,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions with a measured relevance verdict below the threshold (abstentions excluded)"
+        },
+        "abstention_accuracy": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions where the system abstained exactly when it should"
+        },
+        "grounding_state_accuracy": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions whose grounding state met its expectation"
+        },
+        "hallucination_rate": {
+          "value": 0.178571,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "answers that were confidently wrong about corpus coverage"
+        },
+        "pass_rate": {
+          "value": 0.821429,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions passing citation + abstention checks"
+        }
+      },
+      "unknown_metrics": [
+        "correctness",
+        "key_point_recall",
+        "expected_information_coverage",
+        "reference_answer_similarity"
+      ],
+      "relevance_method": "idf-weighted-question-term-coverage",
+      "relevance_weight_source": "lexical-index:n_docs=812",
+      "generator": "llm",
+      "model": "mock/mock-1",
+      "is_mock": true,
+      "evaluator": "deterministic-evidence v8.3",
+      "evaluator_is_model_based": false,
+      "benchmark_fingerprint": "f72c30eb5c0c363a",
+      "benchmark_lifecycle": "draft",
+      "official": false,
+      "warnings": [
+        "answer CORRECTNESS is UNKNOWN for this run: the benchmark has no human-authored reference answers. Citation and abstention metrics ARE measured."
+      ]
+    },
+    {
+      "strategy": "bm25",
+      "run_id": "aerun_ab0d930690be",
+      "created_at": "2026-10-05T21:54:24.343529Z",
+      "question_count": 28,
+      "failed_question_ids": [
+        "auto-eng-011",
+        "auto-eng-019",
+        "auto-eng-020",
+        "auto-eng-021",
+        "auto-eng-024",
+        "auto-eng-028"
+      ],
+      "aggregate": {
+        "citation_precision": {
+          "value": 0.273809,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "citation_recall": {
+          "value": 0.785714,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "evidence_support_rate": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "unsupported_claim_ratio": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "supported_claim_ratio": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "fabricated_citation_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "unsupported_citation_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "contradiction_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "retrieval_hit_rate": {
+          "value": 0.821429,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "question_answer_relevance": {
+          "value": 0.698726,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "relevance_failure_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions with a measured relevance verdict below the threshold (abstentions excluded)"
+        },
+        "abstention_accuracy": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions where the system abstained exactly when it should"
+        },
+        "grounding_state_accuracy": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions whose grounding state met its expectation"
+        },
+        "hallucination_rate": {
+          "value": 0.214286,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "answers that were confidently wrong about corpus coverage"
+        },
+        "pass_rate": {
+          "value": 0.785714,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions passing citation + abstention checks"
+        }
+      },
+      "unknown_metrics": [
+        "correctness",
+        "key_point_recall",
+        "expected_information_coverage",
+        "reference_answer_similarity"
+      ],
+      "relevance_method": "idf-weighted-question-term-coverage",
+      "relevance_weight_source": "lexical-index:n_docs=812",
+      "generator": "llm",
+      "model": "mock/mock-1",
+      "is_mock": true,
+      "evaluator": "deterministic-evidence v8.3",
+      "evaluator_is_model_based": false,
+      "benchmark_fingerprint": "f72c30eb5c0c363a",
+      "benchmark_lifecycle": "draft",
+      "official": false,
+      "warnings": [
+        "answer CORRECTNESS is UNKNOWN for this run: the benchmark has no human-authored reference answers. Citation and abstention metrics ARE measured."
+      ]
+    },
+    {
+      "strategy": "hybrid",
+      "run_id": "aerun_f58736c8c357",
+      "created_at": "2026-10-05T21:55:32.933350Z",
+      "question_count": 28,
+      "failed_question_ids": [
+        "auto-eng-011",
+        "auto-eng-015",
+        "auto-eng-028"
+      ],
+      "aggregate": {
+        "citation_precision": {
+          "value": 0.309524,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "citation_recall": {
+          "value": 0.892857,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "evidence_support_rate": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "unsupported_claim_ratio": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "supported_claim_ratio": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "fabricated_citation_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "unsupported_citation_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "contradiction_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "retrieval_hit_rate": {
+          "value": 0.964286,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "question_answer_relevance": {
+          "value": 0.635241,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "mean over measured values"
+        },
+        "relevance_failure_rate": {
+          "value": 0.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions with a measured relevance verdict below the threshold (abstentions excluded)"
+        },
+        "abstention_accuracy": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions where the system abstained exactly when it should"
+        },
+        "grounding_state_accuracy": {
+          "value": 1.0,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions whose grounding state met its expectation"
+        },
+        "hallucination_rate": {
+          "value": 0.107143,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "answers that were confidently wrong about corpus coverage"
+        },
+        "pass_rate": {
+          "value": 0.892857,
+          "measured": true,
+          "sample_size": 28,
+          "reason": "fraction of questions passing citation + abstention checks"
+        }
+      },
+      "unknown_metrics": [
+        "correctness",
+        "key_point_recall",
+        "expected_information_coverage",
+        "reference_answer_similarity"
+      ],
+      "relevance_method": "idf-weighted-question-term-coverage",
+      "relevance_weight_source": "lexical-index:n_docs=812",
+      "generator": "llm",
+      "model": "mock/mock-1",
+      "is_mock": true,
+      "evaluator": "deterministic-evidence v8.3",
+      "evaluator_is_model_based": false,
+      "benchmark_fingerprint": "f72c30eb5c0c363a",
+      "benchmark_lifecycle": "draft",
+      "official": false,
+      "warnings": [
+        "answer CORRECTNESS is UNKNOWN for this run: the benchmark has no human-authored reference answers. Citation and abstention metrics ARE measured."
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "left_strategy": "dense",
+      "right_strategy": "bm25",
+      "left_run_id": "aerun_d2694d87bd46",
+      "right_run_id": "aerun_ab0d930690be",
+      "verdict": "COMPARABLE",
+      "mode": "identical",
+      "reason": "same question subset and benchmark content",
+      "deltas": {
+        "citation_precision": -0.011905,
+        "citation_recall": -0.035715,
+        "evidence_support_rate": 0.0,
+        "unsupported_claim_rate": 0.0,
+        "unsupported_claim_ratio": 0.0,
+        "supported_claim_ratio": 0.0,
+        "fabricated_citation_rate": 0.0,
+        "unsupported_citation_rate": 0.0,
+        "retrieval_hit_rate": -0.142857,
+        "question_answer_relevance": 0.082881,
+        "relevance_failure_rate": -0.035714,
+        "abstention_accuracy": 0.0,
+        "grounding_state_accuracy": 0.0,
+        "pass_rate": -0.035715
+      }
+    },
+    {
+      "left_strategy": "dense",
+      "right_strategy": "hybrid",
+      "left_run_id": "aerun_d2694d87bd46",
+      "right_run_id": "aerun_f58736c8c357",
+      "verdict": "COMPARABLE",
+      "mode": "identical",
+      "reason": "same question subset and benchmark content",
+      "deltas": {
+        "citation_precision": 0.02381,
+        "citation_recall": 0.071428,
+        "evidence_support_rate": 0.0,
+        "unsupported_claim_rate": 0.0,
+        "unsupported_claim_ratio": 0.0,
+        "supported_claim_ratio": 0.0,
+        "fabricated_citation_rate": 0.0,
+        "unsupported_citation_rate": 0.0,
+        "retrieval_hit_rate": 0.0,
+        "question_answer_relevance": 0.019396,
+        "relevance_failure_rate": -0.035714,
+        "abstention_accuracy": 0.0,
+        "grounding_state_accuracy": 0.0,
+        "pass_rate": 0.071428
+      }
+    },
+    {
+      "left_strategy": "bm25",
+      "right_strategy": "hybrid",
+      "left_run_id": "aerun_ab0d930690be",
+      "right_run_id": "aerun_f58736c8c357",
+      "verdict": "COMPARABLE",
+      "mode": "identical",
+      "reason": "same question subset and benchmark content",
+      "deltas": {
+        "citation_precision": 0.035715,
+        "citation_recall": 0.107143,
+        "evidence_support_rate": 0.0,
+        "unsupported_claim_rate": 0.0,
+        "unsupported_claim_ratio": 0.0,
+        "supported_claim_ratio": 0.0,
+        "fabricated_citation_rate": 0.0,
+        "unsupported_citation_rate": 0.0,
+        "retrieval_hit_rate": 0.142857,
+        "question_answer_relevance": -0.063485,
+        "relevance_failure_rate": 0.0,
+        "abstention_accuracy": 0.0,
+        "grounding_state_accuracy": 0.0,
+        "pass_rate": 0.107143
+      }
+    }
+  ],
+  "all_comparisons_valid": true,
+  "expected_unknown": {
+    "correctness": "no human-authored reference answers exist on the source benchmark; lexical similarity would be a proxy, not correctness",
+    "key_point_recall": "no human-authored key points exist",
+    "expected_information_coverage": "same — requires human key points",
+    "reference_answer_similarity": "no human reference answer exists"
+  },
+  "data_impact": {
+    "qdrant_collections_before": 14,
+    "qdrant_collections_after": 14,
+    "qdrant_unchanged": true,
+    "answer_eval_runs_before": 11,
+    "answer_eval_runs_after": 14,
+    "frozen_artifacts_written": 0,
+    "note": "Read-only on documents, chunks, Qdrant vectors and frozen artifacts. Each strategy run persists 28 answer rows, their retrieval runs/traces, and one immutable answer_evaluation_runs row. Qdrant collection count is asserted unchanged before/after."
+  },
+  "reproduced_by": "backend/scripts/run_answer_evaluation_v1.py"
+}

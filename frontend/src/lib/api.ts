@@ -1,3 +1,201 @@
+/* ------------------------------------------------------------------ */
+/* Answer quality evaluation (V8)                                        */
+/*                                                                      */
+/* A metric is either MEASURED (with a value and a sample size) or       */
+/* UNKNOWN (no value, plus the reason it could not be measured).         */
+/* UNKNOWN is never rendered as 0 — that is the whole point.              */
+/* ------------------------------------------------------------------ */
+
+export interface Measured {
+  value: number | null;
+  measured: boolean;
+  reason: string;
+  sample_size: number | null;
+}
+
+export interface ClaimCitationVerdict {
+  claim_id: string;
+  claim_text: string;
+  support_status: string;
+  /** Five-state evaluator verdict: SUPPORTED | PARTIALLY_SUPPORTED |
+   * UNSUPPORTED | CONTRADICTED | UNVERIFIABLE. */
+  evaluated_state: string;
+  cited_evidence_ids: string[];
+  resolved_chunk_ids: string[];
+  missing_required_chunk_ids: string[];
+  irrelevant_chunk_ids: string[];
+  entailment: "SUPPORTED" | "NOT_SUPPORTED" | "UNKNOWN";
+  entailment_detail: string;
+  entailment_method: string;
+  has_invalid_citation: boolean;
+  uncited: boolean;
+  problems: string[];
+}
+
+export interface AnswerQualityResult {
+  question_id: string;
+  question: string;
+  answerability: string;
+  answer_id: string;
+  answer_trace_id: string | null;
+  answer_status: string;
+  answer_text: string;
+  citation_precision: Measured;
+  citation_recall: Measured;
+  citation_completeness: Measured;
+  evidence_support_rate: Measured;
+  unsupported_claim_rate: Measured;
+  contradiction_rate: Measured;
+  retrieval_hit_rate: Measured;
+  correctness: Measured;
+  key_point_recall: Measured;
+  /** Spec name for completeness — the same measurement as key_point_recall. */
+  expected_information_coverage: Measured;
+  /** Lexical similarity to a HUMAN reference answer — NOT correctness. */
+  reference_answer_similarity: Measured;
+  question_answer_relevance: Measured;
+  excess_information: Measured;
+  supported_claim_ratio: Measured;
+  partial_claim_ratio: Measured;
+  unsupported_claim_ratio: Measured;
+  fabricated_citation_rate: Measured;
+  unsupported_citation_rate: Measured;
+  abstention_expected: boolean;
+  abstention_performed: boolean;
+  abstention_correct: boolean | null;
+  expected_grounding_state: string;
+  actual_grounding_state: string;
+  grounding_state_correct: boolean | null;
+  false_supported: boolean;
+  false_unsupported: boolean;
+  claim_verdicts: ClaimCitationVerdict[];
+  required_chunk_ids: string[];
+  cited_chunk_ids: string[];
+  retrieved_chunk_ids: string[];
+  retrieved_rank_of_required: number | null;
+  passed: boolean;
+  final_score: number | null;
+  final_score_computable: boolean;
+  warnings: string[];
+  problems: string[];
+  evaluator_name: string;
+  evaluator_version: string;
+  evaluator_is_model_based: boolean;
+  evaluator_detail: string;
+  judge_raw: string;
+  entailment_provider: string;
+  entailment_is_model_based: boolean;
+  /** Relevance provenance: method, weight source, model-based flag, close-call. */
+  relevance_method: string;
+  relevance_is_model_based: boolean;
+  relevance_close_call: boolean;
+  relevance_weight_source: string;
+  relevance_passed: boolean | null;
+}
+
+export interface AnswerQualityAggregate {
+  question_count: number;
+  answerable_count: number;
+  unanswerable_count: number;
+  abstention_expected_count: number;
+  citation_precision: Measured;
+  citation_recall: Measured;
+  citation_completeness: Measured;
+  evidence_support_rate: Measured;
+  unsupported_claim_rate: Measured;
+  contradiction_rate: Measured;
+  retrieval_hit_rate: Measured;
+  correctness: Measured;
+  key_point_recall: Measured;
+  expected_information_coverage: Measured;
+  reference_answer_similarity: Measured;
+  question_answer_relevance: Measured;
+  excess_information: Measured;
+  supported_claim_ratio: Measured;
+  partial_claim_ratio: Measured;
+  unsupported_claim_ratio: Measured;
+  fabricated_citation_rate: Measured;
+  unsupported_citation_rate: Measured;
+  relevance_failure_rate: Measured;
+  abstention_accuracy: Measured;
+  grounding_state_accuracy: Measured;
+  false_supported_rate: Measured;
+  false_unsupported_rate: Measured;
+  hallucination_rate: Measured;
+  pass_rate: Measured;
+  grounding_state_distribution: Record<string, number>;
+  confusion_matrix: Record<string, Record<string, number>>;
+  unknown_metrics: string[];
+  warnings: string[];
+}
+
+export interface AnswerEvaluationRunSummary {
+  id: string;
+  created_at: string;
+  benchmark_name: string;
+  benchmark_version: number;
+  benchmark_fingerprint: string;
+  /** Authoring lifecycle: draft | approved | frozen. Only frozen may be official. */
+  benchmark_lifecycle: string;
+  official: boolean;
+  strategy: string;
+  retrieval_params: Record<string, unknown>;
+  generator: string;
+  model: string;
+  is_mock: boolean;
+  /** Summary view joins the evaluator name and version into one string. */
+  evaluator: string;
+  evaluator_is_model_based: boolean;
+  evaluator_detail: string;
+  entailment_provider: string;
+  entailment_is_model_based: boolean;
+  relevance_method: string;
+  relevance_weight_source: string;
+  question_count: number;
+  answerable_count: number;
+  unanswerable_count: number;
+  failed_question_ids: string[];
+  unknown_metrics: string[];
+  warnings: string[];
+  aggregate: AnswerQualityAggregate;
+}
+
+/**
+ * The full run record. NOTE: this is NOT the summary — producers are separate
+ * fields here (`evaluator_name` + `evaluator_version`), so reading `evaluator`
+ * off a full run silently yields undefined and renders a blank provenance field.
+ */
+export interface AnswerEvaluationRun extends Omit<AnswerEvaluationRunSummary, "evaluator"> {
+  kb_id: string;
+  benchmark_path: string;
+  corpus_version: string | null;
+  corpus_fingerprint: string | null;
+  answer_mode: string;
+  prompt_version: string;
+  answerer_version: string;
+  evaluator_name: string;
+  evaluator_version: string;
+  retrieval_run_ids: string[];
+  question_ids: string[];
+  subset_note: string;
+  per_question: AnswerQualityResult[];
+  notes: string[];
+}
+
+export interface AnswerEvaluationComparison {
+  comparable: boolean;
+  /** COMPARABLE | INCONCLUSIVE | NOT_COMPARABLE (V8 STEP 11). */
+  verdict: string;
+  /** identical | intersection | no_overlap */
+  mode: string;
+  /** Shared question ids the differences were computed over (intersection). */
+  shared_question_ids: string[];
+  reason: string;
+  left: AnswerEvaluationRunSummary;
+  right: AnswerEvaluationRunSummary;
+  differences: Record<string, { left: Measured; right: Measured; delta: number | null }>;
+}
+
 export const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
@@ -257,6 +455,379 @@ export interface RetrievalResponse {
   embedding_model: string;
   retrieval_backend: string;
   error: string | null;
+  // V6: strategy provenance (present on all responses since V6)
+  strategy?: string;
+  retrieval_run_id?: string | null;
+  notes?: string[];
+}
+
+// ---------------------------------------------------------------- V7 answers
+
+export type AnswerStatus =
+  | "grounded"
+  | "partial"
+  | "abstained"
+  | "clarification_required"
+  | "generation_failed";
+
+export type GateDecision = "ANSWER" | "PARTIAL_ANSWER" | "ABSTAIN" | "ASK_CLARIFICATION";
+
+/** The five explicit grounding outcomes exposed by the GroundingGate. */
+export type GroundingState =
+  | "ANSWERED"
+  | "PARTIALLY_SUPPORTED"
+  | "INSUFFICIENT_EVIDENCE"
+  | "CONFLICTING_EVIDENCE"
+  | "NO_RELEVANT_EVIDENCE";
+
+/** Coarse classification of what KIND of turn a message is. */
+export type QueryNature =
+  | "knowledge"
+  | "conversational"
+  | "non_knowledge"
+  | "underspecified"
+  | "multi_hop";
+
+/** Grounding detail attached to a chat turn. Never contains a fake
+ *  confidence percentage — see docs/grounding-and-citations.md. */
+export interface Grounding {
+  state: GroundingState;
+  decision: GateDecision;
+  sufficient: boolean;
+  confidence: "high" | "moderate" | "low" | "none";
+  reason_code: string;
+  reason: string;
+  evidence_count: number;
+  document_count: number;
+  supporting_evidence_ids: string[];
+  unsupported_aspects: string[];
+  missing_information: string[];
+  recommended_action: string;
+  signals: GateSignal[];
+  notes: string[];
+}
+
+export interface QueryTrace {
+  original_query: string;
+  normalized_query: string;
+  /** null when the question passed through unchanged (never an empty string) */
+  rewritten_query: string | null;
+  subqueries: string[];
+  processor: string;
+  processor_version: string;
+  query_type: string;
+  nature: QueryNature;
+  classification_method: string;
+  classification_signals: string[];
+  transformations: string[];
+  expanded_terms: string[];
+  warnings: string[];
+  notes: string[];
+  timing_ms: number | null;
+  enabled: boolean;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversation_id: string;
+  kb_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+  answer_id: string | null;
+  answer_trace_id: string | null;
+  answer_run_id: string | null;
+  retrieval_run_id: string | null;
+  grounding_state: GroundingState | null;
+  citation_count: number | null;
+  /** prior user message this turn was expanded from, when applicable */
+  resolved_from: string | null;
+  used_as_knowledge: boolean;
+}
+
+export interface ChatGeneration {
+  generated_by: string;
+  model: string;
+  is_mock: boolean;
+  prompt_version: string;
+  answerer_version: string;
+  answer_mode: string;
+  /** true when the configured generator was unavailable and a fallback ran */
+  degraded: boolean;
+  /** "live" | "mock" | "fallback" */
+  generator_status: string;
+}
+
+export interface ChatResponse {
+  answer: string;
+  answer_id: string;
+  status: AnswerStatus;
+  citations: Citation[];
+  claims: Claim[];
+  grounding: Grounding;
+  evidence: Evidence[];
+  retrieval_run_id: string | null;
+  answer_run_id: string;
+  answer_trace_id: string;
+  query_trace: QueryTrace;
+  conversation_id: string;
+  user_message_id: string;
+  assistant_message_id: string;
+  generation: ChatGeneration;
+  warnings: string[];
+  created_at: string;
+}
+
+export interface ConversationSummary {
+  id: string;
+  kb_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+}
+
+export interface ConversationDetail {
+  conversation: {
+    id: string;
+    kb_id: string;
+    title: string;
+    created_at: string;
+    updated_at: string;
+    message_count: number;
+  };
+  messages: ChatMessage[];
+}
+
+export interface AnswerRun {
+  id: string;
+  kb_id: string;
+  created_at: string;
+  question: string;
+  conversation_id: string | null;
+  message_id: string | null;
+  answer_id: string;
+  answer_trace_id: string;
+  retrieval_run_id: string | null;
+  strategy: string;
+  retrieval_params: Record<string, unknown>;
+  selected_evidence_ids: string[];
+  evidence_count: number;
+  document_count: number;
+  grounding_decision: string;
+  grounding_state: GroundingState;
+  grounding_reasons: string[];
+  grounding_reason_code: string;
+  grounding_sufficient: boolean;
+  citation_count: number;
+  claim_count: number;
+  unsupported_claim_count: number;
+  /** measured latencies in ms; null means "not measured", never 0 */
+  query_processing_ms: number | null;
+  retrieval_ms: number | null;
+  evidence_selection_ms: number | null;
+  grounding_ms: number | null;
+  generation_ms: number | null;
+  citation_validation_ms: number | null;
+  total_ms: number | null;
+  model: string;
+  provider: string;
+  is_mock: boolean;
+  prompt_version: string;
+  answerer_version: string;
+  query_processor: string;
+  query_processor_version: string;
+  evidence_selector: string;
+  grounding_gate: string;
+  answer_status: AnswerStatus | null;
+  warnings: string[];
+  notes: string[];
+}
+
+export interface GateSignal {
+  name: string;
+  measured: boolean;
+  value: number | null;
+  threshold: number | null;
+  passed: boolean | null;
+  interpretation: string;
+  not_performed_reason: string;
+}
+
+export interface EvidenceAssessment {
+  sufficient: boolean;
+  decision: GateDecision;
+  /** the five-state grounding outcome (present on every assessment) */
+  grounding_state?: GroundingState;
+  confidence: "high" | "moderate" | "low" | "none";
+  reason_code: string;
+  reason: string;
+  evidence_count: number;
+  document_count: number;
+  supporting_evidence_ids: string[];
+  unsupported_aspects: string[];
+  missing_information: string[];
+  recommended_action: string;
+  signals: GateSignal[];
+  notes: string[];
+}
+
+export interface Evidence {
+  evidence_id: string;
+  chunk_id: string;
+  document_id: string;
+  source_id: string | null;
+  kb_id: string;
+  title: string;
+  source_type: string | null;
+  content: string;
+  retrieval_score: number;
+  retrieval_strategy: string;
+  rank: number;
+  original_rank: number;
+  page: number | null;
+  slide: number | null;
+  section: string | null;
+  section_path: string | null;
+  url: string | null;
+  publisher: string | null;
+  document_version: number | null;
+  content_hash: string;
+  trust_score: number | null;
+  provenance: Record<string, string | number | boolean | null>;
+  retrieval_run_id: string | null;
+  dedup_reason: string;
+  overlap_fraction: number | null;
+}
+
+export interface Citation {
+  citation_id: string;
+  evidence_id: string;
+  chunk_id: string;
+  document_id: string;
+  source_title: string;
+  source_type: string | null;
+  title: string;
+  page: number | null;
+  page_number: number | null;
+  slide: number | null;
+  slide_number: number | null;
+  section: string | null;
+  section_path: string | null;
+  content_hash: string;
+  url: string | null;
+  publisher: string | null;
+  snippet: string;
+  validation: string;
+  validation_detail: string;
+}
+
+export interface Claim {
+  claim_id: string;
+  text: string;
+  claim_type: string;
+  citation_ids: string[];
+  evidence_ids: string[];
+  support_status: "supported" | "partially_supported" | "unsupported";
+  support_check: string;
+  support_note: string;
+}
+
+export interface Answer {
+  answer_id: string;
+  kb_id: string;
+  question: string;
+  status: AnswerStatus;
+  text: string;
+  claims: Claim[];
+  citations: Citation[];
+  evidence_ids: string[];
+  confidence: "high" | "moderate" | "low" | "none";
+  confidence_basis: string;
+  generated_by: string;
+  model: string;
+  is_mock: boolean;
+  prompt_version: string;
+  answer_mode: string;
+  retrieval_run_id: string | null;
+  answer_trace_id: string;
+  assessment: EvidenceAssessment | null;
+  generation_notes: string[];
+  warnings: string[];
+  created_at: string;
+}
+
+export interface AnswerResponse {
+  answer: Answer;
+  status: AnswerStatus;
+  citations: Citation[];
+  claims: Claim[];
+  evidence: Evidence[];
+  retrieval_run_id: string | null;
+  answer_trace_id: string;
+  grounding_assessment: EvidenceAssessment;
+  generation_metadata: {
+    generated_by: string;
+    model: string;
+    is_mock: boolean;
+    prompt_version: string;
+    answer_mode: string;
+  };
+  warnings: string[];
+}
+
+export interface AnswerTraceStage {
+  name: string;
+  status: "ok" | "skipped" | "unavailable" | "error";
+  detail: string;
+  count: number | null;
+  ms: number | null;
+}
+
+export interface QueryPlan {
+  original_query: string;
+  normalized_query: string;
+  detected_language: string | null;
+  query_type: string;
+  classification_method: string;
+  classification_signals: string[];
+  extracted_terms: string[];
+  domain_terms: string[];
+  retrieval_queries: string[];
+  filters: Record<string, unknown>;
+  requested_answer_format: string;
+  notes: string[];
+}
+
+export interface AnswerTrace {
+  id: string;
+  kb_id: string;
+  answer_id: string;
+  created_at: string;
+  question: string;
+  answer_mode: string;
+  query_plan: QueryPlan | null;
+  retrieval_strategy: string;
+  retrieval_run_id: string | null;
+  retrieval_params: Record<string, unknown> | null;
+  retrieval_stages: Record<string, unknown>[];
+  evidence_ids: string[];
+  evidence_items: Evidence[];
+  evidence_dropped: { evidence_id: string; chunk_id: string; reason: string; original_rank: number }[];
+  evidence_notes: string[];
+  assessment: EvidenceAssessment | null;
+  generator: string;
+  generator_model: string;
+  is_mock: boolean;
+  generation_notes: string[];
+  generation_warnings: string[];
+  raw_generated_text: string;
+  validation_actions: string[];
+  citation_problems: Record<string, unknown>[];
+  status: AnswerStatus | null;
+  stages: AnswerTraceStage[];
+  notes: string[];
+  total_ms: number | null;
 }
 
 export type QuestionLifecycle = "DRAFT" | "REVIEW" | "APPROVED" | "FROZEN";
@@ -515,11 +1086,76 @@ export const api = {
     }),
 
   // retrieval
-  retrieve: (id: string, query: string, topK = 5) =>
+  retrieve: (id: string, query: string, topK = 5, strategy?: string) =>
     request<RetrievalResponse>(`/api/knowledge-bases/${id}/retrieve`, {
       method: "POST",
-      body: JSON.stringify({ query, top_k: topK }),
+      body: JSON.stringify({
+        query,
+        top_k: topK,
+        ...(strategy ? { strategy } : {}),
+      }),
     }),
+
+  // --- V7: grounded answers ---
+  answer: (
+    id: string,
+    question: string,
+    opts: { strategy?: string; mode?: string; topK?: number } = {},
+  ) =>
+    request<AnswerResponse>(`/api/knowledge-bases/${id}/answer`, {
+      method: "POST",
+      body: JSON.stringify({
+        question,
+        ...(opts.strategy ? { retrieval_strategy: opts.strategy } : {}),
+        ...(opts.mode ? { answer_mode: opts.mode } : {}),
+        ...(opts.topK ? { retrieval_params: { top_k: opts.topK } } : {}),
+      }),
+    }),
+  getAnswer: (id: string, answerId: string) =>
+    request<Answer>(`/api/knowledge-bases/${id}/answers/${answerId}`),
+  getAnswerTrace: (id: string, traceId: string) =>
+    request<AnswerTrace>(`/api/knowledge-bases/${id}/answer-traces/${traceId}`),
+
+  // --- V7 Phase 13: grounded chat ---
+  chat: (
+    id: string,
+    message: string,
+    opts: {
+      retrieval_strategy?: string;
+      retrieval_params?: Record<string, unknown>;
+      conversation_id?: string;
+      answer_mode?: string;
+    } = {},
+  ) =>
+    request<ChatResponse>(`/api/knowledge-bases/${id}/chat`, {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+        ...(opts.retrieval_strategy ? { retrieval_strategy: opts.retrieval_strategy } : {}),
+        ...(opts.retrieval_params ? { retrieval_params: opts.retrieval_params } : {}),
+        ...(opts.conversation_id ? { conversation_id: opts.conversation_id } : {}),
+        ...(opts.answer_mode ? { answer_mode: opts.answer_mode } : {}),
+      }),
+    }),
+
+  listConversations: (id: string) =>
+    request<ConversationSummary[]>(`/api/knowledge-bases/${id}/conversations`),
+
+  getConversation: (id: string, conversationId: string) =>
+    request<ConversationDetail>(
+      `/api/knowledge-bases/${id}/conversations/${conversationId}`,
+    ),
+
+  deleteConversation: (id: string, conversationId: string) =>
+    request<void>(`/api/knowledge-bases/${id}/conversations/${conversationId}`, {
+      method: "DELETE",
+    }),
+
+  listAnswerRuns: (id: string) =>
+    request<AnswerRun[]>(`/api/knowledge-bases/${id}/answer-runs`),
+
+  getAnswerRun: (id: string, runId: string) =>
+    request<AnswerRun>(`/api/knowledge-bases/${id}/answer-runs/${runId}`),
 
   // evaluation
   addQuestion: (id: string, body: Partial<EvaluationQuestion>) =>
@@ -856,4 +1492,135 @@ export const corpusApi = {
     }),
   fingerprint: (kbId: string) =>
     request<CorpusFingerprint>(`/api/knowledge-bases/${kbId}/corpus-fingerprint`),
+};
+
+/* Answer-quality evaluation (V8). */
+
+/** One append-only human review of one evaluated answer (V8 STEP 4). */
+export interface AnswerReview {
+  id: string;
+  kb_id: string;
+  run_id: string;
+  question_id: string;
+  answer_id: string;
+  reviewer: string;
+  verdict: string;
+  labels: string[];
+  notes: string;
+  created_at: string;
+}
+
+export const REVIEW_VERDICTS = [
+  "correct",
+  "mostly_correct",
+  "partially_correct",
+  "incorrect",
+  "should_have_abstained",
+  "correctly_abstained",
+] as const;
+
+export const REVIEW_LABELS = [
+  "factual_error",
+  "unsupported_claim",
+  "missing_information",
+  "wrong_citation",
+  "irrelevant_evidence",
+  "contradiction",
+  "incomplete_answer",
+  "excessive_answer",
+  "correct_answer",
+] as const;
+
+export const answerEvaluationApi = {
+  /** Run an answer-quality evaluation. persist=false stores no run row. */
+  run: (
+    kbId: string,
+    body: {
+      benchmark_path: string;
+      strategy?: string;
+      retrieval_params?: Record<string, unknown>;
+      answer_mode?: string;
+      question_ids?: string[];
+      limit?: number;
+      persist?: boolean;
+      /** OFFICIAL result; refused 400 unless the benchmark lifecycle is frozen. */
+      official?: boolean;
+      /** deterministic (default) | human | llm */
+      evaluator?: string;
+    }
+  ) =>
+    request<AnswerEvaluationRun>(`/api/knowledge-bases/${kbId}/answer-evaluation/runs`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  list: (kbId: string, limit = 50) =>
+    request<AnswerEvaluationRunSummary[]>(
+      `/api/knowledge-bases/${kbId}/answer-evaluation/runs?limit=${limit}`
+    ),
+
+  get: (kbId: string, runId: string) =>
+    request<AnswerEvaluationRun>(
+      `/api/knowledge-bases/${kbId}/answer-evaluation/runs/${runId}`
+    ),
+
+  question: (kbId: string, runId: string, questionId: string) =>
+    request<AnswerQualityResult>(
+      `/api/knowledge-bases/${kbId}/answer-evaluation/runs/${runId}/questions/${questionId}`
+    ),
+
+  /**
+   * Compare two runs. The API refuses to compare different question subsets, so
+   * `comparable` must be checked before any delta is rendered. Subsets that
+   * PARTIALLY overlap come back verdict="INCONCLUSIVE" with differences over
+   * the shared questions only.
+   */
+  compare: (kbId: string, left: string, right: string) =>
+    request<AnswerEvaluationComparison>(
+      `/api/knowledge-bases/${kbId}/answer-evaluation/compare?left=${left}&right=${right}`
+    ),
+
+  /** Record ONE human review. Append-only: submitting twice keeps both. */
+  createReview: (
+    kbId: string,
+    runId: string,
+    questionId: string,
+    body: {
+      reviewer: string;
+      verdict: string;
+      labels?: string[];
+      notes?: string;
+      answer_id?: string;
+    },
+  ) =>
+    request<AnswerReview>(
+      `/api/knowledge-bases/${kbId}/answer-evaluation/runs/${runId}/questions/${questionId}/reviews`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+
+  /** Full review history for one question, oldest first. */
+  reviews: (kbId: string, runId: string, questionId: string) =>
+    request<AnswerReview[]>(
+      `/api/knowledge-bases/${kbId}/answer-evaluation/runs/${runId}/questions/${questionId}/reviews`
+    ),
+
+  /**
+   * Derive a NEW run whose correctness comes from this run's human reviews.
+   * Source run and reviews are never modified.
+   */
+  humanEvaluation: (kbId: string, runId: string, persist = true) =>
+    request<AnswerEvaluationRun>(
+      `/api/knowledge-bases/${kbId}/answer-evaluation/runs/${runId}/human-evaluation?persist=${persist}`,
+      { method: "POST" },
+    ),
+
+  /** Top-level (cross-KB) run listing (V8 STEP 10). */
+  listAll: (limit = 100, kbId?: string) =>
+    request<AnswerEvaluationRunSummary[]>(
+      `/api/answer-evaluation-runs?limit=${limit}${kbId ? `&kb_id=${kbId}` : ""}`
+    ),
+
+  /** One run by its global id, regardless of knowledge base. */
+  getById: (runId: string) =>
+    request<AnswerEvaluationRun>(`/api/answer-evaluation-runs/${runId}`),
 };

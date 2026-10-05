@@ -431,3 +431,453 @@ TurboVec, BM25, hybrid retrieval, reranking, autonomous optimisation, MCP, LLM
 answer generation, OCR, CSV/XLSX, auth, cloud deployment. The corpus reliability
 layer and its observability came first, because retrieval features cannot be
 honestly evaluated for a domain with no ground truth.
+
+---
+
+## V6 — Retrieval intelligence (phases 1–8) verification
+
+### Commands and results
+
+| check | command | result |
+|---|---|---|
+| backend tests (chunked) | `.venv/Scripts/python.exe -m pytest tests/... -q` | **302 passed, 0 failed** (89 + 78 + 77 + 58) |
+| new V6 retrieval tests | `pytest tests/test_retrieval_v6.py -q` | 58 passed in ~10 s (hermetic, no Qdrant, no model download) |
+| new V6 API tests | `pytest tests/test_retrieval_api_v6.py -q` | 16 passed in ~7 s (upload → index → retrieve → evaluate) |
+| bytecode compile | `python -m compileall -q app` | exit 0 |
+| frontend typecheck | `npx tsc --noEmit` | exit 0, no output |
+| frozen benchmarks | `git diff --stat HEAD -- benchmarks/` | empty (untouched) |
+| Qdrant safety | collection list before/after the full suite | 14 → 14; **no test collection created** |
+
+### Test isolation (the V5 lesson, applied again)
+
+`RetrievalService` resolves the vector store through the factory MODULE attribute
+at call time, so `test_retrieval_v6.py` and `test_retrieval_api_v6.py` monkeypatch
+`app.services.vector_store.factory.create_vector_store` and route every vector
+operation to the in-memory cosine store. The API fixture additionally stubs
+`routes_build` / `routes_documents` / the embedding factory, so an entire
+upload → chunk → embed → index → retrieve → evaluate cycle runs with no services.
+
+### Real-model evidence (not part of the suite)
+
+`CrossEncoderReranker` with `cross-encoder/ms-marco-MiniLM-L-6-v2` was exercised
+once against the live download path and applied successfully (the model is now
+cached under `~/.cache/huggingface/hub/models--cross-encoder--ms-marco-MiniLM-L-6-v2`).
+The committed tests do NOT depend on that: they cover the applied path with a fake
+reranker and the fallback path by forcing the reranker unavailable, so the suite is
+deterministic and offline-safe.
+
+### Bugs found and fixed by this phase
+
+1. **`get_retriever` broke every legacy 3-argument factory** by unconditionally
+   forwarding `repo=`/`settings=` keywords. Extra dependencies are now forwarded
+   only to factories that declare them (signature inspection), so the documented
+   V4 registration contract still works verbatim.
+2. **The BM25 tokenizer split accented words** (`Métacentre` → `m` + `tacentre`)
+   because the character class was ASCII-only. It is now Unicode-aware, so European
+   technical text tokenizes correctly.
+3. **An unknown retrieval strategy returned HTTP 503** (a service-outage status)
+   because configuration errors were raised as `RetrievalError`. There is now a
+   distinct `RetrievalConfigError` mapped to **400**: a bad configuration is the
+   caller's problem, not an outage.
+4. **`score` was ambiguous for BM25**: raw BM25 is unbounded, so a `[0,1]`
+   `min_score` would not be comparable across corpora. BM25 now reports a normalized
+   score (with the raw value kept in `score_breakdown`) and says so in a note.
+5. **Weights that did not sum to 1 silently changed the fused scale** (0.65/0.35
+   applied as-is capped every score). Weights now keep their ratio and the APPLIED
+   values are recorded with the run.
+6. **An empty lexical pool capped every fused score at the dense weight** (0.65),
+   which reads as "poor relevance" when the truth is "one retriever found nothing".
+   Weights are now rescaled to the surviving side and the response explains why.
+7. **The test-double vector store carried a thinner payload than real Qdrant**, so
+   dense-path provenance could regress unnoticed. The fake now mirrors every key the
+   real store writes.
+
+### Explicitly NOT done in this phase
+
+Query processing, grounded answering, citation validation, evidence gating, chat API
+and UI, Retrieval Lab V2, strategy-comparison experiment runner, TurboVec, MCP, OCR,
+CSV/XLSX, auth, cloud deployment. Retrieval quality for Naval Architecture is still
+**unmeasured** (`ground_truth_status = NOT_AVAILABLE`) — the four strategies can now
+be scored, but only on a benchmark that has real human-authored ground truth.
+
+## V7 — Grounded answer engine verification
+
+### Commands and results
+
+| check | command | result |
+|---|---|---|
+| backend tests (chunked) | `.venv/Scripts/python.exe -m pytest tests/... -q` (4 chunks) | **414 passed, 0 failed** = 318 pre-V7 + 96 new V7 |
+| new V7 unit tests | `pytest tests/test_answering_v7.py -q` | 73 passed (query, evidence, gate, generators, citations, injection, trace) |
+| new V7 API tests | `pytest tests/test_answer_api_v7.py -q` | 23 passed (success, abstention, errors, fetch, backwards-compat) |
+| bytecode compile | `python -m compileall -q app` | exit 0 |
+| frontend typecheck | `npx tsc --noEmit` | exit 0, no output |
+| frontend build | `npm run build` | exit 0, **15 routes** (14 + `/knowledge-bases/[id]/answer`) |
+| frozen benchmarks | `git diff --stat HEAD -- benchmarks/` | empty (untouched) |
+| Qdrant safety | collection list before/after V7 + live smoke | 14 → 14; temp smoke KB created then auto-deleted |
+
+### Chunked test commands (full suite exceeds one 600 s window)
+
+```bash
+cd backend
+./.venv/Scripts/python.exe -m pytest tests/test_answering_v7.py tests/test_answer_api_v7.py tests/test_retrieval_v6.py tests/test_retrieval_api_v6.py -q   # 170
+./.venv/Scripts/python.exe -m pytest tests/test_api.py tests/test_benchmark_lifecycle.py tests/test_chunking.py tests/test_content_scorer.py tests/test_corpus_api.py tests/test_corpus_engine.py tests/test_documents_api.py -q   # 132
+./.venv/Scripts/python.exe -m pytest tests/test_incremental_documents.py tests/test_llm_and_embeddings.py tests/test_metrics.py tests/test_repo_and_discovery.py tests/test_retrieval_integration.py tests/test_schemas.py -q   # 58
+./.venv/Scripts/python.exe -m pytest tests/test_source_quality.py tests/test_urls_and_hashing.py tests/test_user_ingestion.py tests/test_v3_infrastructure.py -q   # 54
+```
+
+### Live smoke test (dedicated temp KB, auto-deleted)
+
+Against the running backend + real Qdrant, using a KB created only for the smoke
+test (`V7 SMOKE TEMP KB`):
+
+| step | result |
+|---|---|
+| create KB + upload + index markdown (2 chunks, 2 vectors) | HTTP 201, `indexed: true` |
+| `POST /answer` "What is metacentric height?" (dense) | 200, `grounded`, 1 claim / 1 citation / 2 evidence, `ANSWER/SUFFICIENT`, `retrieval_run_id` + `answer_trace_id` present, claim `supported` via `lexical_overlap` |
+| `POST /answer` off-domain EASA/turbofan question | 200, `abstained`, `LOW_LEXICAL_ALIGNMENT`, **0 citations** |
+| `POST /answer` hybrid strategy | 200, `grounded` (registry path, no answer-side branching) |
+| `GET /answer-traces/{id}` | 200, all 7 canonical stages `ok`, query plan + strategy + run + raw generator text present |
+| `GET /answers/{id}` | 200, answer refetched |
+| delete temp KB | 204; Qdrant back to **14** collections, temp collection removed |
+
+### Bugs found and fixed by this phase
+
+1. **`Answer.generated_by` / `Answer.model` were silently empty.** The validation
+   pipeline passed `generator_name=` / `generator_model=` but the `Answer` fields
+   are `generated_by` / `model`; Pydantic drops unknown extras, so metadata vanished
+   without an error. `_build()` now translates the names explicitly.
+2. **`AnswerTrace.query_plan` was never assigned** — the trace stored `None` for
+   the query plan even though the stage ran. The service now records the plan on
+   the recorder; caught by the API trace test.
+3. **`is_mock` lied when wrapping the mock provider.** `LLMAnswerGenerator.is_mock`
+   was a class-level `False` even when its provider was `MockLLMProvider`. It is now
+   instance-level and mirrors the wrapped provider, so the UI pill is honest.
+4. **Multi-part query classification misfired** on any "…and…?" sentence (a
+   comparison question became `multi-part`, `Why does X…` became
+   `troubleshooting`). The rules now require two interrogative clauses (or two
+   question marks) for multi-part, and troubleshooting matches failure/repair
+   vocabulary only — `why` alone maps to `explanation`.
+5. **Aspect coverage used a 0.15 floor**, so a multi-part question whose clause
+   shared one incidental word with the evidence counted as "covered" (a partial
+   question returned `ANSWER`). Clause coverage now requires a strict majority
+   (`ASPECT_MIN_COVERAGE = 0.5`).
+6. **Wrong-KB citations could not be rejected** because `CitationValidator` had no
+   KB to compare against; it now takes `kb_id` and rejects evidence recorded under
+   another knowledge base.
+
+### Explicitly NOT done in V7
+
+Semantic/entailment validation (labelled `NOT PERFORMED` everywhere), answer-level
+benchmark or any answer-quality metric, query decomposition / multi-query retrieval /
+HyDE, evidence reranking for generation, calculation tools (`CalculationTrace`
+is schema-only and always `performed=false`), answer modes beyond
+`grounded`/`abstain_if_unsupported`, streaming, Retrieval Lab
+fusion/rerank parameter controls, TurboVec, MCP, OCR, CSV/XLSX, auth, cloud
+deployment. Naval Architecture retrieval **and answer quality remain unmeasured**
+(`ground_truth_status = NOT_AVAILABLE`); no evaluation number for either was
+produced or displayed.
+
+---
+
+## V7.2 — Grounded knowledge assistant
+
+### Test counts
+
+| Suite | Tests |
+|---|---|
+| V1–V5 (pre-existing) | 244 |
+| V6 retrieval (pre-existing) | 74 |
+| V7 answering (previous session) | 96 |
+| **V7.2 units** `tests/test_answering_v7_2.py` | **65** |
+| **V7.2 chat API** `tests/test_chat_api_v7.py` | **34** |
+| **Total** | **511 passed, 0 failed** |
+
+Run (two chunks; the full suite exceeds a single command timeout):
+
+```bash
+cd backend
+./.venv/Scripts/python.exe -m pytest tests/ -q --ignore=tests/test_retrieval_integration.py -p no:randomly
+./.venv/Scripts/python.exe -m pytest tests/test_retrieval_integration.py -q -p no:randomly
+./.venv/Scripts/python.exe -m compileall -q app tests        # exit 0
+```
+
+`-p no:randomly` is required: with random ordering a pre-existing registry leak
+(bug 7 below) made the failures non-deterministic.
+
+### Frontend
+
+```bash
+cd frontend
+npx tsc --noEmit     # clean
+npm run build        # 16 routes, exit 0
+```
+
+### Live chat smoke
+
+```bash
+cd backend
+./.venv/Scripts/python.exe -m uvicorn app.main:app --port 8012
+./.venv/Scripts/python.exe scripts/smoke_chat_v7.py http://localhost:8012
+```
+
+Creates its own scratch KB, indexes a real document through the real upload →
+parse → chunk → embed → Qdrant path, then checks:
+
+* grounded answer with `ANSWERED` state, citations, full provenance;
+* `query_trace` proves no rewrite (`rewritten_query: null`, no transformations);
+* abstention on an off-domain question, with generation **skipped**;
+* conversation memory: follow-up recorded its `resolved_from`, history never used
+  as knowledge;
+* prompt injection: marker surfaced as a warning, system prompt not echoed, no
+  API key / env / path leaked;
+* answer runs: measured latencies, every version string, unmeasured latency `None`;
+* conversational turn flagged and not answered from evidence;
+* scratch KB deleted; Qdrant returns to its starting collection count.
+
+**Result: all checks green.** Qdrant 14 → 14.
+
+`scripts/diagnose_retrieval_v7.py` is the read-only diagnostic used to isolate
+bug 2 below; it also creates and deletes only its own scratch KB.
+
+### Bugs found and fixed in V7.2
+
+1. **Registry leak broke the suite depending on test order** (8 failures).
+   `tests/test_incremental_documents.py` replaced the real `bm25` retriever in the
+   process-global registry and never restored it, so `test_retrieval_v6.py` saw a
+   stub. Added `snapshot_retrievers()` / `restore_retrievers()` to
+   `app/services/retrieval/retriever.py`; both polluting tests now restore in a
+   `finally` block.
+2. **The mock provider answered a stability question with a propulsion sentence.**
+   `_answer_draft` selected sentences with `len(term) > 3` substring matching,
+   which dropped the acronym "GM" and kept the stop-word "when" — so the only
+   matching sentence came from the unrelated Propulsion section. It now uses the
+   stop-word-aware `extract_terms` and ranks by term-hit count. Regression tests:
+   `test_mock_provider_quotes_the_relevant_chunk_not_a_stopword_match` and
+   `test_mock_provider_abstains_when_no_sentence_is_relevant`.
+   *(Retrieval itself was correct — dense ranked the stability chunk first at
+   0.4965 vs 0.0677. This was a generation-side selection bug.)*
+3. **A claim citing one valid and one fabricated evidence id was reported as fully
+   supported.** It is now downgraded to `partially_supported` with the dropped ids
+   named.
+4. **Under `policy=downgrade` the action log recorded `remove_claim`** although the
+   claim was kept. The log now records the action actually taken.
+5. **`_nature_of` reported "who are you" as *underspecified*** rather than
+   *non-knowledge*, because the content-term check ran first and that phrase is
+   all stop-words.
+6. **The underspecified check counted non-topic words**, so "What about the
+   previous case?" looked specific. `_NON_TOPIC` exclusion added; two-letter
+   acronyms (GM, KG) are no longer filtered by length, so "What is GM?" is
+   correctly treated as a real question.
+7. **The gate short-circuited underspecified turns**, masking the true
+   `NO_EVIDENCE` reason on an empty KB. Only conversational and non-knowledge
+   turns short-circuit now.
+
+### Explicitly NOT done in V7.2
+
+Semantic/entailment validation, answer-level benchmark or any answer-quality
+metric, query decomposition, query expansion in the UI (programmatic
+`expand_query` only), streaming answers, regeneration UI, multi-turn answer reuse,
+conversation history as a retrievable source, prompt-injection *filtering*
+(detection is a heuristic marker scan), TurboVec, MCP, OCR, CSV/XLSX, auth, cloud
+deployment, multi-user permissions, agent tool execution.
+
+Naval Architecture answer quality **remains unmeasured**
+(`ground_truth_status = NOT_AVAILABLE`); the smoke test demonstrates grounded,
+cited behaviour but is not a quality score.
+
+---
+
+# V8 — Answer-quality evaluation (verified 2026-10-03)
+
+## Checks
+
+| Check | Baseline (pre-V8) | After V8 |
+|---|---|---|
+| Backend tests | 513 passed | **596 passed**, 0 failed |
+| New V8 tests | — | 63 unit + 20 API |
+| `compileall` | exit 0 | exit 0 |
+| `npx tsc --noEmit` | clean | clean |
+| `npm run build` | 16 routes | **17 routes** |
+| Frozen benchmark byte-identical | exit 0 | **exit 0** |
+| Qdrant collections | 14 | **14** (before and after) |
+
+The frozen `benchmarks/automobile-engineering-baseline-v1.json` was **not
+modified**. `git diff --exit-code HEAD` returns 0.
+
+## Measured run
+
+28 questions, dense, evaluator `deterministic-evidence v8.2`, entailment
+`heuristic-lexical-coverage`, generator **mock**:
+
+| Metric | Value | Metric | Value |
+|---|---|---|---|
+| `pass_rate` | 0.821 | `abstention_accuracy` | 1.000 |
+| `citation_recall` | 0.821 | `grounding_state_accuracy` | 1.000 |
+| `citation_precision` | 0.286 *(lower bound)* | `unsupported_claim_rate` | 0.000 |
+| `evidence_support_rate` | 1.000 | `contradiction_rate` | 0.000 |
+| `retrieval_hit_rate` | 0.964 | `hallucination_rate` | 0.179 |
+| `correctness` | **UNKNOWN** | `key_point_recall` | **UNKNOWN** |
+
+Failures: 5 of 28 — 4 citation failures, 1 retrieval miss.
+
+## What is NOT verified
+
+- **Factual correctness of any answer.** UNKNOWN for all 28 questions.
+- **Abstention on unanswerable questions.** The benchmark has 0 such questions.
+- **Model-based entailment.** The heuristic is the default.
+
+## Data impact
+
+Four evaluation runs were executed against the real KB `kb_f278c283c748`
+during verification, writing **112 `answers` rows**. Qdrant collection count
+returned to 14 and no scratch knowledge bases remain. This is the documented
+behaviour of `persist=false` (it gates the evaluation-run row only) and is now
+stated in the OpenAPI description and in `run_real_answer_eval_v8.py`.
+
+## Bugs found and fixed during V8
+
+1. Polarity/negation conflicts undetected despite high lexical overlap.
+2. `list_chunks` 500-default truncated an 812-chunk corpus.
+3. `Field(...)` used on FastAPI query params.
+4. Broken `BaseModel if False else object` placeholder.
+5. Non-existent `chat_versions` import + dead call.
+6. Windows cp1252 `UnicodeEncodeError` printing `↑` from real corpus text.
+7. Benchmark path guard rejected `DATA_DIR`, failing 7 API tests.
+8. **`passed` not serialized** — the UI showed 28/28 failures while `pass_rate`
+   reported 0.821. Now a `@computed_field`, with tests asserting consistency.
+9. CORS hardcoded to port 3000, ignoring `FRONTEND_URL`.
+10. `persist=false` implied read-only but is not; now documented.
+
+## Evaluator semantics correction
+
+The evaluator initially enforced "cite all required evidence" **per claim**,
+which drove the real-corpus `pass_rate` to `0.000` and asserted that
+cited-but-unlabelled chunks "do not address this question" — ground truth the
+benchmark does not have. Corrected to enforce completeness **per answer** and
+report unlabelled citations as observations. `pass_rate` 0.000 → 0.821 with
+**no benchmark label changed**. 8 tests lock the corrected behaviour.
+
+## V8 continuation — answer evaluation & reliability (2026-10-06)
+
+Audit-first extension against the 20-step V8 continuation spec. No frozen
+artifact was modified; all experiments ran against real (read-only for
+corpus/Qdrant) or scratch resources.
+
+### Commands and results
+
+```bash
+# backend unit + API suite (after the extension)
+cd backend && ./.venv/Scripts/python.exe -m pytest -q
+# → 693 passed, 4 warnings in 333.77s
+
+# targeted V8 continuation files during development
+cd backend && python -m pytest tests/test_answer_eval_v8.py \
+  tests/test_answer_eval_api_v8.py tests/test_answer_relevance_v8.py \
+  tests/test_answer_claim_states_v8.py tests/test_answer_completeness_v8.py \
+  tests/test_answer_benchmark_lifecycle_v8.py \
+  tests/test_answer_evaluator_abstractions_v8.py -q
+# → 180 passed
+
+# frontend typecheck + build
+cd frontend && npx tsc --noEmit   # → clean
+cd frontend && npm run build      # → clean; reliability + answer-quality routes built
+
+# live scratch-KB smoke (STEP 17/18)
+cd backend && python scripts/smoke_answer_eval_v8.py http://127.0.0.1:8013
+# → SMOKE PASSED; Qdrant 14 → 14; scratch KB deleted
+
+# answer-evaluation-v1 experiment (STEP 12)
+cd backend && python -u scripts/run_answer_evaluation_v1.py http://127.0.0.1:8013
+# → all comparisons COMPARABLE; Qdrant unchanged; results artifact written
+```
+
+### New tests (97)
+
+| file | tests | covers |
+|---|---|---|
+| `test_answer_relevance_v8.py` | 13 | irrelevant-but-grounded detection, abstention exemption, plain-fallback labelling, close calls |
+| `test_answer_claim_states_v8.py` | 17 | five-state claims, ratios, fabricated/unsupported citation rates |
+| `test_answer_completeness_v8.py` | 11 | key-point coverage, reference similarity, correctness stays UNKNOWN |
+| `test_answer_benchmark_lifecycle_v8.py` | 16 | lifecycle defaults, official gate, review metadata, fingerprint stability |
+| `test_answer_evaluator_abstractions_v8.py` | 19 | human/LLM evaluators, malformed output, unavailability, provider metadata, reproducibility, mock labelling |
+| `test_answer_eval_api_v8.py` (grew 20 → 36) | +16 | official gating, reviews append-only, human-evaluation derivation, INCONCLUSIVE/zero-overlap compare, top-level endpoints |
+| `test_answer_eval_v8.py` (grew 63 → 68) | +5 | intersection comparison plan; strict contract unchanged |
+
+### Live experiment (answer-evaluation-v1)
+
+See [`answer-evaluation-v1.md`](./answer-evaluation-v1.md) for the full
+report. Headline: hybrid `pass_rate` 0.893 vs dense 0.821 vs bm25 0.786 on the
+identical 28-question subset; all three pairwise comparisons COMPARABLE;
+relevance measured with corpus IDF weights (`n_docs=812`); fabricated
+citations 0.000 (measured); correctness UNKNOWN (no human reference answers).
+Non-official by design — the source benchmark is lifecycle `draft`.
+
+### Data impact
+
+* Qdrant: **14 → 14**, no vectors written or deleted.
+* `answer_evaluation_runs`: 6 → 15 (all on `kb_f278c283c748`): 3 from the
+  first experiment execution, 3 from the re-run under the fixed backend, 1
+  crashed-attempt dense row, 2 human-evaluation derivations (one via UI,
+  one via API to re-verify the label fix), plus pre-V8 rows.
+* `answers`: 280 → 482 (re-run experiment 84 + first execution 84 + crashed
+  attempt 28 + scratch smoke ~6).
+* `answer_reviews`: **1** — a browser round-trip verification review on
+  `aerun_4d474005c78c` / `auto-eng-011` (reviewer `v8-ui-verification`), used
+  to verify the review→derive workflow end-to-end in the UI. Append-only; no
+  existing review was modified.
+* Frozen artifacts: **0 bytes written**.
+
+### Frozen artifact integrity
+
+```bash
+git diff --exit-code HEAD -- benchmarks/automobile-engineering-baseline-v1.json \
+  benchmarks/automobile-engineering-baseline-v1-results.json \
+  benchmarks/answer-quality-automobile-v1.json benchmarks/source-selection-experiment-v1
+# → exit 0 (no changes)
+```
+
+### Live UI round-trip (browser-verified)
+
+Exercised the review workflow through the real UI against the real API
+(no hermetic stubs):
+
+1. Opened *Human review* on the failing `auto-eng-011` card — form renders
+   with reviewer (required), 6 verdicts, 9 structured labels, notes; the
+   *Store review* button is disabled while reviewer is blank.
+2. Stored a review (reviewer `v8-ui-verification`, verdict `correct`, note)
+   → count went 0 → 1 and the record rendered back verbatim (append-only).
+3. Clicked *Derive human-evaluation run* → new immutable run
+   `aerun_9b6d8630396a` with evaluator `human-reviews`, lineage note
+   `derived from run aerun_4d474005c78c`, and `correctness` moving from the
+   UNKNOWN list (5 → 4 entries) — source run and review untouched.
+4. Reliability dashboard renders all runs with UNKNOWN cells shown as
+   UNKNOWN (never 0), flags, and per-dimension columns with no combined score.
+
+### Bugs found and fixed in this final pass
+
+1. **Per-question `correctness` label was hard-coded to UNKNOWN**
+   (`answer-quality/page.tsx`): the card always printed
+   "correctness: UNKNOWN (needs human labels/review)" even when
+   `correctness.measured` was true, contradicting the aggregate that had
+   already dropped `correctness` from `unknown_metrics`. Now renders
+   `1.00 (from 1 human review)` with the policy-mapping reason as tooltip.
+   Verified live on the derived human-evaluation run.
+2. **Duplicated `key_point_recall` in `unknown_metrics`** (stale server
+   process): the backend was started without `--reload` before the
+   `run.py` dedupe fix, so every run it recorded carried
+   `[..., 'key_point_recall', 'key_point_recall', ...]`. The source was
+   already correct; fixed operationally by restarting the backend, and the
+   experiment artifact was regenerated under the fixed code (headline
+   numbers reproduce identically — see the table above). The UI also
+   de-duplicates at render time so historical run rows display honestly.
+
+### Final integrity state
+
+* Frozen artifacts: `git diff --exit-code HEAD` → **exit 0** on all
+  `automobile-engineering-baseline-v1*`, `answer-quality-automobile-v1.json`,
+  `source-selection-experiment-v*`.
+* Qdrant: **14 collections** (unchanged all session).
+* DB: 15 answer-evaluation runs / 482 answers / 1 review, all on
+  `kb_f278c283c748`; no corpus, chunk, or vector rows touched.
+* Frontend: `npx tsc --noEmit` clean, `npm run build` clean, both pages
+  browser-verified on :3000 against the restarted backend on :8013.

@@ -79,6 +79,15 @@ class VectorStore(ABC):
         """
         raise NotImplementedError
 
+    def fetch_vectors(self, kb_id: str, chunk_ids: list[str]) -> dict[str, list[float]]:
+        """{chunk_id: vector} for the requested chunks (V6, used by MMR).
+
+        Optional capability: backends that cannot return stored vectors raise
+        NotImplementedError, and the diversity stage records MMR as unavailable
+        instead of pretending diversification happened.
+        """
+        raise NotImplementedError
+
 
 class QdrantVectorStore(VectorStore):
     """Qdrant client wrapper. One collection per knowledge base."""
@@ -214,6 +223,33 @@ class QdrantVectorStore(VectorStore):
         except Exception as exc:
             raise self._wrap(exc, "counting vectors for documents") from exc
         return int(result.count)
+
+    def fetch_vectors(self, kb_id: str, chunk_ids: list[str]) -> dict[str, list[float]]:
+        """Fetch stored vectors by chunk id (chunk_id -> numeric point id)."""
+        from qdrant_client import models
+
+        if not chunk_ids:
+            return {}
+        out: dict[str, list[float]] = {}
+        try:
+            for i in range(0, len(chunk_ids), 256):
+                batch = chunk_ids[i : i + 256]
+                ids = [numeric_id(c) for c in batch]
+                records = self._client.retrieve(
+                    collection_name=self._collection(kb_id),
+                    ids=ids,
+                    with_vectors=True,
+                    with_payload=True,
+                )
+                for record in records:
+                    payload = dict(record.payload or {})
+                    chunk_id = payload.get("chunk_id")
+                    vector = record.vector
+                    if chunk_id and isinstance(vector, list):
+                        out[str(chunk_id)] = [float(x) for x in vector]
+        except Exception as exc:
+            raise self._wrap(exc, "fetching stored vectors") from exc
+        return out
 
     def all_point_payloads(self, kb_id: str) -> dict[str, dict[str, Any]]:
         """Scroll every point and return {chunk_id: payload}."""

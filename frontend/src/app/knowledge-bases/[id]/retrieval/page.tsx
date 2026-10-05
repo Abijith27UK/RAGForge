@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLink, FileText, Search } from "lucide-react";
-import { api, RetrievalResponse, RetrievalResult } from "@/lib/api";
+import { ExternalLink, FileText, Search, Sparkles } from "lucide-react";
+import { api, AnswerResponse, RetrievalResponse, RetrievalResult } from "@/lib/api";
 import { Badge, Button, EmptyState, Panel, ScoreBar } from "@/components/ui";
 import { fmtScore } from "@/lib/utils";
+
+const STRATEGIES = ["dense", "bm25", "hybrid", "hybrid_reranked"] as const;
 
 type Prov = RetrievalResult["provenance"];
 
@@ -68,20 +71,38 @@ export default function RetrievalLab() {
   const { id: kbId } = useParams<{ id: string }>();
   const [query, setQuery] = useState("");
   const [topK, setTopK] = useState(5);
+  const [strategy, setStrategy] = useState<string>("dense");
   const [resp, setResp] = useState<RetrievalResponse | null>(null);
+  const [answer, setAnswer] = useState<AnswerResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [answering, setAnswering] = useState(false);
 
   async function search(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    setAnswer(null);
     try {
-      setResp(await api.retrieve(kbId, query, topK));
+      setResp(await api.retrieve(kbId, query, topK, strategy));
     } catch (err: unknown) {
       setError(String((err as Error).message));
     } finally {
       setBusy(false);
+    }
+  }
+
+  // Retrieval only vs Retrieval + grounded answer: same question, same
+  // strategy, so the two can be compared side by side.
+  async function generateAnswer() {
+    setAnswering(true);
+    setError(null);
+    try {
+      setAnswer(await api.answer(kbId, query, { strategy, topK }));
+    } catch (err: unknown) {
+      setError(String((err as Error).message));
+    } finally {
+      setAnswering(false);
     }
   }
 
@@ -104,6 +125,12 @@ export default function RetrievalLab() {
           />
         </div>
         <select
+          value={strategy} onChange={(e) => setStrategy(e.target.value)}
+          className="h-11 rounded-lg border border-line-strong bg-surface-2 px-2 text-xs text-ink"
+        >
+          {STRATEGIES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select
           value={topK} onChange={(e) => setTopK(Number(e.target.value))}
           className="h-11 rounded-lg border border-line-strong bg-surface-2 px-2 text-xs text-ink"
         >
@@ -112,11 +139,58 @@ export default function RetrievalLab() {
         <Button type="submit" variant="primary" loading={busy} className="h-11 px-5">Search</Button>
       </form>
 
+      <div className="mb-6 flex items-center gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          loading={answering}
+          disabled={!query}
+          onClick={generateAnswer}
+        >
+          <Sparkles className="h-3 w-3" /> Generate grounded answer
+        </Button>
+        <Link href={`/knowledge-bases/${kbId}/answer`} className="text-2xs text-accent-soft hover:underline">
+          open full Answer page →
+        </Link>
+      </div>
+
       <p className="mb-6 text-2xs leading-4 text-ink-faint">
-        Dense vector retrieval. Scores are real cosine similarities from the vector store — not a
-        fabricated relevance percentage. Page, slide and section numbers are shown only when the source
-        file actually provides them; they are never inferred.
+        Retrieval uses the selected registry strategy (dense, bm25, hybrid or hybrid_reranked). Scores
+        are real retrieval scores from the strategy that produced them — not a fabricated relevance
+        percentage. Page, slide and section numbers are shown only when the source file actually
+        provides them; they are never inferred.
       </p>
+
+      {/* Retrieval only vs Retrieval + grounded answer */}
+      {answer && (
+        <Panel className="mb-4">
+          <div className="border-b border-line px-4 py-2.5 flex items-center justify-between">
+            <span className="section-label">Retrieval + grounded answer</span>
+            <div className="flex items-center gap-2">
+              <Badge tone={answer.status === "grounded" ? "ok" : answer.status === "partial" ? "warn" : "bad"}>
+                {answer.status}
+              </Badge>
+              <Link
+                href={`/knowledge-bases/${kbId}/answer`}
+                className="text-2xs text-accent-soft hover:underline"
+              >
+                full trace →
+              </Link>
+            </div>
+          </div>
+          <div className="px-4 py-3">
+            <p className="whitespace-pre-wrap text-xs leading-5 text-ink">{answer.answer.text}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {answer.citations.map((c) => (
+                <Badge key={c.citation_id} tone="accent">{c.citation_id}</Badge>
+              ))}
+              <span className="ml-auto text-2xs text-ink-faint">
+                {answer.grounding_assessment.decision} · {answer.grounding_assessment.reason_code}
+              </span>
+            </div>
+          </div>
+        </Panel>
+      )}
 
       {error && <div className="mb-4 rounded border border-bad/40 bg-bad/10 px-3 py-2 text-xs text-bad">{error}</div>}
 

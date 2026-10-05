@@ -1,0 +1,1105 @@
+{
+  "benchmark": "answer-quality-automobile-v1",
+  "version": 1,
+  "created_at": "2026-10-03",
+  "kb_id": "kb_f278c283c748",
+  "kb_name": "Automobile Engineering KB (E2E)",
+  "derived_from": "automobile-engineering-baseline-v1",
+  "authorship": {
+    "method": "Required evidence inherited verbatim from the frozen retrieval benchmark; answerability derived from the presence of a reviewer-selected answering chunk. NO expected answers were generated — see reviewer_metadata.answer_label_status.",
+    "answer_labels": "NONE — human authorship required before correctness metrics are computable",
+    "human_review": "PENDING. The source benchmark states human_review = PENDING, so this artifact inherits that status and must NOT be described as human-reviewed."
+  },
+  "human_review": "pending",
+  "evaluator_contract": {
+    "computable_now": [
+      "citation_precision",
+      "citation_recall",
+      "evidence_support_rate",
+      "unsupported_claim_rate",
+      "abstention_correct",
+      "contradiction_rate",
+      "retrieval_hit_rate"
+    ],
+    "unknown_until_human_answers": [
+      "correctness",
+      "reference_answer_similarity",
+      "key_point_recall"
+    ],
+    "note": "Metrics listed under unknown_until_human_answers are reported as UNKNOWN with a reason, never guessed. This is enforced in the evaluator, not just documented."
+  },
+  "questions": [
+    {
+      "question_id": "auto-eng-001",
+      "question": "What is an engine and what does it convert energy into?",
+      "subdomain": "engine",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_d15901e67e35",
+          "document_id": "doc_90752e50cc19",
+          "content_hash": "8624bd657c1e066c757a3c4a5be99651cf4f681c5109b84573dddcd6f028fea7",
+          "section": "Introduction",
+          "source_title": "Engine - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_d15901e67e35 (Engine - Wikipedia, section Introduction): 'An engine or motor is a machine designed to convert one or more forms of energy into mechanical energy.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-001",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-002",
+      "question": "Which internal combustion engine type has been most successful for light automobiles?",
+      "subdomain": "engine",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_c6fcd78d2a1b",
+          "document_id": "doc_90752e50cc19",
+          "content_hash": "c68e21d1bc0af9c3cb057e240786238978079438a1b726fb0988b75ef75bf54f",
+          "section": "Introduction",
+          "source_title": "Engine - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_c6fcd78d2a1b (Engine - Wikipedia, section Automobiles): 'The lightweight gasoline internal combustion engine, operating on a four-stroke Otto cycle, has been the most successful for light automobiles.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-002",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-003",
+      "question": "Which engines are typically used for trucks and buses instead of gasoline engines?",
+      "subdomain": "engine",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_c6fcd78d2a1b",
+          "document_id": "doc_90752e50cc19",
+          "content_hash": "c68e21d1bc0af9c3cb057e240786238978079438a1b726fb0988b75ef75bf54f",
+          "section": "Introduction",
+          "source_title": "Engine - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Same chunk as auto-eng-002: 'the thermally more-efficient Diesel engine is used for trucks and buses.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-003",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-004",
+      "question": "What four stages make up a four-stroke internal combustion cycle?",
+      "subdomain": "engine",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_d15901e67e35",
+          "document_id": "doc_90752e50cc19",
+          "content_hash": "8624bd657c1e066c757a3c4a5be99651cf4f681c5109b84573dddcd6f028fea7",
+          "section": "Introduction",
+          "source_title": "Engine - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_d15901e67e35 figure caption: 'four stages of a four-stroke gasoline-fueled internal combustion cycle: Induction (Fuel enters), Compression, Ignition (Fuel is burnt), Emission (Exhaust exits).' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-004",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-005",
+      "question": "What is a transmission (gearbox) in a machine?",
+      "subdomain": "transmission",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_32090a0af504",
+          "document_id": "doc_20244bd4c0a6",
+          "content_hash": "efdb14b814b6e624c072473b905bc3057580334dda5264d78fb4b86f144b8601",
+          "section": "Introduction",
+          "source_title": "Transmission (mechanical device) - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_32090a0af504 (Transmission - Wikipedia, Introduction): 'A transmission (also called a gearbox) is a mechanical device which uses a gear set - two or more gears working together - to change the speed, direction of rotation, or torque multiplication or reduction.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-005",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-006",
+      "question": "How does a dual-clutch transmission differ from a manual transmission?",
+      "subdomain": "transmission",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_4aad8a5bf267",
+          "document_id": "doc_20244bd4c0a6",
+          "content_hash": "2f408950f8ab2cfd42744bc365dd36567b13c8ba09afb0fac1b852439d40ad67",
+          "section": "Zf 6Hp",
+          "source_title": "Transmission (mechanical device) - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_4aad8a5bf267 (Transmission - Wikipedia, Dual-clutch section): 'A dual-clutch transmission (DCT) uses two separate clutches for odd and even gear sets... often similar to two separate manual transmissions with their respective clutches contained within one housing.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-006",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-007",
+      "question": "What distinguishes a continuously variable transmission from stepped transmissions?",
+      "subdomain": "transmission",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_4aad8a5bf267",
+          "document_id": "doc_20244bd4c0a6",
+          "content_hash": "2f408950f8ab2cfd42744bc365dd36567b13c8ba09afb0fac1b852439d40ad67",
+          "section": "Zf 6Hp",
+          "source_title": "Transmission (mechanical device) - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Same chunk as auto-eng-006 (CVT paragraphs): 'A continuously variable transmission (CVT) can change seamlessly through a continuous range of gear ratios. This contrasts with other transmissions that provide a limited number of gear ratios in fixed steps.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-007",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-008",
+      "question": "What gearsets and coupling does a hydraulic automatic transmission typically use?",
+      "subdomain": "transmission",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_f433a0155c1c",
+          "document_id": "doc_20244bd4c0a6",
+          "content_hash": "d9a9f07ac5761bc1e6d8ad0e021bad71245b1fe71eb9e1db52dc67b5490c772a",
+          "section": "Introduction",
+          "source_title": "Transmission (mechanical device) - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_f433a0155c1c (Transmission - Wikipedia, Hydraulic automatic section): 'uses planetary gearsets that are operated using hydraulics... connected to the engine via a torque converter.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-008",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-009",
+      "question": "What is a brake and by what means does it usually slow a vehicle?",
+      "subdomain": "braking",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_32d144475094",
+          "document_id": "doc_f70fcb4ed4e9",
+          "content_hash": "f18a41189261c89ac002d30ece68c1943407fa526368d75c1d60bffb092090c3",
+          "section": "Introduction",
+          "source_title": "Brake - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_32d144475094 (Brake - Wikipedia, Introduction): 'A brake is a mechanical device that inhibits motion by absorbing energy from a moving system... most often accomplished by means of friction.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-009",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-010",
+      "question": "How do friction pad/shoe brakes work in common configurations?",
+      "subdomain": "braking",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_12d14a4bdaa2",
+          "document_id": "doc_f70fcb4ed4e9",
+          "content_hash": "addc2f9b06b28e97260b9608f391fb65af5244314069a9b1b93bbe1bde10f0d7",
+          "section": "Introduction",
+          "source_title": "Brake - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_12d14a4bdaa2 (Brake - Wikipedia, Friction section): 'Friction (pad/shoe) brakes are often rotating devices with a stationary pad and a rotating wear surface. Common configurations include shoes that contract to rub on the outside of a rotating drum.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-010",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-011",
+      "question": "How does regenerative braking differ from conventional friction braking in what happens to kinetic energy?",
+      "subdomain": "braking",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_6110c9562b0b",
+          "document_id": "doc_494b7f7a6fd7",
+          "content_hash": "147917c0d19db0adaf57c7d6dab1c19b5f61c241150cb0d0d873fa60cab2bc59",
+          "section": "Jstor",
+          "source_title": "Regenerative braking - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_6110c9562b0b (Regenerative braking - Wikipedia, Introduction): 'Regenerative braking is an energy recovery mechanism that slows down a moving vehicle or object by converting its kinetic energy or potential energy into a form that can be either used immediately or stored until needed.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-011",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-012",
+      "question": "How do hybrid and fully electric vehicles combine regenerative and friction braking?",
+      "subdomain": "braking",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_25735cdb8449",
+          "document_id": "doc_494b7f7a6fd7",
+          "content_hash": "72e39cc2ed8cbdf97051c38768605cce9cd1fc117f74b8c121f6ae5e677ba8ec",
+          "section": "24 Hours of Le Mans",
+          "source_title": "Regenerative braking - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_25735cdb8449 (Regenerative braking - Wikipedia): 'Many hybrid electric and fully electric vehicles employ regenerative braking in conjunction with friction braking' and 'Regenerative and friction braking must both be used, creating the need to control them to produce the required total braking.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-012",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-013",
+      "question": "How does a conventional automotive steering system transmit driver input to the front wheels?",
+      "subdomain": "steering",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_412bc04d30b5",
+          "document_id": "doc_5679743e2c32",
+          "content_hash": "310dc63b7f3fdc949ccc7964d5179b5ee40f25c5641fb271d148d5c13d28a743",
+          "section": "Introduction",
+          "source_title": "Steering - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_412bc04d30b5 (Steering - Wikipedia): 'The steering wheel is attached to a steering column, which is linked to rods, pivots and gears... may include a rack and pinion mechanism that converts several turns of the steering wheel into a large linear displacement.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-013",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-014",
+      "question": "How do hydraulic and electric power steering systems differ in efficiency?",
+      "subdomain": "steering",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_9a61450271c8",
+          "document_id": "doc_5679743e2c32",
+          "content_hash": "667c0446d79f24799ecba096cf66380f6bdf4b807a82ba48d3acab418a571fef",
+          "section": "Introduction",
+          "source_title": "Steering - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_9a61450271c8 (Steering - Wikipedia, Power steering): 'Electric Power Steering (EPS) is more efficient than hydraulic power-steering, since the electric power-steering motor only needs to provide assistance when the steering wheel is turned, whereas the hydraulic pump must run constantly.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-014",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-015",
+      "question": "What does speed-sensitive steering change about assistance at low versus high speed?",
+      "subdomain": "steering",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_9a61450271c8",
+          "document_id": "doc_5679743e2c32",
+          "content_hash": "667c0446d79f24799ecba096cf66380f6bdf4b807a82ba48d3acab418a571fef",
+          "section": "Introduction",
+          "source_title": "Steering - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_9a61450271c8 / adjacent Speed-sensitive steering text: 'highly assisted steering at low speeds for maneuverability, and lightly assisted steering at high speed for stability.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-015",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-016",
+      "question": "What factors influence a vehicle's roll rate and what does roll rate shift between axles?",
+      "subdomain": "suspension",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_a35339965c58",
+          "document_id": "doc_31ee9762026c",
+          "content_hash": "8b8174f064a776a66b53790eef7653c2ae134594297c0263ede757caac362c10",
+          "section": "Jstor",
+          "source_title": "Car suspension - Wikipedia",
+          "required": true
+        },
+        {
+          "chunk_id": "chk_a3b572103f5e",
+          "document_id": "doc_31ee9762026c",
+          "content_hash": "94fe59bc7d36bda7c13539db9f7da8e943b913fea2e88b69109d365799dfc075",
+          "section": "Jstor",
+          "source_title": "Car suspension - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunks chk_a35339965c58 and chk_a3b572103f5e (Car suspension - Wikipedia, Roll rate section): 'influenced by... sprung mass, track width, CG height, spring and damper rates, roll centre heights of front and rear, anti-roll bar stiffness and tire pressure/construction' and 'does not change the total amount of weight transfer... but shifts the speed and percentage of weight transferred... to another axle.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-016",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-017",
+      "question": "What is roll couple percentage and how is it commonly adjusted?",
+      "subdomain": "suspension",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_a3b572103f5e",
+          "document_id": "doc_31ee9762026c",
+          "content_hash": "94fe59bc7d36bda7c13539db9f7da8e943b913fea2e88b69109d365799dfc075",
+          "section": "Jstor",
+          "source_title": "Car suspension - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_a3b572103f5e (Car suspension - Wikipedia, Roll couple percentage): 'a simplified method of describing lateral load transfer distribution front to rear, and subsequently handling balance... commonly adjusted through the use of anti-roll bars.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-017",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-018",
+      "question": "How can interconnected suspension decouple vehicle vibration modes passively?",
+      "subdomain": "suspension",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_6feb72cf879a",
+          "document_id": "doc_31ee9762026c",
+          "content_hash": "3297e10145db31bdf026d29c43dc6360f2c0a40eae15edd200c42e64f1919a4d",
+          "section": "Jstor",
+          "source_title": "Car suspension - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_6feb72cf879a (Car suspension - Wikipedia, Interconnected suspension): 'could easily decouple different vehicle vibration modes in a passive manner. Interconnections can be realized by various means, such as mechanical, hydraulic, and pneumatic.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-018",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-019",
+      "question": "What is a vehicle frame (chassis) and what role does it play?",
+      "subdomain": "chassis",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_a7f082f1367f",
+          "document_id": "doc_239d623a606a",
+          "content_hash": "35993f996b3caac5a10b4b2b9a07cf1f5037f3ec58994aee0f3fd86effa977aa",
+          "section": "Jstor",
+          "source_title": "Vehicle frame - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_a7f082f1367f (Vehicle frame - Wikipedia, Introduction): 'A vehicle frame, also historically known as its chassis, is the main supporting structure of a motor vehicle to which all other components are attached, comparable to the skeleton of an organism.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-019",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-020",
+      "question": "What construction replaced body-on-frame in passenger cars during the 20th century?",
+      "subdomain": "chassis",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_a7f082f1367f",
+          "document_id": "doc_239d623a606a",
+          "content_hash": "35993f996b3caac5a10b4b2b9a07cf1f5037f3ec58994aee0f3fd86effa977aa",
+          "section": "Jstor",
+          "source_title": "Vehicle frame - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Same chunk as auto-eng-019: 'Until the 1930s, virtually every car had a structural frame separate from its body, known as body-on-frame construction' and 'unibody passenger cars had become common' (unitized body). Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-020",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-021",
+      "question": "What is a ladder frame and where is it still commonly used?",
+      "subdomain": "chassis",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_fe8b35e2ec9c",
+          "document_id": "doc_239d623a606a",
+          "content_hash": "ad2cd5afbe179b98e8d253b3708085197cb4da7800e911c72814165dd35cc529",
+          "section": "Jstor",
+          "source_title": "Vehicle frame - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_fe8b35e2ec9c (Vehicle frame - Wikipedia, Frame rails): 'A ladder frame, named for its shape' with pickup truck frame caption 'heavy c-shaped longitudinal rails... crossmember just forward of the axle.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-021",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-022",
+      "question": "What attributes of tires most directly affect vehicle dynamics?",
+      "subdomain": "vehicle-dynamics",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_9dad83ea029d",
+          "document_id": "doc_154c9462f9b4",
+          "content_hash": "7ec181438e2433b6a9ab2f7c111713473ec7e06c6e6e7178d1b65e706ffec25f",
+          "section": "Introduction",
+          "source_title": "Vehicle dynamics - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_9dad83ea029d (Vehicle dynamics - Wikipedia): 'le dynamics can be attributed directly to the tires. These include:' (pneumatic trail, slip angle, camber thrust etc. list follows). Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-022",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-023",
+      "question": "How can the dynamic behaviour of vehicles be analysed and simulated?",
+      "subdomain": "vehicle-dynamics",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_9dad83ea029d",
+          "document_id": "doc_154c9462f9b4",
+          "content_hash": "7ec181438e2433b6a9ab2f7c111713473ec7e06c6e6e7178d1b65e706ffec25f",
+          "section": "Introduction",
+          "source_title": "Vehicle dynamics - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_9dad83ea029d (Vehicle dynamics - Wikipedia, Analysis and simulation): 'can be analysed in several different ways... as straightforward as a simple spring mass system, through a three-degree of freedom (DoF) bicycle model, to... multibody system simulation.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-023",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-024",
+      "question": "Which phenomena are listed as key vehicle dynamics behaviours (roll, pitch, yaw)?",
+      "subdomain": "vehicle-dynamics",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_2c9452f46a9e",
+          "document_id": "doc_154c9462f9b4",
+          "content_hash": "bd4194d6b9b531b734a6e1c941f0fe8993cb5e0371456826dc15724038b576e7",
+          "section": "Introduction",
+          "source_title": "Vehicle dynamics - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_2c9452f46a9e (Vehicle dynamics - Wikipedia, Introduction lists): 'Noise, vibration, and harshness; Pitch; Ride quality; Roll; Speed wobble; Understeer, oversteer, lift-off oversteer, and fishtailing; Weight transfer and load transfer; Yaw.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-024",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-025",
+      "question": "What is a battery management system and which battery states does it monitor?",
+      "subdomain": "electric-vehicles",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_4aa26676288d",
+          "document_id": "doc_5ea596059dba",
+          "content_hash": "de41e4de73cd871f973375bda6521aadf840e98c8aea1fc027821091bd33a43a",
+          "section": "Introduction",
+          "source_title": "Battery management system - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_4aa26676288d (Battery management system - Wikipedia, Introduction): 'any electronic system that manages a rechargeable battery (cell or battery pack)... while monitoring and estimating its various states (such as state of health and state of charge).' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-025",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-026",
+      "question": "What kind of battery powers the propulsion system of a battery electric vehicle?",
+      "subdomain": "electric-vehicles",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_e1cf621cbdf1",
+          "document_id": "doc_36e74359e648",
+          "content_hash": "06825267af402a0e7a88913b098013effae7c38884acae6805371106d1663ef3",
+          "section": "Maz-7907",
+          "source_title": "Electric vehicle - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_e1cf621cbdf1 (Electric vehicle - Wikipedia): 'An electric-vehicle battery (EVB)... is a battery used to power the propulsion system of a battery electric vehicle (BEVs). These batteries are usually a secondary (rechargeable) battery, and are typically lithium-ion batteries.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-026",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-027",
+      "question": "How does AC versus DC electric vehicle charging work?",
+      "subdomain": "electric-vehicles",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_dc579a51ada4",
+          "document_id": "doc_36e74359e648",
+          "content_hash": "d48ac5b8e9b46724c24041edbe0c2973a96b682a2771ef4bd05b9739d7e80dbd",
+          "section": "Maz-7907",
+          "source_title": "Electric vehicle - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_dc579a51ada4 (Electric vehicle - Wikipedia, Charging section): 'At an AC charging station, AC power from the grid is supplied to this onboard charger, which converts it into DC power to recharge the battery. DC chargers provide higher-power charging... bypassing the onboard converter.' Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-027",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    },
+    {
+      "question_id": "auto-eng-028",
+      "question": "What secondary energy source recovers energy that would otherwise be wasted by friction brakes in cars?",
+      "subdomain": "general-automobile",
+      "answerability": "answerable",
+      "required_evidence": [
+        {
+          "chunk_id": "chk_bea2185abe4c",
+          "document_id": "doc_494b7f7a6fd7",
+          "content_hash": "015c6dbc2c1b30d57eb3c94931b8bf4f26f5e6b8658bd83865808c4ed5d1792c",
+          "section": "Introduction",
+          "source_title": "Regenerative braking - Wikipedia",
+          "required": true
+        }
+      ],
+      "citation_requirements": {
+        "require_at_least_one_citation": true,
+        "must_cite_all_required_evidence": true,
+        "must_not_cite_irrelevant_chunks": true,
+        "note": "Derived from the frozen retrieval benchmark: the reviewer selected this chunk as the one that answers the question."
+      },
+      "expected_answer": null,
+      "key_points": [],
+      "acceptable_answer_elements": [],
+      "numerical_tolerance": null,
+      "requires_units": false,
+      "expected_grounding_state": "ANY_ACCEPTABLE",
+      "abstention_required": false,
+      "provenance": "Chunk chk_bea2185abe4c (Car - Wikipedia, Hybrid/EV section): 'recovers and returns to a battery some energy which would otherwise be wasted by friction brakes getting hot' and 'all cars must have friction brakes (front disc brakes)'. Manually read and selected 2026-09-15.",
+      "reviewer_metadata": {
+        "source": "automobile-engineering-baseline-v1",
+        "source_question_id": "auto-eng-028",
+        "evidence_selected_by": "Buffy (Codebuff agent), operating under explicit human instruction",
+        "human_review": "PENDING - selections were made by reading real indexed chunk texts; a human must review before treating results as publication-grade",
+        "answer_label_status": "REQUIRES_HUMAN_AUTHORSHIP",
+        "notes": "Required evidence is inherited from the frozen retrieval benchmark. No expected answer or key points exist yet, so answer-correctness metrics are UNKNOWN for this question."
+      }
+    }
+  ]
+}

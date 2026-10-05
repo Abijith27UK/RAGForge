@@ -118,9 +118,12 @@ class MockLLMProvider(LLMProvider):
         self.domain_hint = domain_hint
 
     def generate_structured(self, prompt: str, schema: type[T], system: str = "") -> T:
+        if schema.__name__ == "AnswerDraftLLM":
+            return self._answer_draft(prompt, schema)  # type: ignore[return-value]
         if schema.__name__ != "DomainSpecLLM":
             raise LLMError(
-                f"Mock provider only supports domain analysis (got {schema.__name__})"
+                f"Mock provider only supports domain analysis and answer drafts "
+                f"(got {schema.__name__})"
             )
         # Build a generic, honest, deterministic spec from the domain hint.
         d = self.domain_hint or "the domain"
@@ -133,6 +136,65 @@ class MockLLMProvider(LLMProvider):
             terminology=[f"{domain} terminology"],
             knowledge_requirements=[{"area": f"Core {domain} theory", "description": "Textbooks and lecture material", "priority": "high"}],
             recommended_source_categories=["University lecture notes (.edu)", "Standards organizations", "Peer-reviewed papers", "Technical reference books"],
+        )
+
+    def _answer_draft(self, prompt: str, schema: type[T]) -> T:
+        """Deterministic answer draft parsed from the REAL prompt built by
+        `app.services.answering.prompting`. Exercises prompt construction and
+        structured round-trip without a network call. Clearly a mock: it quotes
+        evidence sentences and never synthesizes.
+
+        Sentence selection uses the SAME stop-word-aware term extractor as query
+        processing, and ranks sentences by how many question terms they contain
+        rather than taking the first substring hit. The earlier
+        `len(term) > 3` substring approach was actively harmful: it dropped
+        short-but-critical engineering acronyms (GM, KG, LCG) and kept stop-words
+        like "when", so "What happens to GM when the centre of gravity rises?"
+        quoted a sentence containing the word "when" from an unrelated section.
+        """
+        import re as _re
+
+        from app.schemas.answer import ClaimDraft, ClaimType
+        from app.services.answering.query_processor import extract_terms
+
+        m = _re.search(r"<AVAILABLE_EVIDENCE_IDS>\s*([^<]+?)\s*</AVAILABLE_EVIDENCE_IDS>", prompt, _re.S)
+        ids = [i.strip() for i in m.group(1).split(",") if i.strip()] if m else []
+        ev = _re.search(r"<EVIDENCE>([\s\S]*?)</EVIDENCE>", prompt)
+        claims: list[ClaimDraft] = []
+        if ev:
+            qmatch = _re.search(r"<USER_QUESTION>([\s\S]*?)</USER_QUESTION>", prompt)
+            question = qmatch.group(1) if qmatch else ""
+            terms = extract_terms(question)
+            for block in _re.finditer(r"\[(ev_\d+)\]([^\n]*)\n([\s\S]*?)(?=\n\[ev_|\Z)", ev.group(1)):
+                eid, _title, body = block.group(1), block.group(2), block.group(3)
+                if eid not in ids:
+                    continue
+                best: tuple[int, int, str] | None = None
+                for idx, sent in enumerate(_re.split(r"(?<=[.!?])\s+", body.strip())):
+                    s = sent.strip()
+                    if len(s) < 20:
+                        continue
+                    low = s.lower()
+                    hits = sum(1 for t in terms if t and t in low)
+                    if hits == 0:
+                        continue
+                    # Most question-term hits first; original order breaks ties.
+                    candidate = (-hits, idx, s)
+                    if best is None or candidate < best:
+                        best = candidate
+                if best is not None:
+                    claims.append(ClaimDraft(text=best[2], claim_type=ClaimType.FACT,
+                                             citation_evidence_ids=[eid]))
+                if len(claims) >= 3:
+                    break
+        if not claims:
+            return schema(answer_text="", claims=[], abstain=True,  # type: ignore[call-arg]
+                          abstention_reason="[DEV MOCK] No evidence sentence matched the question.")
+        return schema(  # type: ignore[call-arg]
+            answer_text=" ".join(c.text for c in claims),
+            claims=claims,
+            abstain=False,
+            abstention_reason="",
         )
 
 

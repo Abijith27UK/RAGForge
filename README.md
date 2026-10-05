@@ -453,21 +453,41 @@ be traced back to the exact index that produced it.
 
 ## 8. Retrieval
 
-The current retrieval system uses dense vector similarity search.
+Retrieval is a pluggable layer with four strategies behind one interface. The
+strategy is selected by name (registry), never hard-coded at the call site.
 
 ```text
 User Query
     ↓
-Query Embedding
+Candidate retrieval      dense (Qdrant vectors)   +   lexical (BM25 over indexed chunks)
     ↓
-Vector Similarity Search
+Normalization            min-max (default) or rank, per candidate pool
     ↓
-Top-K Chunks
+Fusion                   weighted (dense 0.65 / bm25 0.35, configurable) or RRF
     ↓
-Metadata + Provenance
+Diversification          optional: per-document cap, or MMR
+    ↓
+Reranking                optional cross-encoder (honest fallback when unavailable)
+    ↓
+Top-K chunks + provenance + score breakdown
 ```
 
+| strategy | what runs | needs embeddings |
+|---|---|---|
+| `dense` | Qdrant vector similarity (the V1–V5 baseline, unchanged) | yes |
+| `bm25` | real BM25 (`k1=1.2`, `b=0.75`, configurable) over SQLite chunks; loads no embedding model | no |
+| `hybrid` | dense + BM25, normalized and fused (weighted or RRF) | yes |
+| `hybrid_reranked` | hybrid + cross-encoder rerank | yes |
+
+Every result reports how it was selected: raw and normalized dense/lexical scores,
+the fused score and each source's contribution, the pipeline stages it survived,
+and a deterministic `why` sentence. Each request is recorded as a retrieval run
+(strategy, parameters, applied weights, corpus version, measured stage timings) and
+returns a `retrieval_run_id`.
+
 The retrieved context can then be supplied to an external LLM-based RAG application.
+
+Details and honest limitations: [docs/retrieval-architecture.md](docs/retrieval-architecture.md).
 
 ---
 
@@ -922,15 +942,138 @@ RAGForge/
 * `sentence-transformers/all-MiniLM-L6-v2`
 * `python-pptx` / `python-docx` / `pypdf` / BeautifulSoup for document parsing
 
+### Implemented (V6 retrieval layer)
+
+* BM25 retrieval (real term weighting, persisted index, exact staleness detection)
+* Hybrid retrieval (dense + BM25) with weighted fusion **and** Reciprocal Rank Fusion
+* Optional cross-encoder reranking with an honest `unavailable_fallback` status
+* Optional diversification (per-document cap, MMR)
+* Per-KB retrieval configuration + retrieval run records (observability)
+
+### Implemented (V7 grounded answer engine)
+
+* Deterministic query processing (heuristic-labelled query plans; original question preserved)
+* Evidence assembly with full provenance and auditable deduplication
+* Multi-signal evidence gate: `ANSWER / PARTIAL_ANSWER / ABSTAIN / ASK_CLARIFICATION`
+  (categorical confidence only — never a fabricated percentage)
+* Provider-agnostic grounded generation (OpenAI-compatible, deterministic mock for tests)
+* Claim → Evidence → Source citation chain with deterministic citation validation
+* First-class abstention: "I don't have enough evidence" beats a plausible guess
+* Answer trace: every stage inspectable (`GET /answer-traces/{id}`)
+* Prompt-injection defense (evidence wrapped as untrusted data; marker scan)
+* Answer UI with the "How was this answer produced?" panel
+
+### Implemented (V7.2 grounded knowledge assistant)
+
+* `POST /chat` — grounded chat that **never** hides the retrieval process:
+  answer, citations, grounding, evidence, `query_trace`, warnings all in one response
+* Five explicit grounding states: `ANSWERED`, `PARTIALLY_SUPPORTED`,
+  `INSUFFICIENT_EVIDENCE`, `CONFLICTING_EVIDENCE`, `NO_RELEVANT_EVIDENCE` —
+  each with machine-readable reasons, never a blended confidence score
+* `QueryTrace` proving what was done to your question (rewrites, decomposition,
+  expansions, processor version, measured timing) — and provably *nothing*
+  when the question passed through unchanged
+* Full citation provenance: `source_title`, `source_type`, `page_number`,
+  `slide_number`, `section_path`, `content_hash` (never fabricated — a missing
+  page renders as "not recorded")
+* Minimal conversation memory for reference resolution ("What about the previous
+  case?") that is **never** promoted to knowledge, and never crosses knowledge
+  bases
+* `AnswerRun` observability: measured latencies, grounding reasons, selected
+  evidence ids and every version string for reproducible, auditable answers
+* No silent fallback: a degraded generator is disclosed on the answer itself
+* Three-pane grounded chat UI (corpus / conversation / evidence) where clicking a
+  citation opens the exact supporting chunk
+
+See [docs/grounding-and-citations.md](docs/grounding-and-citations.md) and
+[docs/chat-architecture.md](docs/chat-architecture.md).
+
+### Implemented (V8 answer-quality evaluation)
+
+* `benchmarks/answer-quality-automobile-v1.json` — an answer benchmark whose
+  ground truth is **evidence-based, not answer-based**. 28 questions inherit the
+  frozen retrieval benchmark's human-selected chunks; `expected_answer` and
+  `key_points` are deliberately **empty** because no human wrote them
+* 13 answer-quality metrics, each reported as a `Measured` value **or** an
+  explicit reason it could not be measured — UNKNOWN is never rendered as `0`
+* **`correctness` and `key_point_recall` are UNKNOWN for all 28 questions.**
+  The frozen benchmark has no reference answers, and scoring against retrieved
+  text would re-measure retrieval while calling it answer quality
+* Claim-level citation audit: every claim is checked against the evidence it
+  actually cites, with polarity/negation conflict detection
+* Retrieval misses are scored **separately** from citation quality, so a
+  retrieval failure is never blamed on the answerer
+* Immutable run records recording every producer (generator, model, mock flag,
+  prompt/answerer/evaluator versions, entailment provider) and the exact
+  question subset; runs over different subsets **cannot** be compared
+* Answer Quality UI: provenance, measured-vs-UNKNOWN grid, and per-question
+  failure cards with the full claim audit
+
+Measured on the real 28-question corpus (dense, mock generator): `pass_rate`
+0.821, `citation_recall` 0.821, `retrieval_hit_rate` 0.964,
+`abstention_accuracy` 1.000. Correctness UNKNOWN. This is a measurement
+apparatus, **not** a claim that answer quality is solved.
+
+See [docs/answer-evaluation.md](docs/answer-evaluation.md),
+[docs/answer-benchmark-design.md](docs/answer-benchmark-design.md) and
+[docs/v8-continuation-checkpoint.md](docs/v8-continuation-checkpoint.md).
+
+### Extended (V8 continuation — answer evaluation & reliability)
+
+* **Answer relevance is now measured**: IDF-weighted question-term coverage
+  (plain coverage was *measured to be inverted* on known off-domain answers
+  and is kept only as a labelled fallback). Abstentions are exempt; the
+  threshold's thin margin is documented, not oversold
+* **Claim-level five-state verdicts** (`SUPPORTED` / `PARTIALLY_SUPPORTED` /
+  `UNSUPPORTED` / `CONTRADICTED` / `UNVERIFIABLE`) with supported/partial/
+  unsupported ratios over ALL claims
+* **Fabrication is measured, not assumed**: `fabricated_citation_rate` and
+  `unsupported_citation_rate` (judged citations only)
+* **Completeness from human labels** when they exist (`key_point_recall` /
+  `expected_information_coverage`, `reference_answer_similarity`);
+  `correctness` stays UNKNOWN until a human reviews or an explicitly
+  model-based judge scores it
+* **Human review workflow**: append-only, attributed `answer_reviews` with
+  closed verdict/label vocabularies; a derivation pass turns reviews into a
+  NEW run's `correctness` without mutating anything
+* **Evaluator abstraction**: deterministic (default) / human / LLM — each
+  kind must be requested explicitly, LLM-as-judge stores model + prompt
+  version + raw output and is never ground truth
+* **Benchmark lifecycle** `draft → approved → frozen`; `official: true` runs
+  are refused unless the benchmark is FROZEN (a new domain never gets
+  implicit ground truth)
+* **Comparability verdicts**: `COMPARABLE` (identical subsets),
+  `INCONCLUSIVE` (intersection only), `NOT_COMPARABLE` (zero overlap or
+  changed content)
+* **Reliability dashboard** (`/knowledge-bases/[id]/reliability`): strategies
+  compared across SEPARATE dimensions — deliberately **no combined score**
+* Experiment: [`docs/answer-evaluation-v1.md`](docs/answer-evaluation-v1.md) —
+  dense/bm25/hybrid on 28 questions (hybrid best: `pass_rate` 0.893,
+  `hallucination_rate` 0.107; all comparisons COMPARABLE; Qdrant 14→14;
+  non-official because the source benchmark is `draft`)
+
+Full metric definitions and limits:
+[docs/answer-evaluation-architecture.md](docs/answer-evaluation-architecture.md).
+
 ### Planned / Experimental
 
-* TurboVec
-* BM25
-* Hybrid Retrieval
-* Reranking
+* **Human-authored reference answers** for a question subset (plus genuinely
+  unanswerable questions) — the only thing blocking `correctness` from being
+  measured rather than UNKNOWN. **This is the recommended next phase.**
+* Fixing the extractive mock generator's rank truncation: it walks evidence in
+  rank order with a 5-claim budget, making evidence ranked 4th+ structurally
+  uncitable (measured: the required chunk was retrieved at rank 5 and never
+  cited in 4 of 5 real failures)
+* Model-based (LLM) entailment judge — `LLMCitationEntailment` exists and
+  refuses to run without a provider, but is not the default
+* Benchmark authoring UI so a non-Automobile domain can acquire real ground truth
+* Query decomposition (multi-part questions are currently retrieved as one query,
+  and the trace says so)
+* Retrieval Lab V2 parameter controls, strategy-comparison experiment runner
+* TurboVec (optional experimental vector backend)
 * Domain-Aware Chunking
 * Automated RAG Optimization
-* MCP
+* MCP (deliberately not implemented yet)
 
 ---
 
@@ -1142,9 +1285,11 @@ npm run dev
 **Interface**
 
 * Next.js dashboard: guided Create KB wizard, KB overview, Document Library,
-  Sources (user-provided vs discovered), Processing, Chunks, Retrieval Lab, Evaluation, Experiments
+  Sources (user-provided vs discovered), Processing, Chunks, Retrieval Lab,
+  Answer (grounded answers + "How was this answer produced?" trace),
+  Grounded Chat (three-pane: corpus / conversation / evidence), Evaluation, Experiments
 
-*Verification: 177 backend tests, `npm run typecheck` clean, `npm run build` clean.*
+*Verification: 511 backend tests, `npx tsc --noEmit` clean, `npm run build` clean (16 routes).*
 
 ## In Development / Planned
 
@@ -1153,11 +1298,11 @@ npm run dev
 * OCR for scanned PDFs
 * CSV / XLSX ingestion (the parser registry already accepts them)
 * Domain-aware chunking
-* BM25 → hybrid → reranking (the `Retriever` registry is the extension point; nothing is implemented)
+* Answer-level evaluation + answer benchmark (retrieval answering is implemented; answer quality is unmeasured until ground truth exists)
 * TurboVec vector-index backend (the factory is the extension point; Qdrant stays the default)
 * Automated RAG optimization loop
 * MCP integration
-* Optional LLM answering layer with citations — deliberately later: retrieval quality and provenance come first
+* Retrieval Lab V2 parameter controls; streaming answers; conversation history
 
 ---
 
