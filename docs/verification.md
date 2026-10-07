@@ -881,3 +881,180 @@ Exercised the review workflow through the real UI against the real API
   `kb_f278c283c748`; no corpus, chunk, or vector rows touched.
 * Frontend: `npx tsc --noEmit` clean, `npm run build` clean, both pages
   browser-verified on :3000 against the restarted backend on :8013.
+
+---
+
+## V9 — Evaluation → optimization loop
+
+Date: 2026-10-07 · Branch `Dev_1_midterm` · base `67c4a00`
+Python 3.14.7 (`backend/.venv`), Windows, Git Bash.
+
+### Step 0 — restore the V8 baseline (this had to come first)
+
+A prior attempt had **overwritten** seven V8 modules instead of extending them,
+deleting V8's public API while ~180 tests still called it. The package did not
+import:
+
+```
+$ python -c "import app.services.answer_eval"
+NameError: name 'EvaluationService' is not defined
+```
+
+| Check | Command | Result |
+|---|---|---|
+| Damage | `git diff --stat HEAD` | `7 files changed, 846 insertions(+), 2327 deletions(-)` |
+| Repair | `git checkout -- backend/app/services/answer_eval/{__init__,benchmark,evaluator,metrics,review,run,service}.py` | restored byte-for-byte from `67c4a00` |
+| Import | `python -c "import app.services.answer_eval"` | **OK** |
+| Baseline suite (Qdrant down) | `pytest -q` | **692 passed, 1 skipped** |
+| Baseline suite (Qdrant up) | `pytest -q` | **693 passed** (the skip is the live-Qdrant integration test) |
+
+### Step 1 — V9 additions
+
+One V8 file changed, minimally and additively:
+`benchmark.py` gained `"pending"` in the `review_status` vocabulary and the new
+`require_reviewed_benchmark` gate. All 16 V8 benchmark-lifecycle tests re-run and
+pass.
+
+| Check | Command | Result |
+|---|---|---|
+| Tests collected | `pytest --collect-only -q` | **978** (693 V8 + **285 V9**) |
+| **Full backend suite (final)** | `pytest -q` | **978 passed, 0 failed, 0 skipped** in 286s (`EXIT=0`) |
+| Full backend suite (interim, before `test_v9_gate.py`) | `pytest -q` | 957 passed, 0 failed |
+| V9 suite × 9 files | `pytest tests/test_v9_*.py tests/test_failure_taxonomy.py tests/test_benchmark_review_workflow.py tests/test_mock_generator_study.py -q` | **285 passed** |
+| Statistics vs scipy oracle | grid over 8 df × 10 t, and 15 × 15 sign-test grid | t: max abs diff **2.27e-14**; sign: **1.11e-16** |
+| Frontend typecheck | `npx tsc --noEmit` | **clean** (exit 0) |
+| Frontend build | `npm run build` | **clean** (`BUILD_EXIT=0`, 7/7 static pages, all routes built) |
+
+### Step 2 — live and historical integrity
+
+| Check | Result |
+|---|---|
+| Qdrant collections | **14** before → **14** after |
+| Qdrant total points | **8823** |
+| Protected KB `kb_f278c283c748` | **812** → **812** points (untouched) |
+| Qdrant calls made by V9 code | `get_collections()` + `count(exact=True)` only — **no write path exists in `experiment.py`** |
+| Frozen artifacts modified | **0** — verified by SHA-256 checksum comparison |
+| DB state | 15 answer-evaluation runs, 482 answers, 1 review, unchanged |
+
+Known pre-existing issue, recorded not hidden: Qdrant logged a startup panic for
+collection `kb_kb_3217fd29bc60` (`Wal error: Can't init WAL: Kind(WouldBlock)`).
+That collection reports **0 points** and predates this work; V9 did not attempt to
+repair it.
+
+### Step 3 — what was NOT verified, stated plainly
+
+* **Phase 13 (real experiment) was not run.** Its preconditions are unmet: the
+  benchmark is DRAFT with 28 unreviewed questions and no reference answers, so no
+  trustworthy candidate configuration can be justified from measured data.
+* **Phase 10 (UI) was not built.** The V9 analysis layer has no HTTP surface and
+  no page.
+* **The off-domain gate is not measurable** at n_off = 1, against a floor of 5
+  per side.
+* `correctness` / `key_point_recall` remain **UNKNOWN** for all 28 questions.
+
+No test count, metric, or improvement in this section is estimated. Everything
+listed was produced by the command beside it.
+
+## V10 — Human-reviewed benchmark ground truth
+
+Date: 2026-10-08 · Branch `Dev_1_midterm` · Python 3.14.7 (`backend/.venv`),
+Windows, Git Bash. Design: [`v10-benchmark-review.md`](./v10-benchmark-review.md).
+
+### Tests and builds
+
+| Check | Command | Result |
+|---|---|---|
+| **Full backend suite** | `pytest -q -p no:randomly` | **1062 passed, 0 failed, 0 skipped** in 276s (`EXIT=0`); baseline at V9 was 978 → **+84 V10** |
+| V10 ground-truth unit tests | `pytest tests/test_v10_ground_truth.py -q` | **48 passed** |
+| V10 correctness unlock | `pytest tests/test_v10_correctness_unlock.py -q` | **12 passed** (incl. V8 regression: deterministic evaluator still keeps correctness UNKNOWN with a reference answer) |
+| V10 review API | `pytest tests/test_v10_review_api.py -q` | **24 passed** (append-only semantics, 404s, 409 gate reasons, freeze/verify) |
+| V9 regression subset (re-run) | `pytest tests/test_v9_*.py tests/test_benchmark_review_workflow.py -q` | **226 passed** |
+| Frontend typecheck | `npx tsc --noEmit` | **clean** (exit 0) |
+| Frontend build | `npm run build` | **clean** — new route `/knowledge-bases/[id]/benchmark-review` built (7.26 kB) |
+
+### Live write-path smoke (real HTTP, server on :8013)
+
+Script: `backend/data/v10_smoke_writepath.py` (gitignored). It wrote a
+**scratch** benchmark (`backend/data/smoke-answer-benchmark-v1.json`) with two
+questions copied from the official artifact, then exercised the whole chain
+over HTTP against the real KB and real Qdrant corpus:
+
+```
+$ ./.venv/Scripts/python.exe data/v10_smoke_writepath.py
+...
+SMOKE PASSED: author -> review -> freeze -> verify -> reference eval OK;
+official benchmark untouched            (24/24 checks PASS)
+```
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Scratch review-packet: identity `draft` / `pending`, 2 questions | PASS |
+| 2 | Question detail returns REAL corpus evidence (`found: true`, 1 chunk each) | PASS |
+| 3 | POST ground-truth ×2 → 201, **zero corpus provenance problems** | PASS |
+| 4 | POST review ×2 → 201, `outcome=approved` | PASS |
+| 5 | Completeness: 2/2 approved; `key_point_coverage` flips `measured: true` | PASS |
+| 6 | POST freeze → version `abv_d7813b28a6fe` | PASS |
+| 7 | POST versions/verify → `intact: true, problems: []` | PASS |
+| 8 | POST run with `benchmark_version_id`, `evaluator: reference` → 200; `benchmark_lifecycle: frozen`; **`correctness = {value: 0.0, measured: true, sample_size: 2}`**, absent from `unknown_metrics` | PASS |
+| 9 | `evaluator: reference` against the DRAFT file → **refused 400** | PASS |
+| 10 | Official benchmark afterwards: **28/28 pending, 0 approved, 0 frozen versions** | PASS |
+
+The measured 0.0 is deliberate evidence, not a bug: the smoke labels are
+`[SMOKE] key point A…` — facts no real answer contains — so key-point coverage
+is honestly zero. The instrument scores rather than rubber-stamps.
+
+**Smoke cleanup.** The script's own rows were deleted with scoped SQL
+(2 annotations, 2 reviews, 1 version, 1 eval run, 2 answers, 2 retrieval runs,
+2 traces, all `smoke-*`/`v10-smoke-*`/window-matched). DB restored to baseline:
+**15 answer-evaluation runs, 482 answers**, 0 smoke rows anywhere, official
+review tables empty (0 annotations, 0 reviews).
+
+### Live UI (browser, :3000)
+
+The frontend had no `.env.local`, so every fetch failed (`ERR_CONNECTION_REFUSED`
+against the default `:8000`). Fixed locally: created `frontend/.env.local`
+(gitignored) with `NEXT_PUBLIC_BACKEND_URL=http://localhost:8013` and restarted
+`npm run dev` (log picks up `Environments: .env.local`).
+
+| Check | Result |
+|---|---|
+| Page `/knowledge-bases/kb_f278c283c748/benchmark-review` | renders with real data: `DRAFT` / `HUMAN REVIEW PENDING`, fingerprint `f72c30eb5c0c363a`, 28 questions, `0/28 reviewed · 0 approved` |
+| Question 1 evidence (CENTER) | real chunk `chk_d15901e67e35`, 866 chars, *Engine - Wikipedia*, section Introduction, hash `8624bd657c1e`, live URL, full passage text |
+| Navigation | `Next` → `QUESTION 2 OF 28 — AUTO-ENG-002`, evidence switches to `chk_c6fcd78d2a1b` |
+| Completeness panel | states 28 pending / 0 in_review / 0 approved / 0 rejected / 0 ambiguous / 0 insufficient; all four coverage rates **`UNKNOWN (0)`** — not 0% |
+| Gate | `GATE BLOCKED` with named reasons: `BLOCKED by 28 question(s) in state 'pending': auto-eng-001…` + `0 approved, below the policy minimum of 1` |
+| Review form | outcome select (5 outcomes), 6 dimension verdict grids, required dimensions labelled; Save/Record/Freeze buttons correctly disabled until author/reviewer identity present |
+| Console | clean after restart (only React DevTools info); the connection errors in the buffer predate the restart |
+| Layout | `grid gap-4 lg:grid-cols-3` with 3 panel children (3-column ≥1024px, stacked below); screenshot captured at narrow width |
+
+### Integrity
+
+| Check | Before | After |
+|---|---|---|
+| Qdrant collections | 14 | **14** |
+| Qdrant total points | 8822 | **8822** |
+| Protected `kb_kb_f278c283c748` | 812 | **812** |
+| `git diff HEAD -- benchmarks/` | empty | **empty** (exit 0, no untracked files) |
+| SHA-256 `answer-quality-automobile-v1.json` | `16db9dbd…f25` | **unchanged** |
+| DB answer-evaluation runs | 15 | **15** (after smoke cleanup) |
+| Official review rows | 0 annotations / 0 reviews | **0 / 0** |
+
+Known pre-existing issues recorded, not hidden: collection
+`kb_kb_3217fd29bc60` still reports 0 points (V9-era WAL panic, untouched);
+`kb_live_itest` reports 0 points (observed before V10, unchanged by it).
+
+### What was NOT verified, stated plainly
+
+* **The 28 official questions remain 0/28 reviewed.** V10 built the workflow;
+  no label was authored for the real benchmark, by design.
+* **`correctness` for the official benchmark is still UNKNOWN** — measured
+  unlock was demonstrated only on the scratch artifact and its rows were
+  removed afterwards.
+* **Phase 13 was not run** (preconditions still unmet until the human review
+  completes); **Phase 10 failure-analysis UI was not built**.
+* The browser screenshot compositing failed after a viewport resize in the
+  preview webview (app-side); the page itself was verified through the
+  accessibility tree, one successful screenshot, and live interaction.
+
+No test count, metric, or improvement in this section is estimated. Everything
+listed was produced by the command beside it.

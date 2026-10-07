@@ -1055,11 +1055,59 @@ See [docs/answer-evaluation.md](docs/answer-evaluation.md),
 Full metric definitions and limits:
 [docs/answer-evaluation-architecture.md](docs/answer-evaluation-architecture.md).
 
+### Implemented (V9 evaluation → optimization loop)
+
+The loop from measurement to a **justified, safe, recorded** configuration
+change. Full detail: [`docs/v9-evaluation-to-optimization.md`](./docs/v9-evaluation-to-optimization.md).
+
+| Item | Status |
+|---|---|
+| **Benchmark review workflow** — append-only per-question review across answerability, evidence sufficiency, reference answer, key points and **ambiguity**; `require_reviewed_benchmark` gate separate from the FROZEN gate | implemented (28 questions still **unreviewed**) |
+| **Failure taxonomy** — 11 closed labels (`NO_RELEVANT_RETRIEVAL`, `LOW_RETRIEVAL_RECALL`, `WRONG_CHUNK`, …) with evidence, reason and a **categorical** confidence. Falls through to `UNKNOWN` rather than guessing | implemented |
+| **Retrieval diagnostics** — ranked chunks with scores + provenance, first relevant rank, depth-independent recall, selection-vs-retrieval separation. Metrics are **UNKNOWN, never 0**, when the benchmark has no reference evidence | implemented |
+| **Recommendation engine** — deterministic rules with expected effect, risk and named thresholds. A corpus gap reports `CORPUS_OR_SOURCE_DEFICIENCY` and proposes **no** config change. Always `experiment_required=True`; never writes production config | implemented |
+| **Baseline vs candidate** — one row **per metric**, declared directions, protocol identity check, `IMPROVED`/`REGRESSED`/`UNCHANGED`/`UNKNOWN`, guardrail-aware accept/reject | implemented |
+| **Statistics** — exact sign test (primary) + Student's t via the incomplete beta, **stdlib-only**, verified against scipy to 1e-14. Always labelled **exploratory** at n=28 | implemented |
+| **Immutable experiment records** — deterministic ids, append-only store, real artifact checksums, vector-loss detection, scratch-KB isolation before anything runs | implemented |
+| **Off-domain gate study** — explicit score polarity (the first draft had it **inverted**), sample floor of 5 per side. Cannot be measured today: only **1** known off-domain answer exists | framework done, **measurement blocked** |
+| **Mock-generator study** — documents the 5-claim budget's rank truncation as a **limitation**, not a fix | implemented |
+| Real baseline-vs-candidate experiment | **NOT RUN** — needs reviewed ground truth first |
+| "Why did this answer fail?" UI | **NOT DONE** — backend only |
+
+Tests: **978 backend** (693 V8 baseline + **285 V9**), 0 failed. Frontend `tsc` + `npm run build` clean.
+Qdrant **14 collections → 14**, protected KB `kb_f278c283c748` **812 → 812** points. Frozen artifacts: **0 modified**.
+
+### Implemented (V10 human-reviewed benchmark ground truth)
+
+The workflow that turns the 28-question answer benchmark into a trustworthy,
+human-reviewed instrument — or, precisely, every mechanism a human needs to
+do that without the system ever pretending the work is done. Full detail:
+[`docs/v10-benchmark-review.md`](./docs/v10-benchmark-review.md).
+
+| Item | Status |
+|---|---|
+| **Ground-truth authoring** — append-only annotations with required author identity, reference answer, key points, acceptable elements, evidence chunks validated against the LIVE corpus (exists / belongs to KB / hash unchanged) | implemented |
+| **Per-question review** — named reviewer, required V9 dimensions (answerability, evidence sufficiency, reference answer, key points, ambiguity), outcomes `approved / in_review / rejected / ambiguous / insufficient_evidence`. Labels score **only after approval** | implemented |
+| **Question states** — `PENDING → IN_REVIEW → APPROVED`, plus `REJECTED` / `AMBIGUOUS` / `INSUFFICIENT_EVIDENCE`; ambiguous & insufficient are permitted **non-scoring** states, excluded with an explicit warning, never scored as 0 | implemented |
+| **Approval gate** — policy `v10-answer-benchmark-approval-v1`; a refused freeze returns the blocking questions by name, not a bare 409 | implemented |
+| **Freeze → immutable version** — in-DB `AnswerBenchmarkVersion` with benchmark + ground-truth + artifact fingerprints; `verify` detects any tampering; corrections become new versions | implemented |
+| **`reference` evaluator** (`reference-labels` v10.1, policy `reference-key-point-coverage-v1`) — measured correctness from reviewed key-point coverage; **refused with 400** unless the benchmark is approved/frozen; the V8 deterministic evaluator is untouched and still keeps correctness UNKNOWN | implemented |
+| **Benchmark Review UI** (`/knowledge-bases/[id]/benchmark-review`) — authoring / evidence / review panels, state dots, completeness with **UNKNOWN ≠ 0**, gate reasons, freeze + version verify | implemented |
+| Authoring + review of the **28 official questions** | **NOT DONE — human work, 0/28 reviewed** |
+| Real Phase-13 experiment on measured correctness | still blocked until the above is human-complete |
+
+Tests: **1062 backend** (978 V9 + **84 V10**), 0 failed. Frontend `tsc` + `npm run build` clean.
+Live smoke (author → review → freeze → verify → reference eval): **24/24 PASS** on a
+scratch benchmark; official benchmark verified **28/28 pending, 0 frozen versions**.
+Qdrant **14 → 14**, **8822 → 8822** points, protected KB **812 → 812**. Frozen artifacts: **0 modified**.
+
 ### Planned / Experimental
 
-* **Human-authored reference answers** for a question subset (plus genuinely
-  unanswerable questions) — the only thing blocking `correctness` from being
-  measured rather than UNKNOWN. **This is the recommended next phase.**
+* **Human-authored reference answers** for the 28 questions (plus genuinely
+  unanswerable questions) through the V10 Benchmark Review workflow — the only
+  thing blocking `correctness` from being measured rather than UNKNOWN. **This
+  is the recommended next phase; V10 built the workflow, the labels still have
+  to be written by a human.**
 * Fixing the extractive mock generator's rank truncation: it walks evidence in
   rank order with a 5-claim budget, making evidence ranked 4th+ structurally
   uncitable (measured: the required chunk was retrieved at rank 5 and never
@@ -1170,13 +1218,27 @@ Install dependencies:
 npm install
 ```
 
+Create the frontend environment file (points the UI at the backend; the
+frontend defaults to `http://localhost:8000` and will fail to fetch if your
+backend runs on another port):
+
+```bash
+copy .env.example .env.local
+```
+
+```text
+# frontend/.env.local
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+```
+
 Start the development server:
 
 ```bash
 npm run dev
 ```
 
-Open the local URL shown by Next.js.
+Open the local URL shown by Next.js. (`.env.local` is gitignored; `NEXT_PUBLIC_*`
+variables are inlined at startup, so restart `npm run dev` after changing one.)
 
 ---
 
@@ -1287,7 +1349,8 @@ npm run dev
 * Next.js dashboard: guided Create KB wizard, KB overview, Document Library,
   Sources (user-provided vs discovered), Processing, Chunks, Retrieval Lab,
   Answer (grounded answers + "How was this answer produced?" trace),
-  Grounded Chat (three-pane: corpus / conversation / evidence), Evaluation, Experiments
+  Grounded Chat (three-pane: corpus / conversation / evidence), Evaluation,
+  Benchmark Review (V10 human ground-truth authoring + approval gate), Experiments
 
 *Verification: 511 backend tests, `npx tsc --noEmit` clean, `npm run build` clean (16 routes).*
 

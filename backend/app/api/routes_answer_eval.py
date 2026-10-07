@@ -62,8 +62,16 @@ class RunAnswerEvaluationRequest(BaseModel):
         description=(
             "Repository-relative path to a versioned answer-benchmark artifact, "
             "e.g. 'benchmarks/answer-quality-automobile-v1.json'. Paths that "
-            "escape the repository are rejected."
+            "escape the repository are rejected. Ignored when "
+            "`benchmark_version_id` is set."
         ),
+    )
+    benchmark_version_id: str = Field(
+        default="",
+        description="V10: score an IMMUTABLE frozen answer-benchmark version "
+        "(created by the benchmark review workflow) instead of a file. The "
+        "version's approval gate, approval policy and label fingerprints are "
+        "verified before the run starts.",
     )
     strategy: str = Field(default="", description="dense | bm25 | hybrid | hybrid_reranked")
     retrieval_params: RetrievalParams | None = None
@@ -79,10 +87,13 @@ class RunAnswerEvaluationRequest(BaseModel):
     evaluator: str = Field(
         default="deterministic",
         description="Which answer evaluator to use: 'deterministic' (offline "
-        "default), 'human' (correctness from stored human reviews; fresh "
-        "answers have none and stay UNKNOWN), 'llm' (LLM-as-judge; refused "
-        "with 400 when no provider is configured — never substituted "
-        "silently).",
+        "default; correctness stays UNKNOWN), 'reference' (V10: correctness "
+        "from a human-reviewed reference answer / key points under the "
+        "published `reference-key-point-coverage-v1` policy; requires an "
+        "approved or frozen benchmark), 'human' (correctness from stored human "
+        "answer reviews; fresh answers have none and stay UNKNOWN), 'llm' "
+        "(LLM-as-judge; refused with 400 when no provider is configured — "
+        "never substituted silently).",
     )
     persist: bool = Field(
         default=True,
@@ -197,6 +208,10 @@ def _build_evaluator(kind: str, repo: Repository, kb_id: str):
     key = (kind or "deterministic").strip().lower()
     if key in ("", "deterministic", "heuristic", "offline"):
         return None  # service default
+    if key in ("reference", "reference-labels", "reviewed-reference"):
+        from app.services.answer_eval.evaluator import ReferenceAnswerEvaluator
+
+        return ReferenceAnswerEvaluator()
     if key in ("human", "human-reviews"):
         from app.services.answer_eval.evaluator import HumanAnswerEvaluator
 
@@ -223,7 +238,7 @@ def _build_evaluator(kind: str, repo: Repository, kb_id: str):
         return LLMAnswerEvaluator(provider)
     raise HTTPException(
         400,
-        f"unknown evaluator {kind!r}; supported: deterministic, human, llm",
+        f"unknown evaluator {kind!r}; supported: deterministic, reference, human, llm",
     )
 
 
@@ -237,6 +252,8 @@ def _summary(run: AnswerEvaluationRun) -> dict:
         "benchmark_version": run.benchmark_version,
         "benchmark_fingerprint": run.benchmark_fingerprint,
         "benchmark_lifecycle": run.benchmark_lifecycle,
+        "benchmark_version_id": run.benchmark_version_id,
+        "benchmark_artifact_fingerprint": run.benchmark_artifact_fingerprint,
         "official": run.official,
         "strategy": run.strategy,
         "retrieval_params": run.retrieval_params,
@@ -270,10 +287,64 @@ def create_run(
     if not repo.get_kb(kb_id):
         raise HTTPException(404, "Knowledge base not found")
 
-    path = _resolve_benchmark_path(payload.benchmark_path)
+    # -- V10: an immutable frozen version, or a working benchmark file ------
+    frozen_version = None
+    frozen_benchmark = None
+    if payload.benchmark_version_id:
+        from app.services.answer_eval.ground_truth import (
+            verify_answer_benchmark_version,
+        )
+
+        frozen_version = repo.get_answer_benchmark_version(
+            kb_id, payload.benchmark_version_id
+        )
+        if frozen_version is None:
+            raise HTTPException(
+                404,
+                "Frozen benchmark version not found for this knowledge base",
+            )
+        problems = verify_answer_benchmark_version(frozen_version)
+        if problems:
+            raise HTTPException(
+                409,
+                "frozen benchmark version failed its integrity check and cannot "
+                "be used: " + "; ".join(problems),
+            )
+        frozen_benchmark = frozen_version.benchmark
+        path = f"db:answer-benchmark-versions/{frozen_version.version_id}"
+    else:
+        path = _resolve_benchmark_path(payload.benchmark_path)
 
     evaluator = _build_evaluator(payload.evaluator, repo, kb_id)
     service = AnswerEvaluationService(repo, get_settings(), evaluator=evaluator) if evaluator else _service(repo)
+
+    if getattr(evaluator, "name", "") == "reference-labels":
+        # The reference evaluator measures correctness FROM human-reviewed
+        # labels. It is therefore refused unless the instrument has actually
+        # been through the review workflow, so a draft benchmark's labels can
+        # never be scored as if a human had approved them.
+        try:
+            check_benchmark = frozen_benchmark or service.load_benchmark(path)
+        except AnswerEvaluationError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        if check_benchmark.lifecycle.value not in ("approved", "frozen"):
+            raise HTTPException(
+                400,
+                f"the reference evaluator requires a human-reviewed benchmark: "
+                f"lifecycle is {check_benchmark.lifecycle.value!r}. Complete the "
+                f"V10 review workflow (author reference answers, review, freeze) "
+                f"or use evaluator='deterministic'.",
+            )
+        if not any(
+            q.key_points or (q.expected_answer or "").strip()
+            for q in check_benchmark.questions
+        ):
+            raise HTTPException(
+                400,
+                "the reference evaluator requires human-reviewed reference "
+                "answers or key points; this benchmark carries none.",
+            )
+
     config = AnswerEvaluationConfig(
         benchmark_path=path,
         strategy=payload.strategy,
@@ -282,9 +353,13 @@ def create_run(
         question_ids=payload.question_ids,
         limit=payload.limit,
         official=payload.official,
+        benchmark_version_id=(frozen_version.version_id if frozen_version else ""),
+        benchmark_artifact_fingerprint=(
+            frozen_version.artifact_fingerprint if frozen_version else ""
+        ),
     )
     try:
-        run = service.run(benchmark_path=path, config=config)
+        run = service.run(benchmark_path=path, config=config, benchmark=frozen_benchmark)
     except BenchmarkCorpusMismatch as exc:
         raise HTTPException(409, str(exc)) from exc
     except AnswerEvaluationError as exc:

@@ -1011,6 +1011,122 @@ class LLMAnswerEvaluator(AnswerEvaluator):
         return result
 
 
+class ReferenceAnswerEvaluator(DeterministicAnswerEvaluator):
+    """Measures `correctness` from human-reviewed reference labels (V10 STEP 9).
+
+    V8 deliberately kept `correctness` UNKNOWN even when a reference answer
+    existed, because lexical similarity to a reference is not a correctness
+    judgement. That refusal stays in force for the DEFAULT evaluator, and the
+    V8 tests that pin it are unchanged.
+
+    This evaluator is the explicit instrument that unlocks correctness once
+    the benchmark has been through the V10 authoring + review + freeze
+    workflow, under a published policy:
+
+        reference-key-point-coverage-v1
+
+    `correctness` = fraction of the question's HUMAN-REVIEWED key points the
+    answer expresses (the same >= 60% content-term coverage rule used for
+    `key_point_recall`), or — when a reviewed reference answer exists but no
+    key points were authored — the reference-answer term coverage.
+
+    It is a *completeness against human-approved content* measure. It is NOT
+    semantic truth and NOT a substitute for answer reviews or a model-based
+    judge; every value it produces says so in its `reason`. Questions without
+    reviewed labels stay UNKNOWN, so a partially reviewed benchmark cannot
+    silently score the unreviewed remainder.
+    """
+
+    name = "reference-labels"
+    version = "v10.1"
+
+    #: Published policy name. Recorded on every correctness value so a number
+    #: can never be read without knowing which rule produced it.
+    CORRECTNESS_POLICY = "reference-key-point-coverage-v1"
+
+    def evaluate(
+        self,
+        question: AnswerBenchmarkQuestion,
+        answer: Answer,
+        evidence: list[Evidence],
+    ) -> AnswerQualityResult:
+        result = super().evaluate(question, answer, evidence)
+        result.correctness = self._correctness_from_labels(question, answer, result)
+        return result
+
+    def _correctness_from_labels(
+        self,
+        question: AnswerBenchmarkQuestion,
+        answer: Answer,
+        result: AnswerQualityResult,
+    ) -> Measured:
+        policy = self.CORRECTNESS_POLICY
+        if (
+            question.abstention_required
+            or question.answerability is Answerability.UNANSWERABLE
+        ):
+            return Measured.unknown(
+                f"{policy}: correctness is not scored for a question whose correct "
+                f"behaviour is abstention; abstention_accuracy covers it"
+            )
+        key_points = [p for p in question.key_points if p.strip()]
+        reference = (question.expected_answer or "").strip()
+        if not key_points and not reference:
+            return Measured.unknown(
+                f"{policy}: this question carries no human-reviewed reference "
+                f"answer or key points (it has not been through the V10 review "
+                f"workflow), so correctness cannot be measured"
+            )
+        produced = (
+            bool(answer.text.strip())
+            and answer.status not in self._NON_ANSWER_STATUSES
+        )
+        if not produced:
+            return Measured.of(
+                0.0,
+                reason=(
+                    f"{policy}: human-reviewed ground truth exists for this "
+                    f"question but the system produced no answer (status "
+                    f"{answer.status.value}); scored 0.0 by policy"
+                ),
+                sample_size=1,
+            )
+        if key_points:
+            coverage = result.key_point_recall
+            if not coverage.measured or coverage.value is None:
+                return Measured.unknown(
+                    f"{policy}: key-point coverage was not measurable "
+                    f"({coverage.reason})"
+                )
+            return Measured.of(
+                coverage.value,
+                reason=(
+                    f"{policy}: {coverage.value:.3f} of {len(key_points)} "
+                    f"human-reviewed key point(s) expressed by the answer "
+                    f"(content-term coverage >= {KEY_POINT_COVERAGE_THRESHOLD:.0%}). "
+                    f"This is completeness against human-approved content, NOT "
+                    f"semantic truth."
+                ),
+                sample_size=len(key_points),
+            )
+        similarity = result.reference_answer_similarity
+        if not similarity.measured or similarity.value is None:
+            return Measured.unknown(
+                f"{policy}: reference-answer similarity was not measurable "
+                f"({similarity.reason})"
+            )
+        return Measured.of(
+            similarity.value,
+            reason=(
+                f"{policy}: {similarity.value:.3f} of the human-reviewed "
+                f"reference answer's content terms are present (no key points "
+                f"were authored for this question). Lexical completeness against "
+                f"human-approved content, NOT semantic truth."
+            ),
+            sample_size=similarity.sample_size,
+        )
+
+
 def create_answer_evaluator(
     kind: str = "deterministic",
     entailment_kind: str = "heuristic",
@@ -1044,8 +1160,16 @@ def create_answer_evaluator(
             prompt_version=prompt_version,
             base=DeterministicAnswerEvaluator(weights=weights),
         )
+    if key in ("reference", "reference-labels", "reviewed-reference"):
+        from app.services.answer_eval.entailment import create_entailment_evaluator
+
+        return ReferenceAnswerEvaluator(
+            entailment=create_entailment_evaluator(entailment_kind, entailment_provider),
+            weights=weights,
+        )
     raise ValueError(
         f"Unknown answer evaluator {kind!r}. Supported: 'deterministic', "
+        f"'reference' (correctness from a human-reviewed benchmark), "
         f"'human' (requires reviews_provider), 'llm' (requires llm_provider). "
         f"A model-based judge must be added explicitly, never substituted silently."
     )
@@ -1058,6 +1182,7 @@ __all__ = [
     "GroundingState",
     "HumanAnswerEvaluator",
     "LLMAnswerEvaluator",
+    "ReferenceAnswerEvaluator",
     "apply_reviews",
     "create_answer_evaluator",
 ]

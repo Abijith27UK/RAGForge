@@ -1545,8 +1545,18 @@ export const answerEvaluationApi = {
       persist?: boolean;
       /** OFFICIAL result; refused 400 unless the benchmark lifecycle is frozen. */
       official?: boolean;
-      /** deterministic (default) | human | llm */
+      /**
+       * deterministic (default) | reference | human | llm.
+       * 'reference' measures correctness from a HUMAN-REVIEWED benchmark
+       * (requires lifecycle approved/frozen); 'deterministic' keeps
+       * correctness UNKNOWN by design.
+       */
       evaluator?: string;
+      /**
+       * V10: score an immutable frozen benchmark version (created by the
+       * benchmark review workflow) instead of a file path.
+       */
+      benchmark_version_id?: string;
     }
   ) =>
     request<AnswerEvaluationRun>(`/api/knowledge-bases/${kbId}/answer-evaluation/runs`, {
@@ -1623,4 +1633,351 @@ export const answerEvaluationApi = {
   /** One run by its global id, regardless of knowledge base. */
   getById: (runId: string) =>
     request<AnswerEvaluationRun>(`/api/answer-evaluation-runs/${runId}`),
+};
+
+/* ------------------------------------------------------------------ */
+/* Benchmark review — human ground truth (V10)                          */
+/*                                                                      */
+/* A question is PENDING / IN_REVIEW / APPROVED / REJECTED / AMBIGUOUS  */
+/* / INSUFFICIENT_EVIDENCE. Only APPROVED questions carry scorable      */
+/* ground truth; ambiguous and insufficient-evidence questions are      */
+/* excluded LOUDLY by the published approval policy, never silently.    */
+/* Coverage rates with no denominator come back as Measured.unknown.    */
+/* ------------------------------------------------------------------ */
+
+export const QUESTION_STATES = [
+  "pending",
+  "in_review",
+  "approved",
+  "rejected",
+  "ambiguous",
+  "insufficient_evidence",
+] as const;
+export type QuestionState = (typeof QUESTION_STATES)[number];
+
+/** Review dimensions a reviewer must assess (mirrors the backend enum). */
+export const REVIEW_DIMENSIONS = [
+  "answerability",
+  "evidence_sufficiency",
+  "reference_answer",
+  "key_points",
+  "acceptable_elements",
+  "ambiguity",
+] as const;
+export type ReviewDimension = (typeof REVIEW_DIMENSIONS)[number];
+
+/** Dimensions the approval gate REQUIRES to be assessed affirmatively. */
+export const REQUIRED_REVIEW_DIMENSIONS: ReviewDimension[] = [
+  "answerability",
+  "evidence_sufficiency",
+  "reference_answer",
+  "key_points",
+  "ambiguity",
+];
+
+export const DIMENSION_VERDICTS = [
+  "ok",
+  "ok_with_note",
+  "needs_revision",
+  "wrong",
+  "ambiguous",
+  "unknown",
+] as const;
+export type DimensionVerdict = (typeof DIMENSION_VERDICTS)[number];
+
+export interface BenchmarkIdentity {
+  name: string;
+  version: number;
+  kb_id: string;
+  kb_name: string;
+  path: string;
+  fingerprint: string;
+  lifecycle: "draft" | "approved" | "frozen";
+  human_review: "human_reviewed" | "pending";
+  derived_from: string;
+  question_count: number;
+  authorship: Record<string, unknown>;
+}
+
+export interface ReviewCompleteness {
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  total: number;
+  pending: number;
+  in_review: number;
+  approved: number;
+  rejected: number;
+  ambiguous: number;
+  insufficient_evidence: number;
+  authored_reference_answer_count: number;
+  authored_key_point_count: number;
+  authored_acceptable_element_count: number;
+  provenance_valid_count: number;
+  provenance_invalid_count: number;
+  review_count: number;
+  reviewers: string[];
+  /** Rates are Measured: no denominator means UNKNOWN, never 0. */
+  reference_answer_coverage: Measured;
+  key_point_coverage: Measured;
+  acceptable_element_coverage: Measured;
+  provenance_coverage: Measured;
+  unknown_metrics: string[];
+}
+
+export interface ApprovalPolicy {
+  policy_version: string;
+  scoring_states: string[];
+  permitted_non_scoring_states: string[];
+  blocking_states: string[];
+  minimum_approved_questions: number;
+  require_key_points: boolean;
+  require_reference_answer: boolean;
+  require_provenance_valid: boolean;
+}
+
+export interface ApprovalGateResult {
+  approved: boolean;
+  policy: ApprovalPolicy;
+  evaluated_at: string;
+  counts: Record<string, number>;
+  approved_question_ids: string[];
+  excluded_question_ids: string[];
+  blocking: Record<string, string[]>;
+  problems: Record<string, string[]>;
+  reasons: string[];
+}
+
+export interface EvidenceItem {
+  chunk_id: string;
+  required: boolean;
+  found: boolean;
+  document_id: string | null;
+  text: string;
+  source_title: string | null;
+  label_source_title: string | null;
+  source_url: string | null;
+  source_type: string | null;
+  publisher: string | null;
+  document_title: string | null;
+  section: string | null;
+  section_path: string | null;
+  page: number | null;
+  slide: number | null;
+  slide_title: string | null;
+  content_hash: string;
+  char_count: number;
+  problems: string[];
+}
+
+export interface ReviewQuestionSummary {
+  question_id: string;
+  question: string;
+  subdomain: string;
+  answerability: string;
+  state: QuestionState;
+  reasons: string[];
+  problems: string[];
+  review_count: number;
+  reviewers: string[];
+  has_annotation: boolean;
+  annotation_id: string;
+  annotation_author: string;
+  expected_answer: string;
+  key_points: string[];
+  acceptable_answer_elements: string[];
+  evidence_chunk_ids: string[];
+  artifact_reference_answer: string;
+  artifact_key_points: string[];
+}
+
+export interface ProvenanceBlock {
+  kind: string;
+  level: string;
+  method: string;
+  source: string;
+  justification: string;
+  timestamp: string;
+  tags: string[];
+  data: Record<string, unknown>;
+}
+
+export interface GroundTruthAnnotation {
+  annotation_id: string;
+  kb_id: string;
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  question_id: string;
+  author: string;
+  created_at: string;
+  expected_answer: string;
+  key_points: string[];
+  acceptable_answer_elements: string[];
+  evidence: { chunk_id: string; document_id: string | null; content_hash: string; section: string | null; source_title: string | null; required: boolean }[];
+  provenance: ProvenanceBlock[];
+  supersedes: string;
+  note: string;
+}
+
+export interface BenchmarkQuestionReview {
+  review_id: string;
+  kb_id: string;
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  question_id: string;
+  reviewer: string;
+  created_at: string;
+  verdicts: Record<string, DimensionVerdict>;
+  notes: Record<string, string>;
+  evidence_checked: string[];
+  answerability_verdict: string | null;
+  outcome: QuestionState | null;
+  annotation_id: string;
+  unresolved: string[];
+  supersedes: string;
+}
+
+export interface BenchmarkQuestionDetail {
+  identity: BenchmarkIdentity;
+  summary: ReviewQuestionSummary;
+  evidence: EvidenceItem[];
+  annotation_history: GroundTruthAnnotation[];
+  effective_annotation: GroundTruthAnnotation | null;
+  review_history: BenchmarkQuestionReview[];
+  effective_review: BenchmarkQuestionReview | null;
+}
+
+export interface BenchmarkReviewPacket {
+  identity: BenchmarkIdentity;
+  questions: ReviewQuestionSummary[];
+  completeness: ReviewCompleteness;
+  gate: ApprovalGateResult;
+  policy: ApprovalPolicy;
+  versions: FrozenVersionSummary[];
+  warnings: string[];
+}
+
+export interface FrozenVersionSummary {
+  version_id: string;
+  version: number;
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  ground_truth_fingerprint: string;
+  artifact_fingerprint: string;
+  created_at: string;
+  frozen_by: string;
+  scoring_question_count: number;
+  excluded_question_count: number;
+}
+
+export interface FrozenBenchmarkVersion extends Omit<FrozenVersionSummary, "scoring_question_count" | "excluded_question_count"> {
+  kb_id: string;
+  gate: ApprovalGateResult;
+  benchmark: Record<string, unknown>;
+  annotations: GroundTruthAnnotation[];
+  reviews: BenchmarkQuestionReview[];
+  notes: string[];
+}
+
+export interface VersionVerifyResult {
+  version_id: string;
+  intact: boolean;
+  problems: string[];
+}
+
+export const DEFAULT_ANSWER_BENCHMARK_PATH =
+  "benchmarks/answer-quality-automobile-v1.json";
+
+export const benchmarkReviewApi = {
+  /** The whole review surface: states, completeness, gate, frozen versions. */
+  packet: (kbId: string, benchmarkPath = DEFAULT_ANSWER_BENCHMARK_PATH) =>
+    request<BenchmarkReviewPacket>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/review-packet?benchmark_path=${encodeURIComponent(benchmarkPath)}`
+    ),
+
+  /** One question with the ACTUAL corpus evidence and full human input history. */
+  question: (kbId: string, questionId: string, benchmarkPath = DEFAULT_ANSWER_BENCHMARK_PATH) =>
+    request<BenchmarkQuestionDetail>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/questions/${questionId}?benchmark_path=${encodeURIComponent(benchmarkPath)}`
+    ),
+
+  completeness: (kbId: string, benchmarkPath = DEFAULT_ANSWER_BENCHMARK_PATH) =>
+    request<ReviewCompleteness>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/completeness?benchmark_path=${encodeURIComponent(benchmarkPath)}`
+    ),
+
+  /** Append a human-authored reference answer. Append-only: never an update. */
+  authorGroundTruth: (
+    kbId: string,
+    questionId: string,
+    body: {
+      benchmark_path?: string;
+      author: string;
+      expected_answer?: string;
+      key_points?: string[];
+      acceptable_answer_elements?: string[];
+      evidence_chunk_ids?: string[];
+      method?: string;
+      note?: string;
+      supersedes?: string;
+    },
+  ) =>
+    request<{ annotation: GroundTruthAnnotation; problems: string[]; stored: boolean }>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/questions/${questionId}/ground-truth`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+
+  groundTruthHistory: (kbId: string, questionId: string, benchmarkPath = DEFAULT_ANSWER_BENCHMARK_PATH) =>
+    request<GroundTruthAnnotation[]>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/questions/${questionId}/ground-truth?benchmark_path=${encodeURIComponent(benchmarkPath)}`
+    ),
+
+  /** Append ONE human review. An 'approved' outcome requires every required
+   * dimension to be assessed affirmatively — the API refuses otherwise. */
+  createReview: (
+    kbId: string,
+    questionId: string,
+    body: {
+      benchmark_path?: string;
+      reviewer: string;
+      outcome?: string | null;
+      verdicts: Record<string, string>;
+      notes?: Record<string, string>;
+      evidence_checked?: string[];
+      annotation_id?: string;
+      answerability_verdict?: string | null;
+      unresolved?: string[];
+      supersedes?: string;
+    },
+  ) =>
+    request<BenchmarkQuestionReview>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/questions/${questionId}/reviews`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+
+  reviewHistory: (kbId: string, questionId: string, benchmarkPath = DEFAULT_ANSWER_BENCHMARK_PATH) =>
+    request<BenchmarkQuestionReview[]>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/questions/${questionId}/reviews?benchmark_path=${encodeURIComponent(benchmarkPath)}`
+    ),
+
+  /** Freeze an APPROVED benchmark into a new immutable version. The API
+   * returns 409 with the gate's own reasons when it is not approvable. */
+  freeze: (kbId: string, body: { benchmark_path?: string; frozen_by: string; notes?: string[] }) =>
+    request<FrozenBenchmarkVersion>(`/api/knowledge-bases/${kbId}/answer-benchmark/freeze`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  versions: (kbId: string) =>
+    request<FrozenVersionSummary[]>(`/api/knowledge-bases/${kbId}/answer-benchmark/versions`),
+
+  version: (kbId: string, versionId: string) =>
+    request<FrozenBenchmarkVersion>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/versions/${versionId}`
+    ),
+
+  verifyVersion: (kbId: string, versionId: string) =>
+    request<VersionVerifyResult>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/versions/${versionId}/verify`,
+      { method: "POST" }
+    ),
 };

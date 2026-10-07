@@ -465,3 +465,175 @@ sqlite `answer_evaluation_runs`  →  GET /answer-evaluation/runs
     input to `pass_rate`; if it is absent from the response, a client filtering
     on it classifies every question as failed while the metric says otherwise.
     Two API tests assert `pass_rate == mean(per_question[].passed)`.
+
+---
+
+## V9 — evaluation → optimization loop
+
+45. **Retrieval metrics are NOT reimplemented.** `diagnostics.py` imports
+    `recall_at_k`/`precision_at_k`/`mrr`/`ndcg_at_k` from
+    `services/evaluation/metrics.py`, so the retrieval evaluator and the answer
+    evaluator can never disagree about what MRR means. The first draft grew its
+    own copy with an nDCG discount of `1/(2^(i+1))^0.5` (0.707 at rank 1 where the
+    correct value is 1.0); that module was deleted.
+46. **`required_recall_at_depth` is depth-independent, on purpose.** Comparing it
+    against `recall_at_k` separates "the passage is absent" (corpus gap) from "the
+    passage is ranked deep" (depth problem). A deep-ranked passage must **not**
+    raise the corpus-gap warning, and a test asserts that.
+47. **Evidence selection is diagnosed separately from retrieval.**
+    `required_missing_from_generation` names required evidence that WAS retrieved
+    but was not passed to the generator. A retrieval miss and a selection miss
+    need different fixes, so one must not be reported as the other.
+48. **A corpus deficiency proposes NO configuration change.** If required
+    evidence is absent at every depth, the engine returns
+    `CORPUS_OR_SOURCE_DEFICIENCY` with `proposed_config_change == {}`. Tuning
+    `top_k`/fusion/rerank cannot surface a passage the index does not contain.
+    A test asserts the empty config change.
+49. **Every recommendation carries `experiment_required=True` and names its
+    thresholds.** `thresholds_used` records the constants a rule read, so no
+    threshold can drift silently. `answer_eval` has no write path to production
+    retrieval configuration.
+50. **No single magic score.** `compare_suite_explicit` returns one row per
+    metric; a collapsed headline would let a large nDCG gain hide a
+    hallucination-rate regression. `METRIC_DIRECTIONS` declares the direction for
+    every metric, and an undeclared metric **raises** rather than defaulting,
+    because assuming the direction wrong inverts the verdict.
+51. **UNKNOWN ≠ UNCHANGED.** Too few paired observations, all ties, or a split
+    with zero net movement all return `UNKNOWN` with a reason. Only questions
+    measured on **both** sides are paired; `None` is never treated as `0.0`.
+52. **A not-comparable experiment can never be accepted.**
+    `check_protocol` compares benchmark fingerprint, corpus fingerprint,
+    evaluator, model, prompt version and answer mode; a difference yields
+    `NOT_COMPARABLE` and `AcceptanceDecision.NOT_VALID`, and the metric rows are
+    still listed but marked as inspection-only.
+53. **Statistics are stdlib-only and verified against scipy.** `scipy`/`numpy`
+    are installed but undeclared in `requirements.txt`, so the project does not
+    depend on them: the exact sign test uses `math.comb`, and Student's t uses the
+    regularised incomplete beta rather than a normal approximation. Both match
+    scipy to 1e-14 (checked as a test oracle, which skips if scipy is absent).
+    A regression test pins why the normal approximation was rejected.
+54. **`MIN_RELIABLE_PAIRED_N = 30` and the benchmark has 28 questions,** so every
+    comparison is `exploratory = True` and says so in `notes`. No significance is
+    claimed anywhere.
+55. **Integrity checks must CHECK.** A prior draft's `_file_unchanged()` and
+    `_scratch_isolation()` were stubs returning `True`, which converts
+    "unverified" into "verified" — worse than no check. The replacement hashes
+    real artifacts, compares digests, and reads real Qdrant point counts; a test
+    mutates an artifact and asserts the change is **detected**.
+56. **The only Qdrant calls in the experiment layer are READ-ONLY.**
+    `get_collections()` and `count(exact=True)`. There is no delete, overwrite or
+    upsert path, because a historical incident in this project deleted vectors
+    from a real KB. `PROTECTED_KB_IDS` names `kb_f278c283c748`, and
+    `assert_scratch_isolation` refuses an experiment targeting it **before
+    anything runs**.
+57. **The vector-loss allow-list defaults to EMPTY.** Any decrease in a
+    collection not explicitly declared a scratch collection fails postflight, so
+    a missing declaration produces a false alarm rather than a missed deletion —
+    the safe direction. An unavailable snapshot **cannot** report "no vectors
+    were deleted".
+58. **The gate score's polarity must be declared.** The first draft compared
+    `off_median > on_median`, assuming a higher-means-more-off-domain axis. This
+    project's signal (`question_answer_relevance`) is the opposite. Wired to real
+    data the test would have been **inverted** and would have recommended
+    *lowering* the threshold. Polarity is now an explicit parameter, an unknown
+    value raises, and an inverted signal returns `no_threshold_possible` because
+    no threshold can fix a ranking that puts the wrong examples first.
+59. **The gate will not be tuned below 5 samples per side.** The published
+    measurement has exactly **one** known off-domain answer, so the honest output
+    is "cannot be measured yet", and the real V8 numbers (plain coverage
+    **inverted** at 0.400 vs 0.333; IDF separating 0.300 vs 0.260 by 0.04 on one
+    sample) are pinned as tests so reverting to plain coverage fails the suite.
+60. **V9 is ADDITIVE.** V8's public API (`Answerability`, `build_run`,
+    `DeterministicAnswerEvaluator`, `AnswerQualityResult`, `average_measured`, …)
+    is load-bearing for ~180 tests and the API routes. V9 arrives as **new
+    modules** under `services/answer_eval/` that import from V8, not as rewrites.
+    Exactly one V8 file changed — `benchmark.py`, additively: a `"pending"` value
+    in the `review_status` vocabulary and the new `require_reviewed_benchmark`.
+    A prior attempt violated this and deleted V8's API;
+    `git checkout --` restored it byte-for-byte and the suite went green again.
+61. **`require_reviewed_benchmark` is separate from `require_official_benchmark`.**
+    FROZEN is a claim about the **file** (content will not change, so results
+    stay reproducible). APPROVED is a claim about each **question** (a human
+    checked it). A benchmark can be frozen while questions were never reviewed,
+    and that state must be visible rather than treated as reviewed.
+62. **`AMBIGUITY` is a REQUIRED review dimension.** A question nobody assessed
+    for ambiguity is exactly the one that gets approved with two defensible
+    readings. `ACCEPTABLE_ELEMENTS` is deliberately **not** required — many
+    legitimate questions have no alternative-phrasing list, so its absence is a
+    fact about the question, not an unreviewed dimension.
+63. **A review that cannot approve still counts as reviewed.** The derived status
+    is `PENDING → REVIEWED → APPROVED`, so "a human looked and flagged something"
+    is recorded distinctly from "nobody looked", and neither is silently promoted.
+64. **`apply_review_status` DOWNGRADES an unbacked approval.** A question claiming
+    `approved` with no approval review behind it becomes `pending`. Carrying an
+    agent-authored approval forward is the specific failure the review layer
+    exists to prevent.
+65. **Failure classification requires ground truth before blaming retrieval.**
+    V8's evaluator sets `retrieval_hit_rate` to UNKNOWN when a question carries no
+    required-evidence label, so `None` means *"no reference evidence"* — never
+    *"retrieved nothing"*. The first draft's `INSUFFICIENT_EVIDENCE` rule matched
+    every unlabelled question and would have reported a corpus defect derived
+    from **missing labels**. Precedence now puts stated pipeline failures first,
+    retrieval faults second, and falls through to `UNKNOWN`.
+66. **Confidence is categorical, never numeric.**
+    `deterministic | partial | unknown` distinguishes "a rule fired on a value the
+    pipeline states", "a rule fired on an inference", and "nothing fired". A
+    percentage would be fabricated.
+
+## V10 — Human-reviewed benchmark ground truth
+
+Design detail: [`v10-benchmark-review.md`](./v10-benchmark-review.md).
+Workflow: `QUESTION → CORPUS EVIDENCE → HUMAN REFERENCE ANSWER → KEY POINTS →
+ACCEPTABLE ELEMENTS → PROVENANCE → HUMAN REVIEW → APPROVED → FROZEN`.
+
+67. **The benchmark artifact is never written by the review workflow.** All 13
+    files under `benchmarks/` stay in `FROZEN_BENCHMARK_FILES` and byte-identical;
+    annotations, reviews and frozen versions live in SQLite. The artifact is the
+    *instrument under review* — its bytes must keep proving what was reviewed
+    (the shipped answer benchmark stays `f72c30eb5c0c363a`, `draft`, `pending`).
+68. **Ground truth is append-only, in two capacities.** Authors append
+    `GroundTruthAnnotation`s, reviewers append `QuestionReview`s with explicit
+    `supersedes` links; there is no update or delete method in the repository,
+    so "latest wins" and silent overwrite are both impossible. A question's
+    scoring labels appear only after an `approved` outcome
+    (`apply_question_states`), never when the annotation is first written.
+69. **An annotation is grounded in the corpus or it is rejected.**
+    `validate_annotation_against_corpus` requires each cited chunk to exist,
+    belong to this KB, and still carry its recorded content hash — a re-chunked
+    corpus invalidates the label (failure, not warning), because the reference
+    answer would otherwise cite a passage the index no longer contains.
+70. **Completeness rates are `Measured` tri-states.** With no authored
+    annotation there is no denominator: `value=null, measured=false` with a
+    reason. "0% authored" would read as *work done and failed* rather than
+    *work not started*. The UI renders `UNKNOWN (0)` accordingly.
+71. **Ambiguous and insufficient-evidence are first-class non-scoring states.**
+    A human who decides a question should not score must say so explicitly;
+    those questions are excluded from evaluation **with a warning**, never
+    scored as 0 and never silently dropped. Policy
+    `v10-answer-benchmark-approval-v1` records scored / permitted / blocking
+    states, and the gate names the blocking questions.
+72. **Freezing produces an immutable in-DB version, not a new file.**
+    `build_answer_benchmark_version` refuses unapproved questions, deep-copies
+    the benchmark marked `FROZEN` + `HUMAN_REVIEWED`, and computes three
+    fingerprints (benchmark labels, ground truth, whole artifact).
+    `verify_answer_benchmark_version` re-derives them, so tampering with any
+    stored version is detected before a run can use it (409 on failure).
+73. **Correctness unlocks in a NEW evaluator; the V8 one is untouched.**
+    `DeterministicAnswerEvaluator` keeps `correctness` UNKNOWN even with a
+    reference answer (a V8 test pins this), so V10 adds
+    `ReferenceAnswerEvaluator` (`reference-labels` v10.1,
+    `reference-key-point-coverage-v1`) behind the factory key `reference`:
+    correctness = key-point coverage (fallback: reference-term coverage),
+    abstention-expected questions unscored, no answer → 0.0 by published policy.
+74. **The reference evaluator refuses rather than falls back.** The API returns
+    400 unless the benchmark lifecycle is `approved`/`frozen` — draft labels can
+    never be scored as if a human approved them, and no other evaluator is
+    substituted silently. Runs against a frozen version record
+    `benchmark_version_id` + artifact fingerprint, and `is_comparable_with`
+    compares version ids so runs over different label sets never compare.
+75. **The smoke test proved the unlock honestly.** A live end-to-end run over a
+    gitignored *scratch* benchmark produced `correctness.measured=true` with
+    value **0.0** — the smoke labels were not facts any answer contains, and the
+    evaluator scored them instead of rubber-stamping. The scratch rows were
+    deleted afterwards; the official benchmark was verified still 28/28
+    pending with zero frozen versions, and `git diff HEAD -- benchmarks/` empty.

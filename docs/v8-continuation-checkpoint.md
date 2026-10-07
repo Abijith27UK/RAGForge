@@ -1,5 +1,21 @@
 # V8 Continuation Checkpoint — Answer-Quality Evaluation
 
+> **V9 status update (2026-10-07).** This checkpoint is a historical record and
+> has been left intact. Two things it says are now known to need correction:
+>
+> 1. It reports **596 tests**; the true collected count at that commit was
+>    **693** (692 passed + 1 skipped with Qdrant down). A `grep -c '^def test_'`
+>    count is unreliable here because many V7-era files define tests inside
+>    classes.
+> 2. Any reference to `automobile-engineering-baseline-v1.json` as the *answer*
+>    benchmark is wrong — that is the **retrieval** benchmark. The answer
+>    benchmark is `answer-quality-automobile-v1.json`.
+>
+> V9 also had to **restore seven V8 modules** that a later attempt had
+> overwritten destructively; they were restored byte-for-byte from commit
+> `67c4a00` and the full suite is green again. See
+> [`v9-evaluation-to-optimization.md`](./v9-evaluation-to-optimization.md).
+
 **Date:** 2026-10-03
 **Branch:** `Dev_1_midterm`
 **Scope:** Make RAGForge able to measure whether its grounded answers are

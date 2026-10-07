@@ -108,6 +108,15 @@ class AnswerEvaluationService:
             offset += page
         return out
 
+    def chunk_index(self, kb_id: str) -> dict[str, dict]:
+        """Public access to the paginated chunk index (id -> document/hash/kb).
+
+        Used by the V10 review workflow to validate that a reference answer's
+        cited evidence really exists in the corpus; identical to the index the
+        evaluator uses, so validation and evaluation cannot disagree.
+        """
+        return self._chunk_index(kb_id)
+
     def validate_benchmark(self, benchmark: AnswerBenchmark) -> list[str]:
         """Corpus-consistency problems; empty means safe to run."""
         return validate_against_corpus(benchmark, self._chunk_index(benchmark.kb_id))
@@ -143,10 +152,17 @@ class AnswerEvaluationService:
         *,
         benchmark_path: str,
         config: AnswerEvaluationConfig | None = None,
+        benchmark: AnswerBenchmark | None = None,
     ) -> AnswerEvaluationRun:
-        """Run an answer-quality evaluation and return an immutable record."""
+        """Run an answer-quality evaluation and return an immutable record.
+
+        ``benchmark`` is an optional in-memory override (V10): it lets an
+        evaluation score an immutable FROZEN benchmark version loaded from the
+        version store without materialising it as a file. The path is still
+        recorded for provenance (``db:answer-benchmark-versions/<id>``).
+        """
         config = config or AnswerEvaluationConfig(benchmark_path=benchmark_path)
-        benchmark = self.load_benchmark(benchmark_path)
+        benchmark = benchmark or self.load_benchmark(benchmark_path)
 
         if config.official:
             try:
@@ -247,6 +263,26 @@ class AnswerEvaluationService:
                 ]
             )
             run.notes.extend(failures[:20])
+        # V10: a frozen, reviewed benchmark may deliberately exclude some
+        # questions (ambiguous / insufficient evidence). They are NAMED here so
+        # their absence from the aggregate is never mistaken for a zero.
+        excluded_by_policy = [
+            q.question_id
+            for q in questions
+            if (q.review_status or "")
+            in {"ambiguous", "insufficient_evidence"}
+        ]
+        if excluded_by_policy:
+            shown = ", ".join(excluded_by_policy[:8]) + (
+                " …" if len(excluded_by_policy) > 8 else ""
+            )
+            run.warnings.append(
+                f"{len(excluded_by_policy)} question(s) are classified as "
+                f"NON-SCORING by the benchmark's approval policy ({shown}); their "
+                f"correctness/key-point metrics are UNKNOWN and are excluded "
+                f"from the aggregates rather than counted as zero."
+            )
+
         if not any(r.correctness.measured for r in results):
             if any(r.reference_answer_similarity.measured for r in results):
                 run.warnings.append(

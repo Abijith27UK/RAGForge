@@ -312,3 +312,79 @@ human-evaluation runs are the path to measuring correctness; LLM-as-judge is
 available as an explicitly model-based, non-ground-truth option.
 7. **Streaming ingest** — process a 200-file batch progressively instead of
    synchronously, for genuinely large corpora.
+
+
+## V9 continuation — evaluation → optimization loop (2026-10-07, partly delivered)
+
+Closes the loop from measurement to a justified, safe, recorded configuration
+change. Full detail: [`v9-evaluation-to-optimization.md`](./v9-evaluation-to-optimization.md);
+subsystem docs: [`failure-analysis.md`](./failure-analysis.md),
+[`retrieval-diagnostics.md`](./retrieval-diagnostics.md). Audit:
+[`v9-audit-report.md`](./v9-audit-report.md).
+
+| Phase | Item | Status |
+|---|---|---|
+| 0 | Audit of the V8 state before any change | **done** (and corrected: the audit's first draft named the retrieval benchmark as the answer benchmark) |
+| 1 | Benchmark review workflow: append-only per-question reviews, `DRAFT → REVIEWED → APPROVED → FROZEN`, `require_reviewed_benchmark` separate from the FROZEN gate | **done** — but **28/28 questions remain unreviewed** |
+| 2 | Failure taxonomy: 11 closed labels, evidence + reason + categorical confidence, `UNKNOWN` preferred over a guess | **done** |
+| 3 | Retrieval diagnostics: ranked chunks with provenance, first relevant rank, depth-independent recall, selection-vs-retrieval split, **UNKNOWN never 0** | **done** |
+| 4 | Controlled experiment record: deterministic ids, append-only store, immutable artifacts | **done** (no live run) |
+| 5 | Recommendation engine: deterministic, evidence-backed, `experiment_required=True`, never writes production config | **done** |
+| 6 | Baseline vs candidate: per-metric rows, declared directions, protocol identity check, guardrail-aware accept/reject | **done** |
+| 7 | Statistical validity: exact sign test + Student's t (stdlib, scipy-verified), always **exploratory** at n=28 | **done** |
+| 8 | Off-domain gate: explicit score polarity, sample floor | **framework done; NOT MEASURABLE at n_off = 1** |
+| 9 | Mock-generator limitation study (5-claim rank truncation) | **done** — limitation documented, **not** fixed by design |
+| 10 | UI "Why did this answer fail?" | **NOT DONE** — backend only |
+| 11 | Experiment integrity: checksums, vector-loss detection, scratch-KB isolation before running | **done** |
+| 12 | Testing | **done** — 978 backend tests, frontend clean |
+| 13 | Real Automobile experiment | **NOT RUN** — precondition unmet |
+| 14 | Documentation | **done** |
+
+### Why Phase 13 did not run
+
+Not for lack of machinery — the framework is complete and verified offline. The
+**preconditions** fail: the benchmark is DRAFT with 28 unreviewed questions and
+no human reference answers, so `correctness` and `key_point_recall` are UNKNOWN
+by construction and no candidate configuration can be justified from measured
+data. Running it anyway would produce a record whose own `conclusion()` reads
+`INTEGRITY NOT VERIFIED` or `NO VALID COMPARISON`. Reporting that as a result
+would be worse than reporting no experiment.
+
+This also explains why roadmap item **#2** (mock-generator rank truncation)
+stays unfixed: raising the claim budget would tune the instrument to improve the
+number it produces.
+
+### V10 recommended order
+
+1. **Author and review the 28 Automobile reference answers** through the Phase-1
+   workflow, then freeze, then run the Phase-13 experiment. This is the only path
+   that turns UNKNOWN into measured, and everything else waits on it.
+2. **Phase 10 UI** — the failure-analysis view, so step 1 can be done efficiently.
+3. **V9 API routes** — diagnostics, classifications, recommendations and
+   experiment records over HTTP.
+4. **Off-domain gate measurement** — author ≥ 10 off-domain questions and measure.
+5. **Reranker-stage diagnostics** — pre/post-rerank rank comparison.
+
+## V10 — Human-reviewed benchmark ground truth (2026-10-08, delivered)
+
+Builds the full authoring → review → freeze workflow that item 1 above needs,
+so `correctness` can become measured instead of UNKNOWN **without ever
+fabricating a label**. Full detail:
+[`v10-benchmark-review.md`](./v10-benchmark-review.md).
+
+| Phase | Item | Status |
+|---|---|---|
+| 0 | Audit of the V9 state (confirmed the answer benchmark identity, reusable review infra, what must change) | **done** |
+| 1 | Ground-truth domain layer: annotations, question states, corpus-validated provenance, completeness (UNKNOWN ≠ 0), approval policy + gate, immutable frozen versions with tamper detection | **done** — 48 tests |
+| 2 | Persistence: 3 append-only SQLite tables (`benchmark_ground_truth`, `benchmark_question_reviews`, `answer_benchmark_versions`), no update/delete paths | **done** |
+| 3 | `ReferenceAnswerEvaluator` (`reference` / `reference-labels` v10.1): correctness from reviewed key-point coverage; refused 400 unless approved/frozen; V8 evaluator untouched | **done** — 12 tests |
+| 4 | HTTP API: review packet, question detail with REAL evidence, append-only authoring/reviews, freeze with gate reasons, version list/verify, completeness; run accepts `benchmark_version_id` | **done** — 24 tests |
+| 5 | Benchmark Review UI: authoring / evidence / review panels, state dots, gate + policy, freeze + verify | **done** — `tsc` + build clean |
+| 6 | Live verification: full suite, write-path smoke over real HTTP, browser round-trip, Qdrant + frozen-artifact integrity | **done** — 1062 tests; smoke 24/24; Qdrant 14→14 / 8822→8822 / 812→812; `git diff benchmarks/` empty |
+| 7 | Author + review the 28 official questions, freeze, run the reference evaluator | **NOT DONE — human work (0/28 reviewed)** |
+| 8 | Phase-13 optimization experiment on measured correctness | **still blocked** until phase 7 completes |
+
+V9's recommended order is now partly consumed: item 1's *workflow and UI* are
+built (this phase); the human authoring itself remains. Next in V9's order:
+item 2 (Phase-10 failure-analysis UI), item 3 (V9 API routes), item 4
+(off-domain gate measurement).

@@ -208,6 +208,53 @@ CREATE TABLE IF NOT EXISTS answer_reviews (
 );
 CREATE INDEX IF NOT EXISTS idx_answer_reviews_run
     ON answer_reviews(kb_id, run_id, question_id, created_at);
+
+-- ---------------------------------------------------------------------------
+-- V10 human ground truth: append-only benchmark-question reviews, authored
+-- reference answers, and immutable frozen benchmark versions.
+--
+-- Reviews and annotations are append-only (a correction is a new row with
+-- `supersedes`); frozen versions are immutable records keyed by an artifact
+-- fingerprint. Scoping every row by (benchmark_name, benchmark_fingerprint)
+-- keeps two different benchmarks on one knowledge base from sharing review
+-- state.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS benchmark_question_reviews (
+    id TEXT PRIMARY KEY,
+    kb_id TEXT NOT NULL,
+    benchmark_name TEXT NOT NULL DEFAULT '',
+    benchmark_fingerprint TEXT NOT NULL DEFAULT '',
+    question_id TEXT NOT NULL,
+    reviewer TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    data TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_bqm_reviews_scope
+    ON benchmark_question_reviews(kb_id, benchmark_name, benchmark_fingerprint, question_id, created_at);
+CREATE TABLE IF NOT EXISTS benchmark_ground_truth (
+    id TEXT PRIMARY KEY,
+    kb_id TEXT NOT NULL,
+    benchmark_name TEXT NOT NULL DEFAULT '',
+    benchmark_fingerprint TEXT NOT NULL DEFAULT '',
+    question_id TEXT NOT NULL,
+    author TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    supersedes TEXT NOT NULL DEFAULT '',
+    data TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_bgt_scope
+    ON benchmark_ground_truth(kb_id, benchmark_name, benchmark_fingerprint, question_id, created_at);
+CREATE TABLE IF NOT EXISTS answer_benchmark_versions (
+    id TEXT PRIMARY KEY,
+    kb_id TEXT NOT NULL,
+    benchmark_name TEXT NOT NULL DEFAULT '',
+    version INTEGER NOT NULL,
+    fingerprint TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    data TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_abv_kb
+    ON answer_benchmark_versions(kb_id, version);
 """
 
 
@@ -272,6 +319,9 @@ class Repository:
             ("DELETE FROM evaluation_runs WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM build_runs WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM benchmark_versions WHERE kb_id = ?", (kb_id,)),
+            ("DELETE FROM benchmark_question_reviews WHERE kb_id = ?", (kb_id,)),
+            ("DELETE FROM benchmark_ground_truth WHERE kb_id = ?", (kb_id,)),
+            ("DELETE FROM answer_benchmark_versions WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM ingestion_items WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM ingestion_batches WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM corpus_versions WHERE kb_id = ?", (kb_id,)),
@@ -806,6 +856,149 @@ class Repository:
         from app.services.answer_eval.run import AnswerEvaluationRun
 
         return self._from_row(row, AnswerEvaluationRun)
+
+    # -- V10 benchmark question reviews (append-only) -------------------------
+
+    def create_benchmark_question_review(self, review) -> None:
+        """Insert ONE human benchmark-question review.
+
+        Append-only: no update or delete method exists, and a duplicate id
+        raises on the PRIMARY KEY rather than overwriting, so an earlier
+        verdict can never be silently replaced.
+        """
+        self._execute(
+            "INSERT INTO benchmark_question_reviews "
+            "(id, kb_id, benchmark_name, benchmark_fingerprint, question_id, "
+            "reviewer, created_at, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                review.review_id,
+                review.kb_id,
+                review.benchmark_name,
+                review.benchmark_fingerprint,
+                review.question_id,
+                review.reviewer,
+                review.created_at.isoformat(),
+                self._to_row(review),
+            ),
+        )
+
+    def list_benchmark_question_reviews(
+        self,
+        kb_id: str,
+        benchmark_name: str | None = None,
+        benchmark_fingerprint: str | None = None,
+        question_id: str | None = None,
+        limit: int = 2000,
+    ) -> list:
+        """Review history, oldest first — never collapsed to latest-wins."""
+        sql = "SELECT data FROM benchmark_question_reviews WHERE kb_id = ?"
+        params: list = [kb_id]
+        if benchmark_name is not None:
+            sql += " AND benchmark_name = ?"
+            params.append(benchmark_name)
+        if benchmark_fingerprint is not None:
+            sql += " AND benchmark_fingerprint = ?"
+            params.append(benchmark_fingerprint)
+        if question_id is not None:
+            sql += " AND question_id = ?"
+            params.append(question_id)
+        sql += " ORDER BY created_at ASC, id ASC LIMIT ?"
+        params.append(limit)
+        rows = self._conn.execute(sql, tuple(params)).fetchall()
+        from app.services.answer_eval.benchmark_review import QuestionReview
+
+        return [self._from_row(r, QuestionReview) for r in rows]  # type: ignore[misc]
+
+    # -- V10 authored reference answers (append-only) -------------------------
+
+    def create_ground_truth_annotation(self, annotation) -> None:
+        """Insert ONE authored annotation. Append-only, same rule as reviews."""
+        self._execute(
+            "INSERT INTO benchmark_ground_truth "
+            "(id, kb_id, benchmark_name, benchmark_fingerprint, question_id, "
+            "author, created_at, supersedes, data) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                annotation.annotation_id,
+                annotation.kb_id,
+                annotation.benchmark_name,
+                annotation.benchmark_fingerprint,
+                annotation.question_id,
+                annotation.author,
+                annotation.created_at.isoformat(),
+                annotation.supersedes,
+                self._to_row(annotation),
+            ),
+        )
+
+    def list_ground_truth_annotations(
+        self,
+        kb_id: str,
+        benchmark_name: str | None = None,
+        benchmark_fingerprint: str | None = None,
+        question_id: str | None = None,
+        limit: int = 2000,
+    ) -> list:
+        sql = "SELECT data FROM benchmark_ground_truth WHERE kb_id = ?"
+        params: list = [kb_id]
+        if benchmark_name is not None:
+            sql += " AND benchmark_name = ?"
+            params.append(benchmark_name)
+        if benchmark_fingerprint is not None:
+            sql += " AND benchmark_fingerprint = ?"
+            params.append(benchmark_fingerprint)
+        if question_id is not None:
+            sql += " AND question_id = ?"
+            params.append(question_id)
+        sql += " ORDER BY created_at ASC, id ASC LIMIT ?"
+        params.append(limit)
+        rows = self._conn.execute(sql, tuple(params)).fetchall()
+        from app.services.answer_eval.ground_truth import GroundTruthAnnotation
+
+        return [
+            self._from_row(r, GroundTruthAnnotation) for r in rows
+        ]  # type: ignore[misc]
+
+    # -- V10 frozen answer benchmark versions (immutable) ---------------------
+
+    def create_answer_benchmark_version(self, version) -> None:
+        """Insert an IMMUTABLE frozen version. A duplicate id raises; there is
+        no update method, so a frozen version is never rewritten."""
+        self._execute(
+            "INSERT INTO answer_benchmark_versions "
+            "(id, kb_id, benchmark_name, version, fingerprint, created_at, data) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                version.version_id,
+                version.kb_id,
+                version.benchmark_name,
+                version.version,
+                version.artifact_fingerprint,
+                version.created_at.isoformat(),
+                self._to_row(version),
+            ),
+        )
+
+    def get_answer_benchmark_version(self, kb_id: str, version_id: str):
+        row = self._conn.execute(
+            "SELECT data FROM answer_benchmark_versions WHERE kb_id = ? AND id = ?",
+            (kb_id, version_id),
+        ).fetchone()
+        from app.services.answer_eval.ground_truth import AnswerBenchmarkVersion
+
+        return self._from_row(row, AnswerBenchmarkVersion)
+
+    def list_answer_benchmark_versions(self, kb_id: str) -> list:
+        rows = self._conn.execute(
+            "SELECT data FROM answer_benchmark_versions WHERE kb_id = ? "
+            "ORDER BY version DESC",
+            (kb_id,),
+        ).fetchall()
+        from app.services.answer_eval.ground_truth import AnswerBenchmarkVersion
+
+        return [
+            self._from_row(r, AnswerBenchmarkVersion) for r in rows
+        ]  # type: ignore[misc]
 
     # -- evaluation ---------------------------------------------------------------
 

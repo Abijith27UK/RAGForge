@@ -62,6 +62,7 @@ from app.api.routes_answer import router as answer_router
 from app.api.routes_chat import router as chat_router
 from app.api.routes_answer_eval import router as answer_eval_router
 from app.api.routes_answer_eval import global_router as answer_eval_global_router
+from app.api.routes_benchmark_review import router as benchmark_review_router
 from app.api.routes_benchmark import router as benchmark_router
 from app.api.routes_experiments import router as experiments_router
 from app.api.routes_system import router as system_router
@@ -77,6 +78,7 @@ app.include_router(answer_router)
 app.include_router(chat_router)
 app.include_router(answer_eval_router)
 app.include_router(answer_eval_global_router)
+app.include_router(benchmark_review_router)
 app.include_router(benchmark_router)
 app.include_router(experiments_router)
 app.include_router(system_router)

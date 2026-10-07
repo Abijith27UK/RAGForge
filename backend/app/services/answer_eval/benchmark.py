@@ -218,7 +218,9 @@ class AnswerBenchmarkQuestion(BaseModel):
     )
     review_status: str | None = Field(
         default=None,
-        description="draft | reviewed | approved. None = not recorded.",
+        description="pending | draft | reviewed | approved. None = not recorded. "
+        "`pending` means a review is expected but has not happened; it is NOT "
+        "a synonym for `approved` and never satisfies the reviewed gate.",
     )
 
     @field_validator("difficulty", "review_status")
@@ -232,7 +234,20 @@ class AnswerBenchmarkQuestion(BaseModel):
         allowed = (
             {"easy", "medium", "hard"}
             if info.field_name == "difficulty"
-            else {"draft", "reviewed", "approved"}
+            # V10 added the per-question review STATES additively: a question a
+            # human refused, found ambiguous, or found unanswerable from the
+            # corpus must be recorded as such rather than left looking
+            # unreviewed. Existing values are unchanged.
+            else {
+                "pending",
+                "draft",
+                "reviewed",
+                "approved",
+                "in_review",
+                "rejected",
+                "ambiguous",
+                "insufficient_evidence",
+            }
         )
         if value not in allowed:
             raise ValueError(
@@ -359,6 +374,41 @@ def require_official_benchmark(benchmark: AnswerBenchmark) -> None:
         )
 
 
+def require_reviewed_benchmark(benchmark: AnswerBenchmark) -> None:
+    """Gate for TIER-2 use: every question has been individually approved.
+
+    Splitting this from `require_official_benchmark` is deliberate. Freezing an
+    artifact and approving each of its questions are different claims:
+
+    * FROZEN is about the FILE — its content will not change, so a result
+      computed from it stays reproducible.
+    * APPROVED is about each QUESTION — a human actually checked its reference
+      answer, key points, answerability and evidence sufficiency.
+
+    A benchmark can be frozen while some questions were never reviewed. V9 makes
+    that state visible and refuses to treat it as reviewed, because a frozen but
+    unreviewed question is precisely how an agent-authored label gets mistaken
+    for human ground truth.
+
+    Raises `BenchmarkValidationError` naming the questions that are not approved.
+    """
+    unapproved = [
+        q.question_id
+        for q in benchmark.questions
+        if (q.review_status or "").strip().lower() != "approved"
+    ]
+    if unapproved:
+        shown = ", ".join(unapproved[:5])
+        more = f" (+{len(unapproved) - 5} more)" if len(unapproved) > 5 else ""
+        raise BenchmarkValidationError(
+            f"{len(unapproved)} of {len(benchmark.questions)} question(s) are not "
+            f"approved by a human reviewer: {shown}{more}. Only questions whose "
+            f"review_status is 'approved' may be used for reviewed evaluation; "
+            f"review the remaining questions with the benchmark review workflow "
+            f"(events are append-only) before treating this benchmark as reviewed."
+        )
+
+
 def load_answer_benchmark(path: str | Path) -> AnswerBenchmark:
     """Load and structurally validate a benchmark file."""
     p = Path(path)
@@ -424,5 +474,6 @@ __all__ = [
     "RequiredEvidence",
     "load_answer_benchmark",
     "require_official_benchmark",
+    "require_reviewed_benchmark",
     "validate_against_corpus",
 ]

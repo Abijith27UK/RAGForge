@@ -64,6 +64,12 @@ class AnswerEvaluationConfig(BaseModel):
         "Official runs require a FROZEN answer benchmark; development runs "
         "record official=false so draft numbers are never mistakable for them.",
     )
+    # -- V10: evaluating a FROZEN, human-reviewed benchmark version -----------
+    # When set, the run was scored against an immutable frozen version whose
+    # labels a human approved. Recording the version id keeps two runs over
+    # different frozen label sets from being treated as comparable.
+    benchmark_version_id: str = ""
+    benchmark_artifact_fingerprint: str = ""
 
 
 class RunComparisonPlan(BaseModel):
@@ -105,6 +111,9 @@ class AnswerEvaluationRun(BaseModel):
     benchmark_fingerprint: str = ""
     benchmark_path: str = ""
     benchmark_lifecycle: str = ""
+    #: V10: the frozen benchmark version this run scored, when applicable.
+    benchmark_version_id: str = ""
+    benchmark_artifact_fingerprint: str = ""
     official: bool = False
     kb_version: int | None = None
     corpus_version: str | None = None
@@ -161,6 +170,16 @@ class AnswerEvaluationRun(BaseModel):
                 f"{len(other.question_ids)}). Only in this run: {only_self[:5]}; "
                 f"only in the other: {only_other[:5]}. Comparing these would "
                 f"attribute a difference in question mix to the strategy."
+            )
+        if self.benchmark_version_id != other.benchmark_version_id:
+            # V10: two runs over DIFFERENT frozen versions may share a content
+            # fingerprint (labels are excluded from it), so the version id is
+            # compared as well. A frozen run is never treated as comparable to
+            # a draft run: they are different instruments.
+            return False, (
+                f"different benchmark version "
+                f"({self.benchmark_version_id or 'working draft'} vs "
+                f"{other.benchmark_version_id or 'working draft'})"
             )
         if self.benchmark_fingerprint != other.benchmark_fingerprint:
             return False, (
@@ -469,6 +488,8 @@ def build_run(
         benchmark_fingerprint=benchmark.fingerprint(),
         benchmark_path=benchmark_path,
         benchmark_lifecycle=benchmark.lifecycle.value,
+        benchmark_version_id=config.benchmark_version_id,
+        benchmark_artifact_fingerprint=config.benchmark_artifact_fingerprint,
         official=config.official,
         kb_version=None,
         corpus_version=corpus_version,
