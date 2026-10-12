@@ -1058,3 +1058,292 @@ Known pre-existing issues recorded, not hidden: collection
 
 No test count, metric, or improvement in this section is estimated. Everything
 listed was produced by the command beside it.
+
+## V11 — Ground-truth assist: drafting + pre-freeze audit (2026-10-10)
+
+Goal of this phase: make the remaining human work (authoring the 28 reference
+answers) cheap and auditable, **without** producing a single fabricated label.
+Full design detail: [`v11-ground-truth-assist.md`](./v11-ground-truth-assist.md).
+
+### Tests and builds
+
+| Check | Command | Result |
+|---|---|---|
+| V11 unit + API tests | `pytest tests/test_v11_draft_assist.py tests/test_v11_quality_audit.py tests/test_v11_draft_api.py -q` | **54 passed** |
+| Full backend suite | `pytest -q` | **1116 passed, 0 failed** (445 s) — V10 was 1062 |
+| Frontend types | `npx tsc --noEmit` | clean (exit 0) |
+| Frontend production build | `npm run build` | clean (exit 0), review route compiled |
+
+### Live smoke (real HTTP, backend :8013, Qdrant :6333, protected KB `kb_f278c283c748`)
+
+| Check | Result |
+|---|---|
+| `GET …/review-packet` | 200, 19560 bytes, 28 questions, fingerprint `f72c30eb5c0c363a`, lifecycle `draft`, `human_review: pending` |
+| `GET …/quality-audit` | 200, 76626 bytes, **69 findings: 0 error / 34 warning / 35 info**; 8 checks ran, 2 could not; `ready_to_freeze: false`; verdict *STRUCTURALLY SOUND BUT INCOMPLETE* |
+| Findings by code | 28 `ANSWER_LABEL_NOT_AUTHORED`, 24 `QUESTION_TERMS_ABSENT_FROM_EVIDENCE`, 6 `SHARED_REQUIRED_EVIDENCE`, 5 `QUESTION_COMPOUND`, 5 `EVIDENCE_QUESTION_COVERAGE_LOW`, 1 `EVIDENCE_SOURCE_TITLE_NOT_IN_CORPUS` |
+| Low-coverage shortlist | 028 **5%**, 024 **11%**, 011 **34%**, 019 **39%**, 016 **42%** |
+| `POST …/draft-suggestions` (all, persist) | 200; **28 drafts**: 23 `draft_ready`, 3 `partial`, 2 `insufficient_evidence`; 27 key points; 7 agree with the benchmark's pinned sentence, 21 differ |
+| Draft persistence | `benchmark_draft_suggestions` = 28 rows / 28 distinct questions; a second generation via the UI button made 29 — append-only, never overwritten |
+| `GET …/questions/auto-eng-001/draft-suggestions` | 2 rows, both `is_draft: true` with the DRAFT label |
+| `GET …/completeness` | 28 pending, 0 in_review, 0 approved, 0 rejected, 0 ambiguous, 0 insufficient, **0 authored reference answers**, 0 reviews; four coverage rates still `UNKNOWN` |
+| `POST …/freeze` | **409** — gate still blocks (correct) |
+| Sample draft (auto-eng-001) | 100% coverage, verbatim sentence, `MATCHES THE SENTENCE RECORDED IN THE BENCHMARK` |
+| Sample `insufficient_evidence` (028) | `(none)` — no sentence clears the 20% floor; uncovered terms listed; nothing fabricated |
+
+### Live UI (browser :3000, review page)
+
+| Check | Result |
+|---|---|
+| Page render | real data: 28 questions, gate blocked, `0/28 reviewed`, audit panel present |
+| "Generate draft" button | live round-trip: draft rendered with status + 100% coverage, per-key-point chunk + sentence #, "Use as starting point", history `2 record(s)` |
+| "Run audit" button | live round-trip: `0 ERROR · 34 WARNING · 35 INFO`, verdict, checks that did not run, limitations block rendered |
+| Per-question findings | question 024 card shows `evidence question coverage low … only 11% … CHECK BY READING` + the info observation |
+| **Defect found and fixed** | the audit panel's expander was gated on `errors + benchmark-level findings > 4`, unreachable for this dataset, hiding all 33 warning-level findings. Fixed (expander now covers hidden findings + dedupe); re-verified live: **28 `ANSWER_LABEL_NOT_AUTHORED` + 5 `EVIDENCE_QUESTION_COVERAGE_LOW` visible**, benchmark finding shown once. `tsc` re-run clean. |
+| Screenshots | **not available** in this session (preview webview produced no composited frames); verification used the accessibility tree + DOM queries instead |
+
+### Integrity
+
+| Check | Before | After |
+|---|---|---|
+| Qdrant collections | 14 | **14** |
+| Qdrant total points | 8822 | **8822** |
+| Protected `kb_kb_f278c283c748` | 812 | **812** |
+| `git status benchmarks/` | empty | **empty** (frozen retrieval benchmark untouched) |
+| `benchmark_ground_truth` rows | 0 | **0** |
+| `benchmark_question_reviews` rows | 0 | **0** |
+| `answer_benchmark_versions` rows | 0 | **0** |
+| `benchmark_draft_suggestions` rows | 0 | **29** (drafts only — never read by gate, freeze or evaluator) |
+
+### What was NOT verified, stated plainly
+
+* **The 28 official questions remain 0/28 reviewed.** No reference answer, key
+  point, approval or classification was authored — by design. The human work is
+  unchanged; only its cost was reduced.
+* **No official answer-quality baseline exists.** With zero authored labels,
+  `correctness` and key-point recall are still UNKNOWN; no evaluator was run
+  against the official benchmark in this phase.
+* **Failure analysis and the "why did this answer fail?" UI were not built.**
+  15 pre-ground-truth answer-evaluation runs exist in the local DB, but
+  correctness for them is UNKNOWN, so a diagnostic UI would present incomplete
+  evidence as if it were the official instrument.
+* **No optimization ran.** The V9 Phase-13 framework is untouched and its
+  preconditions still fail.
+* Two audit checks (`annotation_reference_answer_grounded`,
+  `authored_key_points_supported_by_evidence`) **could not run** and are reported
+  as not-run, not as clean.
+
+---
+
+## V12 — Retrieval diagnostics (2026-10-11)
+
+### Tests and builds
+
+* `py -m pytest -q` — **1210 passed**, 0 failed (1171 when the audit began, before
+  the V12 API repair; 39 of the tests are V13's and none existed before V13).
+* `tests/test_v12_retrieval_diagnostics.py` + `tests/test_v12_retrieval_diagnostics_api.py`
+  — 55 passed.
+* Frontend `npx tsc --noEmit` — clean. `npm run build` — clean (exit 0).
+
+### Repaired in this pass
+
+`backend/app/api/routes_retrieval_diagnostics.py` **did not import** (it referenced
+names from modules that do not export them), so the whole V12 HTTP surface was
+dead. It was rewritten as a thin layer over the existing runner and models:
+`benchmark`, `evidence-audit`, `strategies`, `taxonomy`, `runs` (POST/GET),
+`runs/{id}`, `runs/{id}/questions/{qid}`, `runs/{id}/recommendations`,
+`runs/{id}/comparisons`. No model or rule was reimplemented; the recommendation
+`notice` and the comparison `notice` are carried verbatim from the service layer.
+
+### Live API (real HTTP, backend started fresh on :8014, Qdrant :6333)
+
+* `GET /api/knowledge-bases/kb_f278c283c748/retrieval-diagnostics/runs` → **8 stored
+  runs**, including `rdx_68aab1a00874` (k=10) and `rdx_373d582da893` (k=3), each
+  reporting `protected_kb_unchanged: true` and `benchmark_unchanged: true`.
+* The full report loads and its stored metrics round-trip:
+  dense `recall@10 = 1.0`, `MRR@10 = 0.742857`, `nDCG@10 = 0.805652` — identical to
+  the persisted artifact.
+* `GET .../retrieval-experiments/meta` and `.../retrieval-experiments` return the
+  V13 vocabulary and the stored experiments.
+
+### Live UI (browser, :3000 against the :8014 backend)
+
+The retrieval-diagnostics page renders the 8 stored runs (with `k`, per-strategy
+status, code counts and the "KB + benchmark untouched" badge) **and** the new
+V13 experiments panel: declaration (hypothesis, primary metric and its bar,
+guardrails with their bars, targeted failure code, rejection conditions, benchmark
++ question-set fingerprints), the measured arms table, the derived outcome with
+its acceptance / pairing / primary delta / per-guardrail assessment /
+`rules_applied`, the per-question table, the integrity line and the limitations.
+A metric with no measured value renders as `UNKNOWN`; the panel has no run button.
+
+### V12 re-verification against the current repository
+
+* Benchmark fingerprint `edf3c586fe9fa296`, 28 questions, sha256
+  `08601f58b33c…28a656` — matches the V12 checkpoint.
+* Protected KB `kb_f278c283c748` — 812 points before and after every V12/V13 run.
+* The V13 measurement engine **reproduces the V12 k=3 and k=10 dense numbers
+  exactly** (recall 0.8214 / 1.0, MRR 0.7083 / 0.7429, nDCG 0.7377 / 0.8057, and
+  the same classification counts), which is the check that the engine was not
+  changed while the API was repaired.
+
+---
+
+## V13 — Controlled retrieval experiments (2026-10-11)
+
+Full write-up: [`v13-controlled-retrieval-optimization.md`](v13-controlled-retrieval-optimization.md).
+
+### Tests and builds
+
+* `py -m pytest -q` — **1210 passed**, 0 failed.
+* `tests/test_v13_retrieval_experiments.py` — **39 passed**. Coverage includes:
+  all outcome rules R1–R7; the declared guardrail bar (noise below the bar does not
+  veto a gain, a regression above the bar does reject); metric direction and
+  `UNKNOWN` handling; unmeasured values never averaged in as `0`; reproducibility
+  of the question-set fingerprint, benchmark fingerprint, arm config fingerprints
+  and pairing verdict across a re-run; matched sets and `COMPARABLE` pairing;
+  strategy unavailability recorded as FAILED with no substituted numbers; a
+  cross-KB benchmark refused; artifact persistence and re-read; `exploratory`
+  true with the sign test present; recommendation traceability walked end to end
+  (measured failure -> named question in the recommendation -> the same question as
+  the experiment's declared target and failure code -> the recorded verdict), plus
+  the converse: a run with nothing failing names no failing question; the frozen
+  benchmarks byte-identical after a run; no artifact written into the versioned
+  `benchmarks/` directory; and experiments not appearing as diagnostic runs.
+* Frontend `npx tsc --noEmit` — clean. `npm run build` — clean (exit 0).
+
+### Experiments run (real HTTP-free local runs, protected KB, frozen benchmark)
+
+Four experiments, run by `py -m scripts.run_retrieval_experiment --experiment all`
+against `kb_f278c283c748`, all on the same matched question set
+(`question_set_fingerprint 822fd0a388b3491f`, 28 questions), all arms probed to
+depth 20:
+
+`p` is the exact sign test on the experiment's PRIMARY metric, recomputed from
+that metric's own pairing (the comparison object holds one flat list of tests
+covering every compared metric, so the primary metric's test is derived
+separately rather than read out of that list by name).
+
+| Experiment | Outcome | Primary metric | Δ | Bar | Paired | wins / losses | p |
+|---|---|---|---|---|---|---|---|
+| B-strict (depth, `precision@k` guardrailed) | `REGRESSION` | recall@k | +0.1786 | 0.02 | 28 | 5 / 0 | 0.0625 |
+| B (depth, `latency` guardrailed) | `IMPROVED` | recall@k | +0.1786 | 0.02 | 28 | 5 / 0 | 0.0625 |
+| A (cross-encoder reranking) | `REGRESSION` | mrr | +0.0083 | 0.02 | 28 | 3 / 4 | 1.0000 |
+| C (dense vs BM25 vs hybrid) | `IMPROVED` (hybrid) / `REGRESSION` (BM25) | mrr | +0.0744 / −0.0273 | 0.02 | 28 | 7 / 4 · 5 / 9 | 0.5488 · 0.4240 |
+
+Notable measured results:
+
+* **Depth:** dense `recall@k` 0.8214 → 1.0000 from k=3 to k=10 (5 questions improved,
+  **0 regressed**), MRR 0.7083 → 0.7429, nDCG 0.7377 → 0.8057; latency within the
+  50 ms bar; `LOW_RECALL` 5 → 0. The same arms under the strict declaration are a
+  `REGRESSION` because `precision@k` falls −0.1821.
+* **Reranking disproven:** MRR +0.0083 (below the 0.02 bar, sign test p = 1.0),
+  **recall@10 FELL to 0.9643**, latency **+1498.8 ms** (0 improved, 28 regressed).
+  Mechanism: a reranker that reorders a 20-candidate pool and cuts to 10 can push
+  required evidence out of the returned window, so it is not coverage-neutral.
+* **Hybrid:** MRR 0.7429 → 0.8173 (+0.0744, recall unchanged at 1.0). BM25 rejected
+  on its `recall@k` guardrail (−0.0714) and MRR (−0.0273), though ~48x faster
+  (43.9 ms vs 2115.9 ms).
+
+### Integrity
+
+| Check | Before | After |
+|---|---|---|
+| Protected KB `kb_f278c283c748` points | 812 | **812** |
+| Chunk rows | 812 | **812** |
+| Corpus revision | 0 | **0** |
+| Benchmark `automobile-engineering-baseline-v1.json` sha256 | `08601f58…` | **unchanged** |
+| Benchmark `answer-quality-automobile-v1.json` sha256 | — | **unchanged** |
+| Scratch collections created | — | **0** |
+| Qdrant collections | 14 | **14** |
+
+Both frozen benchmark artifacts were hashed before and after the whole V13 test
+module and after the live runs: unchanged.
+
+### What was NOT verified, stated plainly
+
+* **No held-out validation set exists.** All four experiments used the same 28
+  questions, which were also used to choose the candidates. Every verdict is
+  exploratory; no significance is claimed and no accepted change is promoted.
+* **Answer correctness was not measured.** No generator ran, the answer-quality
+  benchmark was not read, and answer-quality metrics remain `UNKNOWN` pending the
+  28 authored reference answers.
+* **Latency was measured on one machine** (CPU embedding), so absolute
+  milliseconds are environment-specific.
+* **Only one corpus and one domain.** Nothing here generalises to other
+  knowledge bases.
+* **The `LOW_PRECISION`/precision caveat stands.** `precision@k` under
+  necessity-only binary labels is a lower bound; that is why the corrected
+  depth declaration reports it instead of guardrailing it. The strict
+  declaration is kept next to it rather than deleted.
+
+## V14 — held-out instrument, human review gate and the review-page defect (in progress)
+
+Status at this checkpoint: the held-out candidate set is authored and validated,
+but **no human decision has been recorded yet**, so nothing is frozen and no
+held-out experiment has been run. This section records what WAS measured.
+
+### Human review gate — actual state
+
+| Quantity | Value |
+|---|---|
+| Candidate questions | 26 |
+| Approved / edited / rejected | **0 / 0 / 0** |
+| Awaiting a decision | **26** (`auto-eng-hout-001` … `auto-eng-hout-026`) |
+| Reviewers recorded | none |
+| Candidate fingerprint | `c738f73c9fd52c4a` |
+| Candidate file sha256 | `e1bfb97ff0d28b3ec026a254b480b801eaff167cd8a8a14a3a8de29120eb1a9b` |
+| Lifecycle / claim strength | `draft` / `exploratory` |
+| Frozen artifact `benchmarks/automobile-engineering-heldout-v1.json` | **does not exist** |
+
+Validation verdict reported by the instrument itself (0 errors, 0 warnings, all
+9 checks run):
+
+> FREEZEABLE AS PROVISIONAL — no errors, but 26 question(s) carry no human
+> decision, which caps every result at EXPLORATORY.
+
+Separation from the development set: 0 shared expected chunks, max token
+Jaccard 0.30 (threshold 0.6), max character-ngram Jaccard 0.3136 (threshold
+0.55). Lexical separation is all this measures; it does not prove independence.
+
+### Defect found and fixed while verifying the review page
+
+The review page rendered "Knowledge base 'kb_f278c283c748' not found" although
+every endpoint answered 200 to `curl`. The page issues several requests at once
+and the backend logged, from `Repository.get_kb`:
+
+```
+sqlite3.InterfaceError: bad parameter or other API misuse
+-> 500 Internal Server Error -> the browser reported it as a CORS failure
+```
+
+Cause: `Repository` kept ONE `sqlite3.Connection` with
+`check_same_thread=False` and guarded only `_execute` with its lock, so ~60 read
+paths (and two direct users of `repo._conn`) called `execute()` from whatever
+FastAPI worker thread happened to serve the request. Mixing threads on one
+connection is not safe even with the statement call itself guarded, because
+pysqlite caches prepared statements per connection: a second `execute()` of the
+same SQL resets the statement the first cursor is still reading.
+
+Fix ([`backend/app/repositories/sqlite_repo.py`](../backend/app/repositories/sqlite_repo.py)):
+one connection **per thread** (`threading.local`), each wrapped so that
+`execute` / `executemany` / `executescript` / `commit` / `rollback` hold the
+repository's re-entrant lock. Thread-local connections remove the shared
+statement cache; the lock keeps SQLite's single-writer rule from surfacing as
+`database is locked` inside the process. No query, schema or API changed.
+
+Regression test (`backend/tests/test_repo_thread_safety.py`): 16 threads released
+by a barrier against one shared repository, mixing reads and writes; assert
+there are no exceptions AND that all rows landed. **Before the fix: 3 of 3 tests
+fail, 15/16 threads with `InterfaceError`.** After: 3 of 3 pass.
+
+### Verification at this checkpoint
+
+| Check | Result |
+|---|---|
+| Backend suite (`pytest -q`) | **1299 passed, 0 failed** (563 s; 1296 before this change + 3 new) |
+| Frontend `tsc --noEmit` | clean (run before this change; runtime-unchanged) |
+| Review page in the browser | 26/26 candidates render with evidence, quote and per-question decisions |
+| `PRAGMA integrity_check` | `ok` (21 KBs, 9506 chunk rows) |
+| Protected KB `kb_f278c283c748` | present, `status: ready`, Qdrant collection `green`, **812 points** |
+| `automobile-engineering-baseline-v1.json` | sha256 `08601f58b33c178263f4446ec4443489a142a8a30b0c9c09682acb86a228a656` — unchanged |
+| `answer-quality-automobile-v1.json` | sha256 `16db9dbd46cb90077cf5240cda5a85c78aebfe6483bc9c22a5ddb9c1c9fe9f25` — unchanged |

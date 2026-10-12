@@ -5,10 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Activity, Boxes, ChevronRight, Database, FileSearch, Files, FlaskConical, GitBranch,
+  Activity, Boxes, ChevronRight, Database, FileSearch, Files, FlaskConical, Gauge, GitBranch,
   HardDriveDownload, LayoutDashboard, ListTree, Menu, MessagesSquare, PanelLeftClose,
   PanelLeftOpen, Plus, Quote, Search, ShieldAlert, ShieldCheck, ShieldQuestion, Sigma,
-  Workflow, X,
+  Target, Workflow, X,
 } from "lucide-react";
 import CommandPalette from "@/components/CommandPalette";
 import { StatusDot } from "@/components/ui";
@@ -32,8 +32,10 @@ const NAV = {
     { suffix: "/answer", label: "Answer", icon: Quote },
     { suffix: "/chat", label: "Grounded Chat", icon: MessagesSquare, hint: "inspect every claim" },
     { suffix: "/evaluation", label: "Evaluation", icon: Sigma },
+    { suffix: "/retrieval-diagnostics", label: "Retrieval Diagnostics", icon: Gauge, hint: "why retrieval failed, with evidence" },
     { suffix: "/answer-quality", label: "Answer Quality", icon: ShieldAlert, hint: "citations, grounding, abstention" },
     { suffix: "/benchmark-review", label: "Benchmark Review", icon: ShieldQuestion, hint: "author human ground truth" },
+    { suffix: "/held-out-validation", label: "Held-out Validation", icon: Target, hint: "do the V13 findings generalize?" },
     { suffix: "/reliability", label: "Reliability", icon: Activity, hint: "strategies compared, no combined score" },
   ],
   global: [{ href: "/experiments", label: "Experiments", icon: FlaskConical, hint: null }],

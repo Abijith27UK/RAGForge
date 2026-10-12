@@ -35,8 +35,15 @@ from app.api.deps import get_repo
 from app.api.routes_answer_eval import _resolve_benchmark_path
 from app.config import get_settings
 from app.repositories.sqlite_repo import Repository
+from typing import Any
+
 from app.services.answer_eval.benchmark import BenchmarkValidationError
 from app.services.answer_eval.benchmark_review import QuestionReview
+from app.services.answer_eval.drafting import (
+    DRAFT_LABEL,
+    DraftSuggestion,
+    summarise_drafts,
+)
 from app.services.answer_eval.ground_truth import (
     AnswerBenchmarkVersion,
     GroundTruthAnnotation,
@@ -44,6 +51,7 @@ from app.services.answer_eval.ground_truth import (
     ReviewCompleteness,
     verify_answer_benchmark_version,
 )
+from app.services.answer_eval.quality_audit import BenchmarkQualityAudit
 from app.services.answer_eval.review_workflow import (
     AnswerBenchmarkReviewService,
     BenchmarkIdentity,
@@ -437,8 +445,135 @@ def completeness_only(
     return completeness
 
 
+# ---------------------------------------------------------------------------
+# V11 draft assist and benchmark quality audit
+#
+# Neither endpoint can produce, approve, or alter ground truth. Drafts are
+# stored in their own table and returned as `DraftSuggestion` objects carrying
+# `is_draft = true`, `requires_human_review = true` and a conspicuous label, so
+# a client cannot render one as a reviewed reference answer by accident. The
+# audit is read-only over the benchmark, the corpus, and stored human input.
+# ---------------------------------------------------------------------------
+
+
+class DraftRequest(BaseModel):
+    """Body for the draft-suggestion endpoints. All fields optional."""
+
+    benchmark_path: str = DEFAULT_BENCHMARK_PATH
+    question_ids: list[str] = Field(
+        default_factory=list,
+        description="Questions to draft. Empty = every question in the benchmark.",
+    )
+    persist: bool = Field(
+        default=True,
+        description="Store the drafts append-only so the authoring history records what "
+        "was suggested. A draft is never ground truth either way.",
+    )
+
+
+class DraftBatchResponse(BaseModel):
+    suggestions: list[DraftSuggestion] = Field(default_factory=list)
+    summary: dict[str, Any] = Field(default_factory=dict)
+    label: str = DRAFT_LABEL
+    notice: str = (
+        "Machine-generated DRAFTS assembled from verbatim corpus sentences. They are NOT "
+        "human ground truth, cannot be approved as-is, and are never scored. A named human "
+        "must read, amend and submit an annotation for them to become ground truth."
+    )
+
+
+@router.post(
+    "/{kb_id}/answer-benchmark/draft-suggestions", response_model=DraftBatchResponse
+)
+def create_draft_suggestions(
+    kb_id: str,
+    payload: DraftRequest,
+    repo: Repository = Depends(get_repo),
+):
+    """Generate corpus-grounded DRAFT starting points.
+
+    Nothing here authors ground truth. Each suggestion quotes real evidence text
+    verbatim and says so; the references a reviewer needs in order to judge one
+    are on the object itself (`key_points_draft[].source_chunk_id`,
+    `evidence[]`).
+    """
+    _kb_or_404(repo, kb_id)
+    benchmark, _resolved = _load_benchmark(repo, kb_id, payload.benchmark_path)
+    service = _service(repo)
+    try:
+        drafts = service.build_drafts(
+            benchmark,
+            question_ids=payload.question_ids or None,
+            kb_id=kb_id,
+            persist=payload.persist,
+        )
+    except ReviewWorkflowError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return DraftBatchResponse(suggestions=drafts, summary=summarise_drafts(drafts))
+
+
+@router.get(
+    "/{kb_id}/answer-benchmark/questions/{question_id}/draft-suggestions",
+    response_model=list[DraftSuggestion],
+)
+def draft_suggestion_history(
+    kb_id: str,
+    question_id: str,
+    benchmark_path: str = Query(default=DEFAULT_BENCHMARK_PATH),
+    repo: Repository = Depends(get_repo),
+):
+    """Every draft ever generated for a question, oldest first.
+
+    History rather than latest-wins: a draft the author worked from is part of
+    the record of how the reference answer came to exist.
+    """
+    _kb_or_404(repo, kb_id)
+    benchmark, _resolved = _load_benchmark(repo, kb_id, benchmark_path)
+    return _service(repo).stored_drafts(kb_id, benchmark, question_id=question_id)
+
+
+@router.post(
+    "/{kb_id}/answer-benchmark/questions/{question_id}/draft-suggestions",
+    response_model=DraftSuggestion,
+    status_code=201,
+)
+def create_draft_suggestion(
+    kb_id: str,
+    question_id: str,
+    payload: DraftRequest,
+    repo: Repository = Depends(get_repo),
+):
+    """Generate one DRAFT for one question (the authoring panel's button)."""
+    _kb_or_404(repo, kb_id)
+    benchmark, _resolved = _load_benchmark(repo, kb_id, payload.benchmark_path)
+    try:
+        return _service(repo).build_draft(
+            benchmark, question_id, kb_id=kb_id, persist=payload.persist
+        )
+    except ReviewWorkflowError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
+@router.get("/{kb_id}/answer-benchmark/quality-audit", response_model=BenchmarkQualityAudit)
+def quality_audit(
+    kb_id: str,
+    benchmark_path: str = Query(default=DEFAULT_BENCHMARK_PATH),
+    repo: Repository = Depends(get_repo),
+):
+    """Pre-freeze benchmark quality audit (V11 PHASE 3). Read-only.
+
+    Reports findings; it never repairs them. A benchmark problem is preserved in
+    the audit trail and classified by a human, not silently edited.
+    """
+    _kb_or_404(repo, kb_id)
+    benchmark, resolved = _load_benchmark(repo, kb_id, benchmark_path)
+    return _service(repo).audit(benchmark, benchmark_path=resolved, kb_id=kb_id)
+
+
 __all__ = [
     "DEFAULT_BENCHMARK_PATH",
+    "DraftBatchResponse",
+    "DraftRequest",
     "GroundTruthAuthorRequest",
     "GroundTruthAuthorResponse",
     "FreezeRequest",

@@ -32,6 +32,10 @@ from app.services.answer_eval.benchmark import (
     load_answer_benchmark,
 )
 from app.services.answer_eval.benchmark_review import QuestionReview
+from app.services.answer_eval.drafting import (
+    DraftSuggestion,
+    build_draft_suggestion,
+)
 from app.services.answer_eval.ground_truth import (
     ApprovalGateResult,
     ApprovalPolicy,
@@ -47,6 +51,10 @@ from app.services.answer_eval.ground_truth import (
     compute_completeness,
     evaluate_approval_gate,
     validate_annotation,
+)
+from app.services.answer_eval.quality_audit import (
+    BenchmarkQualityAudit,
+    run_quality_audit,
 )
 from app.services.answer_eval.service import AnswerEvaluationService
 from app.utils.ids import new_id
@@ -586,6 +594,144 @@ class AnswerBenchmarkReviewService:
         )
 
         return validate_annotation_against_corpus(annotation, self.chunk_index(kb_id))
+
+    # -- V11 draft assist (never ground truth) -------------------------------
+
+    def term_weights(self, kb_id: str):
+        """Corpus IDF statistics for a KB, or None when unavailable.
+
+        Public accessor over the evaluator's own loader so the draft assist and
+        the quality audit weight question terms with exactly the statistics the
+        retriever and the relevance metric use.
+        """
+        return self._eval._relevance_weights(kb_id)
+
+    def build_draft(
+        self,
+        benchmark: AnswerBenchmark,
+        question_id: str,
+        *,
+        kb_id: str | None = None,
+        persist: bool = True,
+    ) -> DraftSuggestion:
+        """Assemble a corpus-grounded DRAFT for one question.
+
+        Reads the question's real evidence from the live corpus. The result is a
+        `DraftSuggestion`, never an annotation: it is written to its own table
+        and can never be read back as ground truth, approved, or scored.
+        """
+        kb = kb_id or benchmark.kb_id
+        question = next(
+            (q for q in benchmark.questions if q.question_id == question_id), None
+        )
+        if question is None:
+            raise ReviewWorkflowError(
+                f"question {question_id!r} is not in benchmark {benchmark.benchmark!r}"
+            )
+        items = self.evidence(benchmark, question_id, kb_id=kb)
+        suggestion = build_draft_suggestion(
+            kb_id=kb,
+            benchmark_name=benchmark.benchmark,
+            benchmark_fingerprint=benchmark.fingerprint(),
+            question=question,
+            evidence_texts={item.chunk_id: item.text for item in items if item.found},
+            evidence_meta={
+                item.chunk_id: {
+                    "document_id": item.document_id,
+                    "content_hash": item.content_hash,
+                    "source_title": item.source_title,
+                    "section": item.section,
+                    "problems": item.problems,
+                }
+                for item in items
+            },
+            weights=self.term_weights(kb),
+        )
+        if persist:
+            self._repo.create_draft_suggestion(suggestion)
+        return suggestion
+
+    def build_drafts(
+        self,
+        benchmark: AnswerBenchmark,
+        *,
+        question_ids: list[str] | None = None,
+        kb_id: str | None = None,
+        persist: bool = True,
+    ) -> list[DraftSuggestion]:
+        """Drafts for the whole benchmark (or a subset), in benchmark order."""
+        wanted = set(question_ids) if question_ids else None
+        if wanted:
+            known = {q.question_id for q in benchmark.questions}
+            unknown = sorted(wanted - known)
+            if unknown:
+                raise ReviewWorkflowError(
+                    f"questions not in benchmark {benchmark.benchmark!r}: {unknown}"
+                )
+        out: list[DraftSuggestion] = []
+        for question in benchmark.questions:
+            if wanted and question.question_id not in wanted:
+                continue
+            out.append(
+                self.build_draft(
+                    benchmark, question.question_id, kb_id=kb_id, persist=persist
+                )
+            )
+        return out
+
+    def stored_drafts(
+        self, kb_id: str, benchmark: AnswerBenchmark, question_id: str | None = None
+    ) -> list[DraftSuggestion]:
+        """Previously generated drafts, oldest first (never latest-wins)."""
+        return self._repo.list_draft_suggestions(
+            kb_id,
+            benchmark_name=benchmark.benchmark,
+            question_id=question_id,
+        )
+
+    def latest_draft(
+        self, kb_id: str, benchmark: AnswerBenchmark, question_id: str
+    ) -> DraftSuggestion | None:
+        drafts = self.stored_drafts(kb_id, benchmark, question_id=question_id)
+        return drafts[-1] if drafts else None
+
+    def audit(
+        self,
+        benchmark: AnswerBenchmark,
+        *,
+        benchmark_path: str = "",
+        kb_id: str | None = None,
+    ) -> BenchmarkQualityAudit:
+        """Read-only pre-freeze quality audit over the live corpus."""
+        kb = kb_id or benchmark.kb_id
+        chunk_ids = sorted(
+            {e.chunk_id for q in benchmark.questions for e in q.required_evidence}
+        )
+        chunks = {c.id: c for c in self._repo.get_chunks_by_ids(kb, chunk_ids)}
+        evidence_texts: dict[str, str] = {}
+        evidence_meta: dict[str, dict[str, Any]] = {}
+        for chunk_id in chunk_ids:
+            chunk = chunks.get(chunk_id)
+            if chunk is None:
+                evidence_texts[chunk_id] = ""
+                evidence_meta[chunk_id] = {"problems": ["chunk is not in the live corpus"]}
+                continue
+            evidence_texts[chunk_id] = chunk.text or ""
+            evidence_meta[chunk_id] = {
+                "document_id": chunk.document_id,
+                "content_hash": chunk.content_hash,
+                "source_title": chunk.source_title,
+                "section": chunk.section,
+            }
+        return run_quality_audit(
+            benchmark=benchmark,
+            evidence_texts=evidence_texts,
+            evidence_meta=evidence_meta,
+            annotations=self.scoped_annotations(kb, benchmark),
+            weights=self.term_weights(kb),
+            benchmark_path=benchmark_path,
+            benchmark_fingerprint=benchmark.fingerprint(),
+        )
 
     # -- versions -----------------------------------------------------------
 

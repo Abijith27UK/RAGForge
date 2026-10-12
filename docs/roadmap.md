@@ -388,3 +388,129 @@ V9's recommended order is now partly consumed: item 1's *workflow and UI* are
 built (this phase); the human authoring itself remains. Next in V9's order:
 item 2 (Phase-10 failure-analysis UI), item 3 (V9 API routes), item 4
 (off-domain gate measurement).
+
+## V11 — Ground-truth assist: drafting + pre-freeze audit (2026-10-10, delivered)
+
+V11 does not run the evaluation loop; it removes the reason the loop is stuck.
+The only missing input is 28 human-authored reference answers, so this phase
+makes that authoring cheap and auditable while keeping every integrity rule
+intact. Full detail: [`v11-ground-truth-assist.md`](./v11-ground-truth-assist.md).
+
+| Phase | Item | Status |
+|---|---|---|
+| 0 | Audit of the V10 state (benchmark identity, freeze gate, what was actually blocking) | **done** |
+| 1 | `drafting.py` — extractive, corpus-grounded DRAFT engine: IDF-weighted sentence selection, per-key-point chunk + sentence provenance, `draft_ready` / `partial` / `insufficient_evidence`, divergence vs the frozen benchmark's pinned sentence | **done** |
+| 2 | `quality_audit.py` — deterministic, read-only, 8 pre-freeze checks; findings with severity + action; `checks_not_run` reported honestly; explicit limitations block; never repairs | **done** |
+| 3 | Persistence: append-only `benchmark_draft_suggestions` (no update/delete path) | **done** |
+| 4 | HTTP API: batch + per-question draft suggestions, draft history, quality audit | **done** — 54 tests |
+| 5 | Review UI: draft-assist panel with history and "use as starting point", per-question audit findings, benchmark audit panel with full-findings expander | **done** — `tsc` + build clean |
+| 6 | Live verification on the real benchmark: 28 drafts, 69 findings, 0 errors, UNKNOWN preserved, freeze still 409, benchmark untouched | **done** |
+| 7 | Author + review the 28 official questions, freeze, run the first official reference baseline | **NOT DONE — human work (0/28 reviewed)** |
+| 8 | Failure-mode analysis of the real baseline, then the "why did this answer fail?" UI | **blocked** until phase 7 completes |
+| 9 | Controlled optimization experiments driven by the observed failure modes | **blocked** — no measured baseline exists to justify a change |
+
+### Measured live state after V11
+
+* Drafts: **23 `draft_ready`, 3 `partial` (011/016/019), 2
+  `insufficient_evidence` (024/028)**; 27 key points; 7 drafts agree with the
+  sentence the frozen retrieval benchmark pinned, 21 differ.
+* Audit: **0 error / 34 warning / 35 info**, 8 checks ran, 2 could not (no
+  annotations exist). Verdict: *STRUCTURALLY SOUND BUT INCOMPLETE*.
+* Review-first shortlist: **auto-eng-028 (5%), 024 (11%), 011 (34%), 019 (39%),
+  016 (42%)** — pinned evidence may not answer these questions.
+* One real provenance finding: 29/29 required-evidence slots carry a source title
+  on the benchmark label that the live corpus chunk does not record.
+* Unchanged: 28 pending / 0 authored / 0 approved, freeze **409**, Qdrant
+  **14 / 8822 / 812**, `git status benchmarks/` empty.
+
+### V11 recommended order
+
+1. **Author and review the 28 questions using the drafts and the audit** (the
+   review-first shortlist above), then freeze and measure the official baseline.
+   Nothing else in this roadmap can produce a trustworthy number until this is
+   done, and V11 has made it the cheapest it can be without inventing labels.
+2. **Phase-10 failure-analysis UI** (V9 item 2) — worth building only once real
+   official runs exist to explain; its inputs (retrieval diagnostics, failure
+   taxonomy, claim-level grounding) are already stored per run.
+3. **V9 API routes** — diagnostics, classifications, recommendations and
+   experiment records over HTTP.
+4. **Off-domain gate measurement** — author ≥ 10 off-domain questions.
+5. **Reranker-stage diagnostics** — pre/post-rerank rank comparison.
+6. **Controlled optimization** — only against failure modes measured in the
+   official baseline, with scratch-KB isolation and no destructive Qdrant work.
+
+---
+
+## V12 — Retrieval diagnostics (2026-10-10, delivered)
+
+Per-question, evidence-backed diagnosis of why retrieval failed. Delivered:
+
+- evidence availability against the live corpus AND the live index;
+- the retrieval failure taxonomy (with `LOW_PRECISION` reserved and never
+  emitted, because precision@k is a lower bound under necessity-only labels);
+- a candidate probe deeper than the evaluated `k`, so "below your cut-off" and
+  "never retrieved" stay distinguishable;
+- matched-question strategy comparison reusing the V9 protocol gate and pairing;
+- append-only diagnostic runs with an integrity snapshot, plus API and UI.
+
+Measured at the time: dense recall@10 = 1.0, MRR@10 ≈ 0.743, nDCG@10 ≈ 0.806,
+11 `RANKING_FAILURE` / 17 `RETRIEVAL_SUCCESS`; at k=3, 5 `LOW_RECALL`, 6
+`RANKING_FAILURE`, 17 `RETRIEVAL_SUCCESS`. `required_recall_in_probe` = 1.0 in
+both runs, i.e. the expected evidence was retrievable at depth 20 even when the
+evaluated window was 3.
+
+The two recommendations that came out of it were "increase top-k for one
+question" and "investigate reranking for ranking failures". Both were tested in
+V13.
+
+---
+
+## V13 — Controlled retrieval experiments (2026-10-11, delivered)
+
+The measured-failure → hypothesis → experiment → verdict loop. It adds **no new
+retrieval capability**; it is an experiment layer over the V12 engine and the V9
+comparison utilities. Full detail:
+[`docs/v13-controlled-retrieval-optimization.md`](v13-controlled-retrieval-optimization.md).
+
+Delivered:
+
+- a declaration contract (hypothesis, targeted failure code, arms, primary
+  metric, guardrails, rejection conditions) stored BEFORE measurement;
+- `RetrievalDiagnosticRunner.run_configs()` — several configurations of the same
+  strategy measured by the same code path as a V12 diagnostic;
+- derived outcomes (`IMPROVED` / `NO_MEANINGFUL_IMPROVEMENT` / `REGRESSION` /
+  `INCONCLUSIVE` / `BLOCKED`) with the rule each verdict fired on recorded;
+- guardrails held to a declared per-metric bar rather than raw inequality;
+- immutable JSON experiment artifacts with before/after integrity snapshots;
+- four shipped, versioned experiment definitions and a read-only UI panel.
+
+Measured results (all exploratory, 28 questions, one corpus):
+
+| Experiment | Outcome | Headline |
+|---|---|---|
+| B — depth, strict guardrails | `REGRESSION` | `precision@k` −0.1821 dominates a recall gain of +0.1786 |
+| B — depth, corrected guardrails | `IMPROVED` | recall@k **0.8214 → 1.0000**, 5 questions improved, 0 regressed |
+| A — cross-encoder reranking | `REGRESSION` (hypothesis **disproven**) | MRR +0.0083 (bar 0.02, p = 1.0), recall **0.9643**, latency **+1.5 s** |
+| C — dense vs BM25 vs hybrid | `IMPROVED` (hybrid), `REGRESSION` (BM25) | hybrid MRR **0.7429 → 0.8173** with recall unchanged |
+
+The exact sign test on each experiment's PRIMARY metric gives p = 0.0625 (B, depth),
+1.0 (A, reranking), 0.549 (C, hybrid) and 0.424 (C, BM25). **None clears 0.05**, so
+nothing here is a claim of statistical significance.
+
+### V13 recommended order
+
+1. **Build the held-out validation set** — independently authored questions for
+   the same corpus, frozen the same way, then re-run B and C against it
+   unchanged. Nothing accepted in V13 is a finding until it survives questions
+   that were not used to select it.
+2. **Re-test the reranking mechanism narrowly** — rerank only the candidates that
+   will be returned (`reranker_top_n == top_k`), which cannot push required
+   evidence out of the window, and see whether the MRR gain survives.
+3. **Author and review the 28 answer-benchmark questions** (the V11 item still
+   open) — answer-correctness optimization remains blocked without it.
+4. **Reranker-stage diagnostics** — pre/post-rerank rank comparison per question,
+   which Experiment A showed is where the coverage loss happens.
+5. **Diversity/MMR experiment** — `apply_diversity` exists but has never been
+   measured on the benchmark.
+6. **Promote an accepted change** only after (1) — as an explicit, recorded user
+   decision, never automatically.

@@ -255,6 +255,42 @@ CREATE TABLE IF NOT EXISTS answer_benchmark_versions (
 );
 CREATE INDEX IF NOT EXISTS idx_abv_kb
     ON answer_benchmark_versions(kb_id, version);
+-- V11: machine-generated DRAFT suggestions for human authoring.
+--
+-- DELIBERATELY A SEPARATE TABLE from benchmark_ground_truth. A draft is not
+-- ground truth and must never be readable as if it were, so it cannot share a
+-- storage location with the annotations a human authored: any query that reads
+-- ground truth is structurally incapable of picking up a draft. Append-only,
+-- scoped by (benchmark_name, benchmark_fingerprint) like the other V10 tables.
+CREATE TABLE IF NOT EXISTS benchmark_draft_suggestions (
+    id TEXT PRIMARY KEY,
+    kb_id TEXT NOT NULL,
+    benchmark_name TEXT NOT NULL DEFAULT '',
+    benchmark_fingerprint TEXT NOT NULL DEFAULT '',
+    question_id TEXT NOT NULL,
+    generator TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    data TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_bds_scope
+    ON benchmark_draft_suggestions(kb_id, benchmark_name, benchmark_fingerprint, question_id, created_at);
+-- V12: retrieval-diagnostics runs.
+--
+-- Append-only, like every other evaluation record: a diagnostic run is what was
+-- measured at a point in time and is never rewritten. The full report (per
+-- question metrics, availability, classifications, comparisons and the
+-- integrity snapshot) is stored as one JSON document so a historical run can be
+-- re-read exactly as it was produced.
+CREATE TABLE IF NOT EXISTS retrieval_diagnostic_runs (
+    id TEXT PRIMARY KEY,
+    kb_id TEXT NOT NULL,
+    benchmark_name TEXT NOT NULL DEFAULT '',
+    benchmark_fingerprint TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    data TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rdx_kb
+    ON retrieval_diagnostic_runs(kb_id, created_at);
 """
 
 
@@ -264,16 +300,93 @@ def _connect(db_path: str) -> sqlite3.Connection:
     return conn
 
 
+class _SerialisedConnection:
+    """One thread's sqlite3 connection, whose statements take the repo lock.
+
+    Two things have to hold for the API to work at all:
+
+    1. **Threads must not share a connection.** ``Repository`` used one
+       ``sqlite3.Connection`` with ``check_same_thread=False``, and FastAPI runs
+       synchronous endpoints in a thread pool, so two requests could be inside it
+       at once. pysqlite caches prepared statements per connection, so two
+       cursors built from the same SQL text share one statement: the second
+       ``execute`` resets it and the first cursor then fetches the wrong rows
+       (or nothing). In practice that raised, from the held-out review page which
+       issues several requests at once::
+
+           sqlite3.InterfaceError: bad parameter or other API misuse
+
+       and, once the connection itself was guarded but the fetch was not, a
+       row/column mix-up. Connections are therefore PER THREAD: a thread's cursor
+       state can never be reset by another thread's statement.
+
+    2. **Statements must still be serialised.** SQLite allows one writer at a
+       time, and the repository is a small metadata store; the repository's
+       re-entrant lock is held for the whole call (``execute``, ``executemany``,
+       ``executescript``, ``commit``, ``rollback``), so write contention inside
+       the process cannot surface as ``database is locked``. Reads are
+       sub-millisecond, so serialising them costs nothing that matters here.
+
+    Regression tests: ``tests/test_repo_thread_safety.py``.
+    """
+
+    def __init__(self, connection: sqlite3.Connection, lock: threading.RLock) -> None:
+        self._connection = connection
+        self._lock = lock
+
+    def execute(self, *args: Any, **kwargs: Any):
+        with self._lock:
+            return self._connection.execute(*args, **kwargs)
+
+    def executemany(self, *args: Any, **kwargs: Any):
+        with self._lock:
+            return self._connection.executemany(*args, **kwargs)
+
+    def executescript(self, *args: Any, **kwargs: Any):
+        with self._lock:
+            return self._connection.executescript(*args, **kwargs)
+
+    def commit(self) -> None:
+        with self._lock:
+            self._connection.commit()
+
+    def rollback(self) -> None:
+        with self._lock:
+            self._connection.rollback()
+
+    def __getattr__(self, name: str) -> Any:
+        # Everything not listed above (row_factory, in_transaction, ...) reads
+        # through to the real connection. A raw ``cursor()`` reached this way is
+        # NOT serialised, so new code should call ``execute`` instead.
+        return getattr(self._connection, name)
+
+
 class Repository:
-    """SQLite-backed storage for RAGForge entities."""
+    """SQLite-backed storage for RAGForge entities.
+
+    One database file, one connection PER THREAD (see ``_SerialisedConnection``),
+    and one lock serialising the statements. All three are needed together: the
+    API shares a single ``Repository`` across request threads.
+    """
 
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
-        self._conn = _connect(db_path)
         self._lock = threading.RLock()
+        self._local = threading.local()
+        # Create this thread's connection eagerly so the schema exists before
+        # anything else touches the file, and so a bad path fails right here.
         with self._lock:
             self._conn.executescript(_SCHEMA)
             self._conn.commit()
+
+    @property
+    def _conn(self) -> _SerialisedConnection:
+        """This thread's connection to the database, created on first use."""
+        conn = getattr(self._local, "connection", None)
+        if conn is None:
+            conn = _SerialisedConnection(_connect(self.db_path), self._lock)
+            self._local.connection = conn
+        return conn
 
     # -- generic helpers ----------------------------------------------------
 
@@ -321,6 +434,9 @@ class Repository:
             ("DELETE FROM benchmark_versions WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM benchmark_question_reviews WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM benchmark_ground_truth WHERE kb_id = ?", (kb_id,)),
+            ("DELETE FROM benchmark_draft_suggestions WHERE kb_id = ?", (kb_id,)),
+            # V12: retrieval diagnostics are derived and go with the KB.
+            ("DELETE FROM retrieval_diagnostic_runs WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM answer_benchmark_versions WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM ingestion_items WHERE kb_id = ?", (kb_id,)),
             ("DELETE FROM ingestion_batches WHERE kb_id = ?", (kb_id,)),
@@ -908,6 +1024,112 @@ class Repository:
         from app.services.answer_eval.benchmark_review import QuestionReview
 
         return [self._from_row(r, QuestionReview) for r in rows]  # type: ignore[misc]
+
+    # -- V11 draft suggestions (append-only, never ground truth) --------------
+
+    def create_draft_suggestion(self, suggestion) -> None:
+        """Insert ONE machine-generated draft. Append-only, like reviews.
+
+        There is no update or delete path: a draft is a record of what was
+        suggested at a point in time, and a later draft is a new row. Nothing
+        reading ground truth can see these rows.
+        """
+        self._execute(
+            "INSERT INTO benchmark_draft_suggestions "
+            "(id, kb_id, benchmark_name, benchmark_fingerprint, question_id, "
+            "generator, created_at, data) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                suggestion.suggestion_id,
+                suggestion.kb_id,
+                suggestion.benchmark_name,
+                suggestion.benchmark_fingerprint,
+                suggestion.question_id,
+                suggestion.generator,
+                suggestion.created_at.isoformat(),
+                self._to_row(suggestion),
+            ),
+        )
+
+    def list_draft_suggestions(
+        self,
+        kb_id: str,
+        benchmark_name: str | None = None,
+        benchmark_fingerprint: str | None = None,
+        question_id: str | None = None,
+        limit: int = 2000,
+    ) -> list:
+        sql = "SELECT data FROM benchmark_draft_suggestions WHERE kb_id = ?"
+        params: list = [kb_id]
+        if benchmark_name is not None:
+            sql += " AND benchmark_name = ?"
+            params.append(benchmark_name)
+        if benchmark_fingerprint is not None:
+            sql += " AND benchmark_fingerprint = ?"
+            params.append(benchmark_fingerprint)
+        if question_id is not None:
+            sql += " AND question_id = ?"
+            params.append(question_id)
+        sql += " ORDER BY created_at ASC, id ASC LIMIT ?"
+        params.append(limit)
+        rows = self._conn.execute(sql, tuple(params)).fetchall()
+        from app.services.answer_eval.drafting import DraftSuggestion
+
+        return [self._from_row(r, DraftSuggestion) for r in rows]  # type: ignore[misc]
+
+    # -- V12 retrieval diagnostics (append-only) ------------------------------
+
+    def create_retrieval_diagnostic_run(self, report) -> None:
+        """Insert ONE retrieval-diagnostics report. Append-only, like reviews.
+
+        There is no update or delete path here: a diagnostic run is a record of
+        what was measured, and re-running produces a NEW row so the two can be
+        compared rather than one silently overwriting the other.
+        """
+        self._execute(
+            "INSERT INTO retrieval_diagnostic_runs "
+            "(id, kb_id, benchmark_name, benchmark_fingerprint, created_at, data) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                report.id,
+                report.kb_id,
+                report.benchmark_name,
+                report.benchmark_fingerprint,
+                report.created_at,
+                self._to_row(report),
+            ),
+        )
+
+    def list_retrieval_diagnostic_runs(
+        self,
+        kb_id: str,
+        benchmark_name: str | None = None,
+        limit: int = 100,
+    ):
+        sql = "SELECT data FROM retrieval_diagnostic_runs WHERE kb_id = ?"
+        params: list = [kb_id]
+        if benchmark_name is not None:
+            sql += " AND benchmark_name = ?"
+            params.append(benchmark_name)
+        sql += " ORDER BY created_at DESC, id DESC LIMIT ?"
+        params.append(limit)
+        rows = self._conn.execute(sql, tuple(params)).fetchall()
+        from app.services.answer_eval.retrieval_diagnostics import (
+            RetrievalDiagnosticsReport,
+        )
+
+        return [self._from_row(r, RetrievalDiagnosticsReport) for r in rows]  # type: ignore[misc]
+
+    def get_retrieval_diagnostic_run(self, kb_id: str, run_id: str):
+        row = self._conn.execute(
+            "SELECT data FROM retrieval_diagnostic_runs WHERE kb_id = ? AND id = ?",
+            (kb_id, run_id),
+        ).fetchone()
+        from app.services.answer_eval.retrieval_diagnostics import (
+            RetrievalDiagnosticsReport,
+        )
+
+        return self._from_row(row, RetrievalDiagnosticsReport)  # type: ignore[misc]
 
     # -- V10 authored reference answers (append-only) -------------------------
 

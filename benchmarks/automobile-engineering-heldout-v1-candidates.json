@@ -1,0 +1,551 @@
+{
+  "benchmark": "automobile-engineering-heldout-v1",
+  "version": 1,
+  "created_at": "2026-10-11T05:51:49.886677+00:00",
+  "kb_id": "kb_f278c283c748",
+  "kb_name": "Automobile Engineering KB (E2E)",
+  "derived_from": "benchmarks/automobile-engineering-baseline-v1.json",
+  "protocol": {
+    "method": "Manual, agent-authored drafting grounded in the full text of the indexed corpus, following the same evidence-first method as the development benchmark: a chunk is chosen because it contains the answer, and the question is then written from that chunk.",
+    "question_selection": "Candidate chunks were located by scanning the stored TEXT of every chunk in the knowledge base with plain substring matching. No retriever was run: no vector search, no BM25, no reranker, no embedding call. Topics were chosen to avoid the concepts the 28 development questions already cover and to spread across all 11 corpus documents.",
+    "evidence_selection": "Exactly one necessary chunk per question, inherited from the development benchmark's relevance model (binary, necessity-only). Every chunk must not appear in the development benchmark, and every question must be answerable from that single chunk alone.",
+    "review_policy": "Every question is frozen as a DRAFT. A human must record an approve, edit or reject decision for each question in the review view before the artifact can freeze as VALIDATED. Until then it freezes as PROVISIONAL, which permits exploratory results only.",
+    "separation_policy": "Separation from the development benchmark is measured, not asserted: no expected chunk may be shared with a development question, and every question is scored for lexical similarity against all 28 development questions. The measurements are recomputed by the validator and reported per question.",
+    "known_limitations": "Lexical similarity cannot prove two differently-worded questions test different knowledge, and the agent that drafted these questions is the same agent that ran the V13 experiments, so a shared blind spot cannot be excluded by the drafting method alone. Only independent human review, and ideally questions authored by someone else, can address that."
+  },
+  "authorship": {
+    "method": "agent-drafted from the full text of named indexed corpus chunks; no retrieval and no LLM generation",
+    "author": "Buffy (Codebuff agent), operating under explicit human instruction",
+    "human_review": "PENDING - see the review records on each question",
+    "agent_authored": true,
+    "integrity_rules": [
+      "No question may reuse an expected chunk of a development question; the validator treats a shared chunk as an error, not a warning.",
+      "No question enters the frozen instrument without a verbatim evidence quote that the validator can find in the named chunk.",
+      "Every question is frozen as a draft; review decisions are appended by a named human in the review view and never by this script.",
+      "Recorded reference answers, key points and ground truth do not exist for these questions, so no answer-correctness claim may be made from them."
+    ]
+  },
+  "relevance_model": "binary",
+  "candidates": [
+    {
+      "id": "auto-eng-hout-001",
+      "subdomain": "engine",
+      "question": "Which devices were described as engines during the Industrial Revolution, and what were the original steam engines such as Thomas Savery's?",
+      "expected_chunk_ids": [
+        "chk_2878a1b70522"
+      ],
+      "expected_document_ids": [
+        "doc_90752e50cc19"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Most mechanical devices invented during the Industrial Revolution were described as engines—the steam engine being a notable example. However, the original steam engines, such as those by Thomas Savery , were not mechanical engines but pumps.",
+      "coverage_rationale": "Adds the history and etymology of the word 'engine' plus the counter-intuitive fact that Savery's engines were pumps. The development set asks only what an engine IS (auto-eng-001) and which IC engine suits light automobiles (auto-eng-002); it contains no terminology or history question.",
+      "query_type": "terminology",
+      "difficulty": "basic",
+      "provenance": "Chunk chk_2878a1b70522 (Engine - Wikipedia, section Introduction): \"Most mechanical devices invented during the Industrial Revolution were described as engines—the steam engine being a notable example. However, the original steam engines, such as those by Thomas Savery , were not mechanical engines but pumps.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-002",
+      "subdomain": "engine",
+      "question": "Which engine is the largest internal combustion engine ever built, and what are its cylinder count, fuel and rated output?",
+      "expected_chunk_ids": [
+        "chk_93a889a89753"
+      ],
+      "expected_document_ids": [
+        "doc_90752e50cc19"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "The largest internal combustion engine ever built is the Wärtsilä-Sulzer RTA96-C , a 14-cylinder, 2-stroke turbocharged diesel engine",
+      "coverage_rationale": "A named-entity plus numeric-specification question (14 cylinders, 2-stroke, turbocharged diesel, 80 MW). Nothing in the development set asks for a specific engine model or any engine specification.",
+      "query_type": "quantitative",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_93a889a89753 (Engine - Wikipedia, section Introduction): \"The largest internal combustion engine ever built is the Wärtsilä-Sulzer RTA96-C , a 14-cylinder, 2-stroke turbocharged diesel engine\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-003",
+      "subdomain": "engine",
+      "question": "What are engines with horizontally opposed pistons commonly called, and when was the first such design patented?",
+      "expected_chunk_ids": [
+        "chk_5927eb177d1e"
+      ],
+      "expected_document_ids": [
+        "doc_90752e50cc19"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "In 1897, Karl Benz was granted a patent for his design of the first engine with horizontally opposed pistons.",
+      "coverage_rationale": "Introduces engine-layout terminology ('flat' / 'boxer') and a patent date. The development set covers four-stroke stages (auto-eng-004) but never a named layout or its origin.",
+      "query_type": "terminology",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_5927eb177d1e (Engine - Wikipedia, section Introduction): \"In 1897, Karl Benz was granted a patent for his design of the first engine with horizontally opposed pistons.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-004",
+      "subdomain": "transmission",
+      "question": "Why do automobiles powered by internal combustion engines require multiple gear ratios?",
+      "expected_chunk_ids": [
+        "chk_741b5e7c0b5e"
+      ],
+      "expected_document_ids": [
+        "doc_20244bd4c0a6"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Since the torque and power output of an internal combustion engine (ICE) varies with its (rotational) speed , automobiles powered by ICEs require multiple gear ratios to keep the engine within its power band to produce optimal power, fuel efficiency , and smooth operation.",
+      "coverage_rationale": "Asks for the CAUSE of multi-ratio transmissions. The development set asks what a transmission is (auto-eng-005), how a dual-clutch differs (auto-eng-006), how a CVT differs from stepped designs (auto-eng-007) and what a hydraulic automatic uses (auto-eng-008) — none asks why gears are needed at all.",
+      "query_type": "mechanism",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_741b5e7c0b5e (Transmission (mechanical device) - Wikipedia, section Introduction): \"Since the torque and power output of an internal combustion engine (ICE) varies with its (rotational) speed , automobiles powered by ICEs require multiple gear ratios to keep the engine within its power band to produce optimal power, fuel efficiency , and smooth operation.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-005",
+      "subdomain": "transmission",
+      "question": "How many forward gear ratios do most currently produced gasoline or diesel passenger cars use, and what do electric vehicles use instead?",
+      "expected_chunk_ids": [
+        "chk_e7b4113e9fd5"
+      ],
+      "expected_document_ids": [
+        "doc_20244bd4c0a6"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Most currently produced passenger cars with gasoline or diesel engines use transmissions with 4–10 forward gear ratios (also called speeds ) and one reverse gear ratio. Electric vehicles typically use fixed-ratio or two-speed transmissions with no reverse",
+      "coverage_rationale": "A numeric range plus an electric-vehicle comparison. The development set's transmission questions are all about transmission TYPES; none gives a gear count or contrasts an EV drivetrain.",
+      "query_type": "quantitative",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_e7b4113e9fd5 (Transmission (mechanical device) - Wikipedia, section Introduction): \"Most currently produced passenger cars with gasoline or diesel engines use transmissions with 4–10 forward gear ratios (also called speeds ) and one reverse gear ratio. Electric vehicles typically use fixed-ratio or two-speed transmissions with no reverse\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-006",
+      "subdomain": "braking",
+      "question": "What is meant by fade in a brake, and what determines the greatest amount of power a brake can dissipate without failing?",
+      "expected_chunk_ids": [
+        "chk_0d263bc542f9"
+      ],
+      "expected_document_ids": [
+        "doc_f70fcb4ed4e9"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Fade – As a brake heats, it may become less effective, called brake fade . Some designs are inherently prone to fade, while other designs are relatively immune.",
+      "coverage_rationale": "Adds the failure mode of a brake (fade) and the concept of continuous power dissipation. The development set asks what a brake is (auto-eng-009) and how friction pad/shoe brakes work (auto-eng-010) — it never asks how brakes fail.",
+      "query_type": "terminology",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_0d263bc542f9 (Brake - Wikipedia, section Introduction): \"Fade – As a brake heats, it may become less effective, called brake fade . Some designs are inherently prone to fade, while other designs are relatively immune.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-007",
+      "subdomain": "braking",
+      "question": "What did Bosch and Mercedes update in 1978, and how was that system described?",
+      "expected_chunk_ids": [
+        "chk_502dcf67ec92"
+      ],
+      "expected_document_ids": [
+        "doc_f70fcb4ed4e9"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "In 1978, Bosch and Mercedes updated their 1936 anti-lock brake system for the Mercedes S-Class . That ABS is a fully electronic, four-wheel and multi-channel system that later became standard.",
+      "coverage_rationale": "A specific dated engineering-development fact about ABS. The development set covers regenerative versus friction braking only; anti-lock braking does not appear in it.",
+      "query_type": "mechanism",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_502dcf67ec92 (Brake - Wikipedia, section Introduction): \"In 1978, Bosch and Mercedes updated their 1936 anti-lock brake system for the Mercedes S-Class . That ABS is a fully electronic, four-wheel and multi-channel system that later became standard.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-008",
+      "subdomain": "steering",
+      "question": "Who invented collapsible steering columns and in which car were they introduced?",
+      "expected_chunk_ids": [
+        "chk_2bdbedea01d7"
+      ],
+      "expected_document_ids": [
+        "doc_5679743e2c32"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Collapsible steering columns were invented by Béla Barényi and were introduced in the 1959 Mercedes-Benz W111 Fintail, along with crumple zones.",
+      "coverage_rationale": "A safety-engineering fact tying steering to crash design. The development set asks how steering input is transmitted (auto-eng-013), how hydraulic and electric assistance differ (auto-eng-014) and what speed-sensitive steering changes (auto-eng-015) — nothing about steering as a crash-safety topic.",
+      "query_type": "mechanism",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_2bdbedea01d7 (Steering - Wikipedia, section 2012 Honda EV-STER \"Twin Lever Steering\" concept.): \"Collapsible steering columns were invented by Béla Barényi and were introduced in the 1959 Mercedes-Benz W111 Fintail, along with crumple zones.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-009",
+      "subdomain": "steering",
+      "question": "What is compliance understeer, and which methods are typical for achieving it on a live rear axle and on a twist beam suspension?",
+      "expected_chunk_ids": [
+        "chk_8ec810da0d3c"
+      ],
+      "expected_document_ids": [
+        "doc_5679743e2c32"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "This effect is called compliance understeer ; it, or its opposite, is present on all suspensions. Typical methods of achieving compliance understeer are to use a Watt's link on a live rear axle, or the use of toe control bushings on a twist beam suspension .",
+      "coverage_rationale": "Requires linking suspension geometry to a steering behaviour named by the corpus. The development set never uses the terms understeer or compliance, and its suspension questions are about roll rate, roll couple and interconnected suspension.",
+      "query_type": "mechanism",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_8ec810da0d3c (Steering - Wikipedia, section 2007 Liebherr-Bauma): \"This effect is called compliance understeer ; it, or its opposite, is present on all suspensions. Typical methods of achieving compliance understeer are to use a Watt's link on a live rear axle, or the use of toe control bushings on a twist beam suspension .\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-010",
+      "subdomain": "suspension",
+      "question": "What is damping, and what happens to a car that has none?",
+      "expected_chunk_ids": [
+        "chk_5345c113b94f"
+      ],
+      "expected_document_ids": [
+        "doc_31ee9762026c"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Damping is the control of motion or oscillation, as seen with the use of hydraulic gates and valves in a vehicle's shock absorber.",
+      "coverage_rationale": "Defines damping and its failure mode. The development set's suspension questions (auto-eng-016/017/018) are about roll rate, roll couple percentage and interconnected suspension; damping appears nowhere in it.",
+      "query_type": "mechanism",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_5345c113b94f (Car suspension - Wikipedia, section Jstor): \"Damping is the control of motion or oscillation, as seen with the use of hydraulic gates and valves in a vehicle's shock absorber.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-011",
+      "subdomain": "suspension",
+      "question": "Which suspension arrangement is generally accepted as the most compact for front-engined vehicles, and why does that matter?",
+      "expected_chunk_ids": [
+        "chk_09e04aa8bc01"
+      ],
+      "expected_document_ids": [
+        "doc_31ee9762026c"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "It is generally accepted, that MacPherson struts are the most compact arrangement for front-engined vehicles, where space between the wheels is required to place the engine.",
+      "coverage_rationale": "A packaging/space trade-off question naming a suspension type. The development set never names a suspension type or discusses space, weight or packaging.",
+      "query_type": "comparison",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_09e04aa8bc01 (Car suspension - Wikipedia, section Jstor): \"It is generally accepted, that MacPherson struts are the most compact arrangement for front-engined vehicles, where space between the wheels is required to place the engine.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-012",
+      "subdomain": "suspension",
+      "question": "How do the shock absorbers sold with magneto-rheological fluid give variable control, and how does fully active suspension differ in principle?",
+      "expected_chunk_ids": [
+        "chk_03476fb586a7"
+      ],
+      "expected_document_ids": [
+        "doc_31ee9762026c"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Delphi currently sells shock absorbers filled with a magneto-rheological fluid , whose viscosity can be changed electromagnetically — thereby giving variable control without switching valves, which is faster and thus more effective.",
+      "coverage_rationale": "Introduces semi-active versus fully active suspension and electromagnetic fluid control. The development set contains no actuator, damper-technology or active-suspension question at all.",
+      "query_type": "mechanism",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_03476fb586a7 (Car suspension - Wikipedia, section Jstor): \"Delphi currently sells shock absorbers filled with a magneto-rheological fluid , whose viscosity can be changed electromagnetically — thereby giving variable control without switching valves, which is faster and thus more effective.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-013",
+      "subdomain": "chassis",
+      "question": "Why is 'semi-monocoque' a more appropriate description than 'monocoque' for an integrated body structure?",
+      "expected_chunk_ids": [
+        "chk_69451f181e58"
+      ],
+      "expected_document_ids": [
+        "doc_239d623a606a"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Although this is sometimes also referred to as a monocoque structure, because the car's outer skin and panels are made load-bearing, there are still ribs, bulkheads, and box sections to reinforce the body, making the description semi-monocoque more appropriate.",
+      "coverage_rationale": "A terminology-precision question about body construction. The development set asks what a frame is (auto-eng-019), what replaced body-on-frame (auto-eng-020) and what a ladder frame is (auto-eng-021); the monocoque/semi-monocoque distinction is not in it. Shares the DOCUMENT with auto-eng-019/020 but not the evidence chunk.",
+      "query_type": "terminology",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_69451f181e58 (Vehicle frame - Wikipedia, section Jstor): \"Although this is sometimes also referred to as a monocoque structure, because the car's outer skin and panels are made load-bearing, there are still ribs, bulkheads, and box sections to reinforce the body, making the description semi-monocoque more appropriate.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-014",
+      "subdomain": "chassis",
+      "question": "Which streamlined 1936 car used a unibody structure, and what does the corpus say about how the design spread afterwards?",
+      "expected_chunk_ids": [
+        "chk_4299bcd54ac5"
+      ],
+      "expected_document_ids": [
+        "doc_239d623a606a"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "The streamlined 1936 Lincoln-Zephyr with conventional front-engine, rear-wheel-drive layout utilized a unibody structure.",
+      "coverage_rationale": "A named-model, dated adoption question about unit construction, distinct from auto-eng-020's general 'what replaced body-on-frame'. Shares the document with three development questions but not the evidence chunk.",
+      "query_type": "terminology",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_4299bcd54ac5 (Vehicle frame - Wikipedia, section Gaz-12 Zim): \"The streamlined 1936 Lincoln-Zephyr with conventional front-engine, rear-wheel-drive layout utilized a unibody structure.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-015",
+      "subdomain": "vehicle-dynamics",
+      "question": "Which attributes or aspects of vehicle dynamics are purely due to mass and its distribution?",
+      "expected_chunk_ids": [
+        "chk_561c97852061"
+      ],
+      "expected_document_ids": [
+        "doc_154c9462f9b4"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Some attributes or aspects of vehicle dynamics are purely due to mass and its distribution. These include: Center of mass Moment of inertia Roll moment Sprung mass Unsprung mass Weight distribution",
+      "coverage_rationale": "Asks for a specific grouping of attributes (mass and its distribution). The development set asks which TIRE attributes affect dynamics (auto-eng-022), how dynamics can be analysed (auto-eng-023) and which phenomena are listed as key behaviours (auto-eng-024) — the mass-distribution grouping is a fourth, separate grouping in the same corpus section.",
+      "query_type": "enumeration",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_561c97852061 (Vehicle dynamics - Wikipedia, section Introduction): \"Some attributes or aspects of vehicle dynamics are purely due to mass and its distribution. These include: Center of mass Moment of inertia Roll moment Sprung mass Unsprung mass Weight distribution\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-016",
+      "subdomain": "vehicle-dynamics",
+      "question": "In current vehicle simulator models, which part of the math model is described as the weakest and most difficult to simulate?",
+      "expected_chunk_ids": [
+        "chk_0f11fa3d273f"
+      ],
+      "expected_document_ids": [
+        "doc_154c9462f9b4"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "In current vehicle simulator models, the tire model is the weakest and most difficult part to simulate.",
+      "coverage_rationale": "A limitation-of-simulation fact, not a 'how do you simulate' question. Deliberately narrow wording to keep it distinct from auto-eng-023, which is in the same document; the validator reports its lexical similarity to that question so the resemblance is inspectable rather than assumed away.",
+      "query_type": "mechanism",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_0f11fa3d273f (Vehicle dynamics - Wikipedia, section Msc Adams): \"In current vehicle simulator models, the tire model is the weakest and most difficult part to simulate.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-017",
+      "subdomain": "electric-vehicles",
+      "question": "According to the vehicle-type table, how does a mild hybrid electric vehicle differ from a plug-in hybrid vehicle in the fuel it uses?",
+      "expected_chunk_ids": [
+        "chk_8d1f34008a3d"
+      ],
+      "expected_document_ids": [
+        "doc_36e74359e648"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Mild hybrid electric vehicle (MHEV, BAHV) Exclusively uses petroleum or other fuel, but has electric battery to consume less. Plug-in hybrid vehicle (PHEV) Uses mixture of petroleum or other fuel and electricity from power grid .",
+      "coverage_rationale": "Classification-by-fuel question, a taxonomy the development set never touches. The development set's EV questions are about the battery (auto-eng-026) and AC/DC charging (auto-eng-027); neither classifies vehicle types.",
+      "query_type": "comparison",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_8d1f34008a3d (Electric vehicle - Wikipedia, section Maz-7907): \"Mild hybrid electric vehicle (MHEV, BAHV) Exclusively uses petroleum or other fuel, but has electric battery to consume less. Plug-in hybrid vehicle (PHEV) Uses mixture of petroleum or other fuel and electricity from power grid .\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-018",
+      "subdomain": "electric-vehicles",
+      "question": "What do current electric vehicle safety regulations focus on, and which materials are being developed to address it?",
+      "expected_chunk_ids": [
+        "chk_60b255a941d5"
+      ],
+      "expected_document_ids": [
+        "doc_36e74359e648"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Current regulations focus on thermal runaway protection, with various international standards mandating advance warning systems and thermal propagation containment measures.",
+      "coverage_rationale": "Battery-safety regulation and fire-protection materials — a distinct area from the development set's battery-chemistry (auto-eng-026) and charging-mode (auto-eng-027) questions.",
+      "query_type": "mechanism",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_60b255a941d5 (Electric vehicle - Wikipedia, section Maz-7907): \"Current regulations focus on thermal runaway protection, with various international standards mandating advance warning systems and thermal propagation containment measures.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-019",
+      "subdomain": "electric-vehicles",
+      "question": "What is a charging station also known as, and what does it supply power to?",
+      "expected_chunk_ids": [
+        "chk_934dc093b023"
+      ],
+      "expected_document_ids": [
+        "doc_36e74359e648"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "A charging station , also known as a charge point, chargepoint, or electric vehicle supply equipment (EVSE), is a power supply device that supplies electrical power for recharging the onboard battery packs of plug-in electric vehicles",
+      "coverage_rationale": "Infrastructure terminology (EVSE). The development set asks how AC versus DC charging WORKS (auto-eng-027) but never names the equipment.",
+      "query_type": "terminology",
+      "difficulty": "basic",
+      "provenance": "Chunk chk_934dc093b023 (Electric vehicle - Wikipedia, section Maz-7907): \"A charging station , also known as a charge point, chargepoint, or electric vehicle supply equipment (EVSE), is a power supply device that supplies electrical power for recharging the onboard battery packs of plug-in electric vehicles\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-020",
+      "subdomain": "electric-vehicles",
+      "question": "Which forms of rechargeable on-board electricity storage are used in electric vehicles, and what advantage does avoiding an intermediate mechanical step give?",
+      "expected_chunk_ids": [
+        "chk_2d819cfb9f96"
+      ],
+      "expected_document_ids": [
+        "doc_36e74359e648"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "Batteries, electric double-layer capacitors and flywheel energy storage are forms of rechargeable on-board electricity storage systems.",
+      "coverage_rationale": "Asks for the storage taxonomy including supercapacitors and flywheels. The development set asks which battery powers a BEV (auto-eng-026) — chemistry only — and never mentions flywheels or double-layer capacitors.",
+      "query_type": "enumeration",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_2d819cfb9f96 (Electric vehicle - Wikipedia, section Maz-7907): \"Batteries, electric double-layer capacitors and flywheel energy storage are forms of rechargeable on-board electricity storage systems.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-021",
+      "subdomain": "battery-management",
+      "question": "Why does a battery management system balance the cells, and by which methods can it do so?",
+      "expected_chunk_ids": [
+        "chk_5559c040bb81"
+      ],
+      "expected_document_ids": [
+        "doc_5ea596059dba"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "In order to maximize the battery's capacity, and to prevent localized under-charging or over-charging, the BMS may actively ensure that all the cells that compose the battery are kept at the same voltage or State of Charge, through balancing.",
+      "coverage_rationale": "Cell balancing and its methods. The development set asks what a BMS is and which states it monitors (auto-eng-025) — a different function of the same component. Shares the document with auto-eng-025 but not the evidence chunk.",
+      "query_type": "mechanism",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_5559c040bb81 (Battery management system - Wikipedia, section Mosfet): \"In order to maximize the battery's capacity, and to prevent localized under-charging or over-charging, the BMS may actively ensure that all the cells that compose the battery are kept at the same voltage or State of Charge, through balancing.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-022",
+      "subdomain": "battery-management",
+      "question": "Why can the battery management system of an electric or hybrid vehicle not work as a stand-alone device, and with which subsystems must it communicate?",
+      "expected_chunk_ids": [
+        "chk_5037fa56fe36"
+      ],
+      "expected_document_ids": [
+        "doc_5ea596059dba"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "In the case of electric or hybrid vehicles, the BMS is only a subsystem and cannot work as a stand-alone device. It must communicate with at least a charger (or charging infrastructure), a load, thermal management and emergency shutdown subsystems.",
+      "coverage_rationale": "Integration/interface question — which other subsystems the BMS depends on. Distinct from both auto-eng-025 (monitored states) and hout-021 (balancing).",
+      "query_type": "mechanism",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_5037fa56fe36 (Battery management system - Wikipedia, section Mosfet): \"In the case of electric or hybrid vehicles, the BMS is only a subsystem and cannot work as a stand-alone device. It must communicate with at least a charger (or charging infrastructure), a load, thermal management and emergency shutdown subsystems.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-023",
+      "subdomain": "regenerative-braking",
+      "question": "Which factors can affect the energy transfer efficiency of a braking energy recovery system, and roughly what value does it generally take?",
+      "expected_chunk_ids": [
+        "chk_183f9951e89a"
+      ],
+      "expected_document_ids": [
+        "doc_494b7f7a6fd7"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "which may be affected by battery state of charge (SOC) and ambient temperature. In general, about 0.9.",
+      "coverage_rationale": "A symbolic-plus-numeric efficiency fact (SOC and ambient temperature; about 0.9). The development set asks how regenerative braking differs from friction braking (auto-eng-011) and how hybrid and electric vehicles combine the two (auto-eng-012) — neither quantifies recovery efficiency.",
+      "query_type": "quantitative",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_183f9951e89a (Regenerative braking - Wikipedia, section 24 Hours of Le Mans): \"which may be affected by battery state of charge (SOC) and ambient temperature. In general, about 0.9.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-024",
+      "subdomain": "regenerative-braking",
+      "question": "In the CPC-KERS, what replaces the continuously variable transmission and where does the mechanism sit?",
+      "expected_chunk_ids": [
+        "chk_39602e0f5da3"
+      ],
+      "expected_document_ids": [
+        "doc_494b7f7a6fd7"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "the whole mechanism including the flywheel sits entirely in the vehicle's hub (looking like a drum brake). In the CPC-KERS, a differential replaces the CVT and transfers torque between the flywheel , drive wheel and road wheel.",
+      "coverage_rationale": "A named mechanical KERS variant and its packaging. The development set's regenerative-braking questions are about the energy-flow concept only; no flywheel, KERS or driveline layout appears in it.",
+      "query_type": "mechanism",
+      "difficulty": "advanced",
+      "provenance": "Chunk chk_39602e0f5da3 (Regenerative braking - Wikipedia, section 2010 Formula One season): \"the whole mechanism including the flywheel sits entirely in the vehicle's hub (looking like a drum brake). In the CPC-KERS, a differential replaces the CVT and transfers torque between the flywheel , drive wheel and road wheel.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-025",
+      "subdomain": "general-automobile",
+      "question": "Which US patent was granted for a two-stroke car engine, what effect is it said to have had on car development, and when was it overturned?",
+      "expected_chunk_ids": [
+        "chk_4b7f788c3ea9"
+      ],
+      "expected_document_ids": [
+        "doc_83cf15f7960a"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "on 5 November 1895, Selden was granted a US patent ( U.S. patent 549,160 ) for a two-stroke car engine, which hindered, more than encouraged , development of cars in the United States. His patent was challenged by Henry Ford and others, and overturned in 1911.",
+      "coverage_rationale": "Automotive history and intellectual property. The development set's only general-automobile question is auto-eng-028 (which secondary energy source recovers energy) — no history, dates or named people.",
+      "query_type": "mechanism",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_4b7f788c3ea9 (Car - Wikipedia, section Introduction): \"on 5 November 1895, Selden was granted a US patent ( U.S. patent 549,160 ) for a two-stroke car engine, which hindered, more than encouraged , development of cars in the United States. His patent was challenged by Henry Ford and others, and overturned in 1911.\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    },
+    {
+      "id": "auto-eng-hout-026",
+      "subdomain": "general-automobile",
+      "question": "Why did cars increase in weight during the late 20th and early 21st century, and what did cars typically weigh as of 2019?",
+      "expected_chunk_ids": [
+        "chk_4c7ddabe7417"
+      ],
+      "expected_document_ids": [
+        "doc_83cf15f7960a"
+      ],
+      "expected_keywords": [],
+      "evidence_quote": "During the late 20th and early 21st century, cars increased in weight due to batteries, [ 67 ] modern steel safety cages, anti-lock brakes, airbags, and \"more-powerful—if more efficient—engines\"",
+      "coverage_rationale": "Mass trend and its causes plus a numeric range (1–3 tonnes). Nothing in the development set concerns vehicle weight, size or trends.",
+      "query_type": "quantitative",
+      "difficulty": "intermediate",
+      "provenance": "Chunk chk_4c7ddabe7417 (Car - Wikipedia, section Introduction): \"During the late 20th and early 21st century, cars increased in weight due to batteries, [ 67 ] modern steel safety cages, anti-lock brakes, airbags, and \"more-powerful—if more efficient—engines\"\". Read in full from the indexed corpus and selected 2026-10-11. The chunk is not expected evidence for any development benchmark question.",
+      "draft_origin": "Agent-drafted (Buffy, under explicit human instruction) after reading the full text of the named indexed chunk. No retrieval, scoring or embedding was run during authoring and no language model generated the question text; the evidence_quote was verified verbatim against the chunk before the draft was written.",
+      "status": "draft",
+      "review": null
+    }
+  ]
+}

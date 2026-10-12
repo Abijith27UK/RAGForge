@@ -165,6 +165,20 @@ POST/GET/DELETE /api/knowledge-bases/{id}/evaluation-questions[/{qid}]
 POST /api/knowledge-bases/{id}/evaluate              {top_k, question_ids?, benchmark_version?}
 GET  /api/knowledge-bases/{id}/evaluation-runs
 GET  /api/system/health | status
+
+# --- V10 benchmark review (see v10-benchmark-review.md) ---
+GET  /api/knowledge-bases/{id}/answer-benchmark/review-packet | completeness | quality-audit
+GET  /api/knowledge-bases/{id}/answer-benchmark/questions/{qid}
+POST /api/knowledge-bases/{id}/answer-benchmark/questions/{qid}/annotations
+POST /api/knowledge-bases/{id}/answer-benchmark/questions/{qid}/reviews
+POST /api/knowledge-bases/{id}/answer-benchmark/freeze
+GET  /api/knowledge-bases/{id}/answer-benchmark/versions[/{version_id}]
+POST /api/knowledge-bases/{id}/answer-benchmark/versions/{version_id}/verify
+
+# --- V11 draft assist (see v11-ground-truth-assist.md) ---
+POST /api/knowledge-bases/{id}/answer-benchmark/draft-suggestions            # batch, persist append-only
+GET  /api/knowledge-bases/{id}/answer-benchmark/questions/{qid}/draft-suggestions
+POST /api/knowledge-bases/{id}/answer-benchmark/questions/{qid}/draft-suggestions
 ```
 
 ## Extension points for experiments (V3)
@@ -637,3 +651,107 @@ ACCEPTABLE ELEMENTS → PROVENANCE → HUMAN REVIEW → APPROVED → FROZEN`.
     evaluator scored them instead of rubber-stamping. The scratch rows were
     deleted afterwards; the official benchmark was verified still 28/28
     pending with zero frozen versions, and `git diff HEAD -- benchmarks/` empty.
+
+## V11 — Ground-truth assist (drafting + pre-freeze audit)
+
+Design detail: [`v11-ground-truth-assist.md`](./v11-ground-truth-assist.md).
+V11 lowers the cost of the one step V10 cannot do — a human writing 28 reference
+answers — without ever producing a label.
+
+76. **Drafting is extractive, so a draft cannot contain outside knowledge.**
+    `drafting.py` selects whole sentences from the question's own pinned
+    evidence chunks, weighted by corpus IDF (reusing the lexical instrument the
+    project already validated in V9 `relevance.py`). No model, no network, no
+    paraphrase. Every key point carries `source_chunk_id` + sentence index. A
+    question with no supporting sentence becomes `insufficient_evidence` rather
+    than plausible prose — the failure mode to avoid is fluency where the
+    corpus is thin.
+77. **A draft is structurally incapable of becoming ground truth.** Every
+    `DraftSuggestion` sets `is_draft=true`, `requires_human_review=true` and a
+    fixed human-readable label; drafts live in their own append-only table
+    (`benchmark_draft_suggestions`) and are never read by the annotator, the
+    gate, the freeze path or the evaluator. The UI's "Use as starting point"
+    only copies text into the form — nothing is stored until a named human
+    presses Save, which writes a `GroundTruthAnnotation`.
+78. **Coverage triage is a judgement, and says so.** IDF-weighted question-term
+    coverage with the missing terms named; below a 45% triage line the draft is
+    `partial`, below a 20% sentence floor it is `insufficient_evidence`. The
+    audit's own `limitations` block records that the triage line is calibrated
+    on the shipped 28-question benchmark (not a validated classifier) and that a
+    question above the line is not thereby proven answerable.
+79. **The pre-freeze audit reports and never repairs.** `quality_audit.py` is
+    deterministic and read-only over the benchmark, the live corpus and stored
+    human input. It separates `error` / `warning` / `info`, returns an `action`
+    code per finding, and distinguishes `checks_run` from `checks_not_run` so a
+    check that cannot run (no annotations yet) is never presented as clean. It
+    cannot fix a benchmark problem, so nothing is silently edited — a bad
+    question keeps its audit trail and is classified by a human as `ambiguous`
+    or `insufficient_evidence`.
+80. **Lexical checks never claim to establish meaning.** The audit's limitation
+    list states it cannot prove a question is ambiguous, that a reference answer
+    is factually correct, or that two differently-worded questions test the same
+    knowledge; key-point support is lexical term coverage (`entailment.py`),
+    and an UNKNOWN judgement is reported as unsupported rather than fine.
+
+## V12 — Retrieval diagnostics
+
+Design detail: [`retrieval-diagnostics.md`](./retrieval-diagnostics.md) and the module
+docstrings in `backend/app/services/answer_eval/retrieval_diagnostics.py`.
+
+81. **A classification is not a metric.** The module keeps the metrics of record
+    (computed over the evaluated window, with the published meaning at `k`) apart
+    from the classification, which reads those metrics plus a deeper candidate
+    probe. The UI renders MEASURED / INFERRED / PROPOSED as different kinds of
+    statement, and a metric with `measured: false` renders as UNKNOWN with its
+    reason — never as `0.0`.
+82. **Availability is checked before blame is assigned.** Every required chunk is
+    resolved against the live corpus AND the live index, so "the evidence is not
+    in the corpus", "the evidence has no vector" and "the evidence was not
+    retrieved" are three different findings rather than one metric.
+83. **The probe exists so the classifier can tell depth apart from absence.**
+    Candidates are probed deeper than the evaluated `k`; `LOW_RECALL` is only
+    distinguishable from `NO_RELEVANT_EVIDENCE` when the probe is wider than the
+    window, and the
+    classification records a limitation when it is not.
+84. **A strategy that cannot run is recorded as FAILED with its error.** No other
+    strategy's numbers are substituted, and the report says so.
+
+## V13 — Controlled retrieval experiments
+
+Design detail: [`v13-controlled-retrieval-optimization.md`](./v13-controlled-retrieval-optimization.md).
+
+85. **The experiment layer adds no retrieval capability.** It is a measurement
+    and decision layer over the V12 engine and the V9 comparison utilities. Arms
+    are measured by `RetrievalDiagnosticRunner.run_configs()`, which calls the
+    same `_run_strategy` a V12 diagnostic uses; `run_configs` exists only because
+    a diagnostic run applies ONE configuration to every strategy while an
+    experiment needs several configurations of the same strategy side by side.
+    One measurement path means an experiment's numbers are comparable with the
+    diagnostics it is testing.
+86. **The declaration is stored before the measurement.** Hypothesis, targeted
+    failure code, arms, primary metric, guardrails, comparison method and
+    rejection conditions are written onto the artifact before any arm runs, so the
+    pass mark cannot be chosen after the result is known. `rejection_conditions`
+    and `outcome` sit on the same record.
+87. **Verdicts are derived by explicit, ordered rules.** `decide_candidate_outcome`
+    applies R1–R7 and appends the rule it fired on to `rules_applied`; the verdict
+    is auditable rather than asserted. `INCONCLUSIVE` and
+    `NO_MEANINGFUL_IMPROVEMENT` are first-class outcomes, not failures to reach a
+    conclusion.
+88. **Guardrails are held to a declared per-metric bar, not raw inequality.** A
+    guardrail fires only when its oriented mean delta reaches that metric's own
+    bar (`MEANINGFUL_DELTA`). Raw inequality would let a few milliseconds of
+    jitter veto a genuine improvement, which is a coin flip rather than a safety
+    property. The same bar applies to the primary metric.
+89. **Nothing is promoted.** `promoted_to_default` is always `false`; an
+    experiment never writes a retrieval configuration. Promotion is an explicit,
+    separate user decision.
+90. **Isolation is a measurement, not a promise.** Index point count, chunk-row
+    count, corpus revision and both benchmark sha256s are captured before and
+    after every run and stored on the artifact. All shipped strategies are
+    read-only with respect to the index, so no scratch collection is needed and
+    `scratch_collections_created` is 0.
+91. **An experiment is a record, not a knob.** The UI panel is read-only and has
+    no run control; definitions live in the repository
+    (`backend/scripts/run_retrieval_experiment.py`) so the hypothesis, the bar and
+    the arm configurations are versioned with the code that measures them.

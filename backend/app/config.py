@@ -56,6 +56,14 @@ class Settings(BaseSettings):
     # Retrieval defaults
     default_top_k: int = 5
 
+    # --- V14: held-out validation artifacts ---
+    # Overridable so a test (or an experiment on a copy of the corpus) can point
+    # the held-out tooling at its own artifacts instead of the shipped ones. A
+    # test that could only use the real files would either mutate the research
+    # instrument or not exist at all.
+    heldout_candidate_path: Path | None = None
+    heldout_benchmark_path: Path | None = None
+
     # --- V4: user document ingestion ---
     max_upload_bytes: int = 100 * 1024 * 1024  # 100 MB per uploaded file
     max_upload_files_per_request: int = 200

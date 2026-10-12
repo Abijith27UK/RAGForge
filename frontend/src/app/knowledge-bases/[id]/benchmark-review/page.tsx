@@ -33,14 +33,18 @@ import {
   Lock,
   RefreshCw,
   ShieldQuestion,
+  Sparkles,
 } from "lucide-react";
 import {
   benchmarkReviewApi,
   answerEvaluationApi,
   DEFAULT_ANSWER_BENCHMARK_PATH,
+  BenchmarkQualityAudit,
+  BenchmarkQualityFinding,
   BenchmarkQuestionDetail,
   BenchmarkReviewPacket,
   DIMENSION_VERDICTS,
+  DraftSuggestion,
   EvidenceItem,
   FrozenVersionSummary,
   GroundTruthAnnotation,
@@ -149,16 +153,354 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
 }
 
 /** LEFT panel — the reviewer's own ground truth for this question. */
+/**
+ * V11 draft assist. Produces a STARTING POINT for the human author.
+ *
+ * Deliberately placed in the ground-truth column with its machine origin
+ * shouted, not whispered: it must be impossible to mistake a draft for a
+ * reviewed reference answer. "Use as starting point" only fills the editable
+ * fields above — nothing is stored until the author saves it under their own
+ * name, and no draft can satisfy the approval gate on its own.
+ */
+function DraftAssistPanel({
+  kbId,
+  benchmarkPath,
+  questionId,
+  onUse,
+  auditFindings,
+}: {
+  kbId: string;
+  benchmarkPath: string;
+  questionId: string;
+  onUse: (draft: DraftSuggestion) => void;
+  auditFindings: BenchmarkQualityFinding[];
+}) {
+  const [draft, setDraft] = useState<DraftSuggestion | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [history, setHistory] = useState<DraftSuggestion[]>([]);
+  const [showCaveats, setShowCaveats] = useState(false);
+
+  useEffect(() => {
+    setDraft(null);
+    setErr(null);
+    let alive = true;
+    (async () => {
+      try {
+        const h = await benchmarkReviewApi.draftHistory(kbId, questionId, benchmarkPath);
+        if (alive) setHistory(h);
+      } catch {
+        if (alive) setHistory([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [kbId, questionId, benchmarkPath]);
+
+  const generate = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const d = await benchmarkReviewApi.generateDraft(kbId, questionId, {
+        benchmark_path: benchmarkPath,
+      });
+      setDraft(d);
+      setHistory((h) => [...h, d]);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const statusTone =
+    draft?.status === "draft_ready" ? "neutral" : draft ? "warn" : "neutral";
+
+  return (
+    <div className="rounded border border-warn/40 bg-warn/5 px-2.5 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="section-label text-warn">Draft assist (machine-generated)</span>
+        <Button variant="ghost" onClick={generate} loading={busy}>
+          <Sparkles className="mr-1 h-3 w-3" />
+          {draft ? "Regenerate draft" : "Generate draft"}
+        </Button>
+      </div>
+      <p className="mt-1 text-2xs text-ink-muted">
+        Assembles a starting point from <strong>verbatim sentences of the evidence</strong> in the
+        centre panel. It adds no outside knowledge, it is not ground truth, and it cannot be
+        approved. You still author, sign and save the reference answer.
+      </p>
+
+      {err && <p className="mt-1.5 text-2xs text-bad">{err}</p>}
+
+      {!draft && history.length > 0 && (
+        <p className="mt-1.5 text-2xs text-ink-faint">
+          {history.length} draft(s) already generated for this question — generate again to see the
+          latest, or check the history below.
+        </p>
+      )}
+
+      {draft && (
+        <div className="mt-2 space-y-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge tone="warn">{draft.label}</Badge>
+            <Badge tone={statusTone as "warn" | "neutral"}>
+              {draft.status.replace(/_/g, " ")}
+            </Badge>
+            <Badge tone="neutral">
+              coverage:{" "}
+              {draft.coverage_measured
+                ? `${Math.round(draft.coverage * 100)}% (IDF-weighted)`
+                : "UNKNOWN (no corpus statistics)"}
+            </Badge>
+            {draft.agrees_with_benchmark_quote === true && (
+              <Badge tone="ok">matches the sentence recorded in the benchmark</Badge>
+            )}
+            {draft.agrees_with_benchmark_quote === false && (
+              <Badge tone="warn">differs from the recorded sentence — compare both</Badge>
+            )}
+          </div>
+
+          <p className="text-2xs text-ink-muted">{draft.reason}</p>
+
+          {draft.expected_answer_draft ? (
+            <div>
+              <div className="section-label">Draft reference answer (verbatim corpus sentences)</div>
+              <p className="mt-0.5 whitespace-pre-wrap rounded border border-line bg-surface-3 px-2 py-1.5 text-2xs text-ink">
+                {draft.expected_answer_draft}
+              </p>
+            </div>
+          ) : (
+            <p className="text-2xs text-warn">
+              No draft was produced: the evidence does not state an answer this selector can quote.
+              Do not infer one — either cite additional evidence or classify the question.
+            </p>
+          )}
+
+          {draft.key_points_draft.length > 0 && (
+            <div>
+              <div className="section-label">
+                Draft key points ({draft.key_points_draft.length}) — each traceable to a sentence
+              </div>
+              <div className="mt-0.5 space-y-1">
+                {draft.key_points_draft.map((p, i) => (
+                  <div key={i} className="rounded border border-line bg-surface-3 px-2 py-1">
+                    <p className="text-2xs text-ink">{p.text}</p>
+                    <p className="mt-0.5 font-mono text-2xs text-ink-faint">
+                      {p.source_chunk_id} · sentence #{p.source_sentence_index} · term coverage{" "}
+                      {(p.coverage * 100).toFixed(0)}%
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {draft.uncovered_terms.length > 0 && (
+            <div>
+              <div className="section-label">Question terms absent from this evidence</div>
+              <p className="text-2xs text-ink-muted">
+                {draft.uncovered_terms.join(", ")}
+              </p>
+              <p className="mt-0.5 text-2xs text-ink-faint">
+                Ordered by significance. Several are usually the question&apos;s own phrasing — read
+                the evidence before treating any as missing knowledge.
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <Button onClick={() => onUse(draft)} disabled={!draft.expected_answer_draft}>
+              Use as starting point
+            </Button>
+            <span className="text-2xs text-ink-faint">
+              Copies the text into the form above. Nothing is saved until you press Save.
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="text-2xs text-ink-faint underline"
+            onClick={() => setShowCaveats((s) => !s)}
+          >
+            {showCaveats ? "hide" : "show"} the draft&apos;s own caveats and generator identity
+          </button>
+          {showCaveats && (
+            <div className="space-y-0.5">
+              <p className="font-mono text-2xs text-ink-faint">
+                {draft.generator} · {draft.method} · {draft.suggestion_id}
+              </p>
+              {draft.caveats.map((c, i) => (
+                <p key={i} className="text-2xs text-warn">
+                  {c}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {auditFindings.length > 0 && (
+        <div className="mt-2 border-t border-line pt-2">
+          <div className="section-label">Quality audit findings for this question</div>
+          {auditFindings.map((f, i) => (
+            <p
+              key={i}
+              className={cn(
+                "text-2xs",
+                f.severity === "error" ? "text-bad" : f.severity === "warning" ? "text-warn" : "text-ink-muted"
+              )}
+            >
+              <span className="font-mono">{f.severity}</span> {f.code.split("_").join(" ").toLowerCase()}:{" "}
+              {f.message}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {history.length > 1 && (
+        <p className="mt-1.5 text-2xs text-ink-faint">
+          Draft history: {history.length} record(s), newest {history[history.length - 1]?.suggestion_id}.
+          Append-only — regenerating never overwrites an earlier draft.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * V11 pre-freeze benchmark quality audit. READ-ONLY.
+ *
+ * Reports findings for a human to act on; it never repairs them, and it says
+ * which checks could not run instead of reporting them as clean.
+ */
+function QualityAuditPanel({
+  audit,
+  busy,
+  err,
+  onRun,
+}: {
+  audit: BenchmarkQualityAudit | null;
+  busy: boolean;
+  err: string | null;
+  onRun: () => void;
+}) {
+  const [showAll, setShowAll] = useState(false);
+
+  const benchmarkFindings = audit?.findings.filter((f) => !f.question_id) ?? [];
+  const errorFindings = audit?.findings.filter((f) => f.severity === "error") ?? [];
+  const warnFindings = audit?.findings.filter((f) => f.severity === "warning") ?? [];
+  // A benchmark-level finding appears in both the severity list and the
+  // benchmark list; dedupe by object identity so "show all" never prints one twice.
+  const seen = new Set<BenchmarkQualityFinding>();
+  const panelFindings = [...errorFindings, ...warnFindings, ...benchmarkFindings].filter(
+    (f) => !seen.has(f) && (seen.add(f), true)
+  );
+  const collapsed = [...errorFindings, ...benchmarkFindings]
+    .filter((f, i, arr) => arr.indexOf(f) === i)
+    .slice(0, 4);
+  const shown = showAll ? panelFindings : collapsed;
+  const hiddenCount = panelFindings.length - shown.length;
+
+  return (
+    <Panel>
+      <PanelHeader
+        title="Benchmark quality audit (read-only)"
+        right={
+          <Button variant="ghost" onClick={onRun} loading={busy}>
+            <ShieldQuestion className="mr-1 h-3.5 w-3.5" />
+            {audit ? "Re-run audit" : "Run audit"}
+          </Button>
+        }
+      />
+      {!audit && !err && (
+        <p className="text-2xs text-ink-muted">
+          Checks the benchmark against the live corpus before freezing: is every required chunk
+          still present with a matching content hash, does the pinned evidence actually cover each
+          question, are any questions near-duplicates, and are authored key points supported by the
+          evidence they cite. It reports problems for you to fix — it never edits the benchmark.
+        </p>
+      )}
+      {err && <p className="text-2xs text-bad">{err}</p>}
+      {audit && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge tone={audit.error_count > 0 ? "bad" : audit.warning_count > 0 ? "warn" : "ok"}>
+              {audit.error_count} error · {audit.warning_count} warning · {audit.info_count} info
+            </Badge>
+            <Badge tone={audit.ready_to_freeze ? "ok" : "warn"}>
+              {audit.ready_to_freeze ? "audit: ready to freeze" : "audit: not ready (see findings)"}
+            </Badge>
+            <span className="text-2xs text-ink-faint">
+              {audit.checks_run.length} checks ran · {audit.checks_not_run.length} could not run
+            </span>
+          </div>
+          <p className="text-2xs text-ink">{audit.verdict}</p>
+
+          {shown.map((f, i) => (
+            <p
+              key={i}
+              className={cn(
+                "flex items-start gap-1 text-2xs",
+                f.severity === "error" ? "text-bad" : "text-warn"
+              )}
+            >
+              <CircleAlert className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>
+                <span className="font-mono">
+                  [{f.severity}] {f.question_id || "benchmark"} {f.code}
+                </span>{" "}
+                {f.message}
+              </span>
+            </p>
+          ))}
+          {!showAll && hiddenCount > 0 && (
+            <button type="button" className="text-2xs text-ink-faint underline" onClick={() => setShowAll(true)}>
+              show all {panelFindings.length} finding(s) — {hiddenCount} hidden, including every
+              question-level finding
+            </button>
+          )}
+
+          {audit.checks_not_run.length > 0 && (
+            <div className="rounded border border-line bg-surface-3 px-2 py-1.5">
+              <div className="section-label">Checks that did NOT run</div>
+              {audit.checks_not_run.map((c, i) => (
+                <p key={i} className="text-2xs text-ink-muted">
+                  {c}
+                </p>
+              ))}
+            </div>
+          )}
+          <div className="rounded border border-line bg-surface-3 px-2 py-1.5">
+            <div className="section-label">What this audit cannot decide</div>
+            {audit.limitations.map((l, i) => (
+              <p key={i} className="text-2xs text-ink-faint">
+                {l}
+              </p>
+            ))}
+          </div>
+          <p className="text-2xs text-ink-faint">
+            {audit.audited_by} · {audit.audited_at}
+          </p>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 function AuthoringPanel({
   kbId,
   benchmarkPath,
   detail,
   onSaved,
+  auditFindings,
 }: {
   kbId: string;
   benchmarkPath: string;
   detail: BenchmarkQuestionDetail;
   onSaved: () => void;
+  auditFindings: BenchmarkQualityFinding[];
 }) {
   const effective = detail.effective_annotation;
   const [author, setAuthor] = useState(effective?.author ?? "");
@@ -249,6 +591,20 @@ function AuthoringPanel({
           className="mt-0.5 w-full rounded border border-line bg-surface-3 px-2 py-1.5 text-xs text-ink"
         />
       </label>
+
+      <DraftAssistPanel
+        kbId={kbId}
+        benchmarkPath={benchmarkPath}
+        questionId={detail.summary.question_id}
+        auditFindings={auditFindings}
+        onUse={(draft) => {
+          setReference(draft.expected_answer_draft);
+          setPoints(draft.key_points_draft.map((p) => p.text).join("\n"));
+          setNote(
+            `edited from draft ${draft.suggestion_id} (${draft.generator}); verified against the evidence`
+          );
+        }}
+      />
 
       <label className="block">
         <span className="section-label">Reference answer (human-authored, from the evidence)</span>
@@ -766,8 +1122,26 @@ export default function BenchmarkReviewPage() {
   const [tick, setTick] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // V11: the quality audit is run on demand, and its per-question findings are
+  // shown next to the question they concern.
+  const [audit, setAudit] = useState<BenchmarkQualityAudit | null>(null);
+  const [auditBusy, setAuditBusy] = useState(false);
+  const [auditErr, setAuditErr] = useState<string | null>(null);
 
   const refresh = useCallback(() => setTick((t) => t + 1), []);
+
+  const runAudit = useCallback(async () => {
+    if (!kbId) return;
+    setAuditBusy(true);
+    setAuditErr(null);
+    try {
+      setAudit(await benchmarkReviewApi.qualityAudit(kbId, DEFAULT_ANSWER_BENCHMARK_PATH));
+    } catch (e) {
+      setAuditErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAuditBusy(false);
+    }
+  }, [kbId]);
 
   // Whole-benchmark packet
   useEffect(() => {
@@ -954,6 +1328,10 @@ export default function BenchmarkReviewPage() {
                 benchmarkPath={DEFAULT_ANSWER_BENCHMARK_PATH}
                 detail={detail}
                 onSaved={refresh}
+                auditFindings={
+                  audit?.questions.find((q) => q.question_id === detail.summary.question_id)
+                    ?.findings ?? []
+                }
               />
             </div>
             <div className="rounded-md border border-line bg-surface-2 p-3">
@@ -980,6 +1358,13 @@ export default function BenchmarkReviewPage() {
           <p className="text-sm text-ink-faint">loading question evidence…</p>
         )}
       </Panel>
+
+      <QualityAuditPanel
+        audit={audit}
+        busy={auditBusy}
+        err={auditErr}
+        onRun={runAudit}
+      />
 
       <FreezePanel
         kbId={kbId}

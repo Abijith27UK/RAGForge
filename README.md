@@ -1101,12 +1101,41 @@ Live smoke (author → review → freeze → verify → reference eval): **24/24
 scratch benchmark; official benchmark verified **28/28 pending, 0 frozen versions**.
 Qdrant **14 → 14**, **8822 → 8822** points, protected KB **812 → 812**. Frozen artifacts: **0 modified**.
 
+### Implemented (V11 ground-truth assist)
+
+Makes the remaining human work — authoring the 28 reference answers — cheap and
+auditable without ever fabricating a label. Full detail:
+[`docs/v11-ground-truth-assist.md`](./docs/v11-ground-truth-assist.md).
+
+| Item | Status |
+|---|---|
+| **Draft assist** (`drafting.py`) — extractive only: selects **verbatim corpus sentences** from each question's pinned evidence, weighted by corpus IDF; never paraphrases, never calls a model, never adds outside knowledge. Each key point carries `source_chunk_id` + sentence index; every draft is labelled `DRAFT — MACHINE-GENERATED SUGGESTION, NOT HUMAN GROUND TRUTH`, stored append-only, and can never be approved as-is | implemented |
+| **Coverage triage** — IDF-weighted question-term coverage per question, with the missing terms named; below the 45% triage line a draft is `partial`, and with no supporting sentence it is honestly `insufficient_evidence` | implemented |
+| **Divergence signal** — each draft carries the sentence the frozen retrieval benchmark pinned plus `agrees_with_benchmark_quote`, marking where machine selection and earlier human pinning differ | implemented |
+| **Pre-freeze quality audit** (`quality_audit.py`) — deterministic, READ-ONLY, 8 checks: corpus presence, citation-requirement consistency, question-term coverage, source-title recording, near-duplicates, shared evidence, question wording, answerability. Reports findings for a human to act on and **never edits the benchmark** | implemented |
+| **Honest gaps** — checks that cannot run (no annotations yet) are reported as `checks_not_run`, never as clean; a `limitations` block states what lexical checks cannot decide | implemented |
+| **Review UI** — draft-assist panel (generate / history / use-as-starting-point), per-question audit findings, benchmark audit panel with a full-findings expander on `/knowledge-bases/[id]/benchmark-review` | implemented |
+| Authoring + review of the **28 official questions** | **NOT DONE — human work, 0/28 reviewed; live audit verdict: "STRUCTURALLY SOUND BUT INCOMPLETE"** |
+
+Measured live (2026-10-10, fingerprint `f72c30eb5c0c363a`): **28 drafts** — 23
+`draft_ready`, 3 `partial` (011/016/019), 2 `insufficient_evidence` (024/028);
+**0 errors / 34 warnings / 35 info** in the audit, 8 checks ran, 2 deferred.
+Review-first shortlist: auto-eng-028 (5% coverage), 024 (11%), 011 (34%),
+019 (39%), 016 (42%). One real provenance finding: 29/29 evidence slots carry
+a source title on the **benchmark label** that the corpus chunk does not record.
+No ground truth was created: **28 pending, 0 authored, 0 approved**; freeze
+still returns **409**; `git status benchmarks/` empty; Qdrant **14 / 8822 / 812**
+unchanged.
+
+Tests: **1116 backend** (1062 V10 + **54 V11**), 0 failed. Frontend `tsc` +
+`npm run build` clean.
+
 ### Planned / Experimental
 
 * **Human-authored reference answers** for the 28 questions (plus genuinely
-  unanswerable questions) through the V10 Benchmark Review workflow — the only
-  thing blocking `correctness` from being measured rather than UNKNOWN. **This
-  is the recommended next phase; V10 built the workflow, the labels still have
+  unanswerable questions) through the V10 Benchmark Review workflow — V11 now
+  supplies corpus-grounded drafts and the pre-freeze audit for it. **This
+  is the recommended next phase; the labels still have
   to be written by a human.**
 * Fixing the extractive mock generator's rank truncation: it walks evidence in
   rank order with a 5-claim budget, making evidence ranked 4th+ structurally
@@ -1117,11 +1146,89 @@ Qdrant **14 → 14**, **8822 → 8822** points, protected KB **812 → 812**. Fr
 * Benchmark authoring UI so a non-Automobile domain can acquire real ground truth
 * Query decomposition (multi-part questions are currently retrieved as one query,
   and the trace says so)
-* Retrieval Lab V2 parameter controls, strategy-comparison experiment runner
+* Retrieval Lab V2 parameter controls
 * TurboVec (optional experimental vector backend)
 * Domain-Aware Chunking
-* Automated RAG Optimization
 * MCP (deliberately not implemented yet)
+
+---
+
+### Implemented (V12 retrieval diagnostics)
+
+Per-question, evidence-backed diagnosis of **why** retrieval failed, kept separate
+from the metrics so a classification never becomes a metric.
+
+| Item | Status |
+|---|---|
+| **Evidence availability** — every required chunk checked against the LIVE corpus AND the live vector index: `indexed` / `corpus_only` / `missing_from_index` / `missing_from_corpus` / `unknown` | implemented |
+| **Retrieval failure taxonomy** — `CORPUS_OR_SOURCE_DEFICIENCY`, `EXPECTED_EVIDENCE_UNAVAILABLE`, `RETRIEVAL_FAILURE`, `NO_RELEVANT_EVIDENCE`, `LOW_RECALL`, `RANKING_FAILURE`, `RETRIEVAL_SUCCESS`, `UNKNOWN`; `LOW_PRECISION` is reserved and never fires (precision@k is a lower bound under necessity-only labels) | implemented |
+| **Candidate probe** — candidates probed deeper than the evaluated `k` so "retrieved below your cut-off" stays distinguishable from "never retrieved at all" | implemented |
+| **Matched-question strategy comparison** — protocol gate + paired statistics, reused from V9 | implemented |
+| **Append-only diagnostic runs** — one row per run, re-readable; read-only with respect to the KB, the index and the benchmark (integrity snapshot stored on every report) | implemented |
+| API + UI over the stored runs | implemented |
+
+### Implemented (V13 controlled retrieval experiments)
+
+The stage that turns a V12 finding into a measurement: **declare → run → compare on
+matched questions → accept or reject**. Not a parameter search. Full detail:
+[`docs/v13-controlled-retrieval-optimization.md`](./docs/v13-controlled-retrieval-optimization.md).
+
+| Item | Status |
+|---|---|
+| **Experiment declaration** — hypothesis, observed failure code, baseline + candidate arms, primary metric, guardrail metrics, comparison method and rejection conditions are stored on the artifact BEFORE any arm runs | implemented |
+| **Isolated arms** — every arm measured by the same engine the V12 diagnostics use (`run_configs`), same question set, same probe depth, same metric definitions | implemented |
+| **Derived verdicts** — `IMPROVED` / `NO_MEANINGFUL_IMPROVEMENT` / `REGRESSION` / `INCONCLUSIVE` / `BLOCKED`, each citing the rule it fired on; guardrails held to a declared per-metric bar so noise cannot veto a real gain | implemented |
+| **No auto-promotion** — `promoted_to_default` is always `false`; a configuration change needs an explicit, separate decision | implemented |
+| **Integrity** — index points, chunk rows, corpus revision and both benchmark sha256s captured before/after each run; scratch collections created = 0 | implemented |
+| **Reproducible definitions** — the shipped experiments live in `backend/scripts/run_retrieval_experiment.py` so the bar is versioned with the code | implemented |
+| Experiments run | **4 run** — depth under two declarations, cross-encoder reranking, dense/BM25/hybrid |
+| Held-out validation set | **NOT DONE** — needed before any accepted change is treated as generalisable |
+
+Measured on the protected KB `kb_f278c283c748` (812 points) against the frozen
+benchmark `edf3c586fe9fa296` (28 questions), all exploratory:
+
+* **Depth accepted**: `dense` recall@10 **0.8214 → 1.0000** from k=3 (+0.1786, 5 questions improved, 0 regressed), latency within the 50 ms bar. `LOW_RECALL` 5 → 0.
+* **Depth rejected under a strict declaration**: the same arms, with `precision@k` guardrailed, are a `REGRESSION` (−0.1821). Both artifacts are kept.
+* **Reranking disproven**: MRR +0.0083 against a 0.02 bar (sign test p = 1.0), recall **fell** to 0.9643, latency **+1.5 s**. A reranker is not coverage-neutral when the returned window is smaller than the reranked pool.
+* **Hybrid accepted for ranking**: MRR **0.7429 → 0.8173** (+0.0744) with recall unchanged at 1.0; BM25 rejected (recall −0.0714, MRR −0.0273) though ~48x faster.
+
+Tests: **1210 backend**, 0 failed. Frontend `tsc --noEmit` + `npm run build` clean.
+Protected KB `kb_f278c283c748` **812 → 812** points. Frozen benchmark artifacts: **0 modified**.
+
+### Implemented (V14 held-out validation — instrument complete, review pending)
+
+The stage that exists specifically so a V13-style finding can be tested on
+questions that were never used to choose it: a **separate instrument**, a
+**human review gate**, and a **one-way freeze**.
+
+| Item | Status |
+|---|---|
+| Held-out candidate set — 26 draft questions over 11 subdomains, each with a verbatim evidence quote, the chunk it came from and a coverage rationale | implemented |
+| Human review gate — one recorded decision per question (approve / edit / reject) carrying the reviewer's name; drafts never share storage with human ground truth | implemented, **0 of 26 decided** |
+| Validation of the labels — 9 checks (evidence in corpus, evidence in index, quote matches chunk, schema, provenance, uniqueness, separation from the development set); 0 errors, 0 warnings | implemented, PASSED |
+| Freeze — computes the tier from the review records and writes it into the artifact; the tier cannot be raised afterwards, because a reviewer who has seen results is no longer blind to them | implemented, **not run** |
+| Pre-registered arms `b-depth`, `c-hybrid`, `a-rerank-windowed` — declared in `backend/scripts/run_heldout_validation.py`, each retesting a V13 result at the configuration V13 left it | implemented, **not run** |
+| Frozen artifact `benchmarks/automobile-engineering-heldout-v1.json` | **does not exist** |
+| Held-out results | **none — no held-out measurement has been taken** |
+
+Current gate state, reported by the instrument itself: candidate fingerprint
+`c738f73c9fd52c4a`, 0 shared expected chunks with the development set (max
+lexical similarity 0.30 token / 0.31 char), lifecycle `draft`, claim strength
+`exploratory`, verdict *"FREEZEABLE AS PROVISIONAL — no errors, but 26
+question(s) carry no human decision, which caps every result at EXPLORATORY."*
+Lexical separation is all those numbers measure; they make overlap detectable,
+they do not make independence provable.
+
+Also in this stage: **one product defect found and fixed.** The repository shared
+a single SQLite connection across request threads, so the review page — which
+issues several requests at once — returned 500 and rendered "Knowledge base not
+found". Connections are now per thread, with statements serialised by the
+repository lock; `backend/tests/test_repo_thread_safety.py` reproduces the
+failure (3/3 fail before the fix, 15/16 threads) and pins it.
+
+Tests: **1299 backend**, 0 failed. Frontend `tsc --noEmit` clean. Protected KB
+`kb_f278c283c748` **812 → 812** points; both frozen benchmark artifacts
+byte-identical; `PRAGMA integrity_check` ok. Detail: [`docs/verification.md`](./docs/verification.md) (V14 section).
 
 ---
 

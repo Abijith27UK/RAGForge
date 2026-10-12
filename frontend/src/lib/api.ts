@@ -1884,6 +1884,126 @@ export interface VersionVerifyResult {
   problems: string[];
 }
 
+// ---------------------------------------------------------------------------
+// V11 draft assist and benchmark quality audit
+//
+// A DraftSuggestion is NOT ground truth. It carries `is_draft`, a conspicuous
+// `label`, and `requires_human_review`, and the backend stores it in a table no
+// ground-truth query can read. The UI must render it as a suggestion the author
+// edits and submits under their own name — never as an approved label.
+// ---------------------------------------------------------------------------
+
+export type DraftStatus = "draft_ready" | "partial" | "insufficient_evidence";
+
+export interface DraftKeyPoint {
+  /** Verbatim text of the cited chunk. Guaranteed by the backend. */
+  text: string;
+  source_chunk_id: string;
+  source_sentence_index: number;
+  score: number;
+  coverage: number;
+  method: string;
+}
+
+export interface DraftEvidence {
+  chunk_id: string;
+  found: boolean;
+  document_id: string | null;
+  source_title: string | null;
+  section: string | null;
+  content_hash: string;
+  char_count: number;
+  sentence_count: number;
+  problems: string[];
+}
+
+export interface DraftSuggestion {
+  suggestion_id: string;
+  kb_id: string;
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  question_id: string;
+  created_at: string;
+  method: string;
+  generator: string;
+  is_draft: boolean;
+  label: string;
+  requires_human_review: boolean;
+  status: DraftStatus;
+  reason: string;
+  caveats: string[];
+  question: string;
+  subdomain: string;
+  expected_answer_draft: string;
+  key_points_draft: DraftKeyPoint[];
+  evidence: DraftEvidence[];
+  question_terms: string[];
+  covered_terms: string[];
+  uncovered_terms: string[];
+  coverage: number;
+  coverage_measured: boolean;
+  coverage_method: string;
+  benchmark_quote: string;
+  agrees_with_benchmark_quote: boolean | null;
+}
+
+export interface DraftBatchResponse {
+  suggestions: DraftSuggestion[];
+  summary: Record<string, unknown>;
+  label: string;
+  notice: string;
+}
+
+export type AuditSeverity = "error" | "warning" | "info";
+
+export interface BenchmarkQualityFinding {
+  code: string;
+  severity: AuditSeverity;
+  message: string;
+  question_id: string;
+  also_question_id: string;
+  evidence_chunk_id: string;
+  action: string;
+  detail: Record<string, unknown>;
+}
+
+export interface BenchmarkQualityQuestion {
+  question_id: string;
+  question: string;
+  subdomain: string;
+  answerability: string;
+  evidence_chunk_ids: string[];
+  has_annotation: boolean;
+  key_points_checked: number;
+  key_points_supported: number;
+  key_points_unsupported: string[];
+  question_terms: string[];
+  uncovered_terms: string[];
+  /** null when the KB has no corpus statistics — NEVER a substituted 0. */
+  coverage: number | null;
+  recommended_action: string;
+  findings: BenchmarkQualityFinding[];
+}
+
+export interface BenchmarkQualityAudit {
+  kb_id: string;
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  benchmark_path: string;
+  audited_at: string;
+  audited_by: string;
+  questions: BenchmarkQualityQuestion[];
+  findings: BenchmarkQualityFinding[];
+  error_count: number;
+  warning_count: number;
+  info_count: number;
+  ready_to_freeze: boolean;
+  verdict: string;
+  checks_run: string[];
+  checks_not_run: string[];
+  limitations: string[];
+}
+
 export const DEFAULT_ANSWER_BENCHMARK_PATH =
   "benchmarks/answer-quality-automobile-v1.json";
 
@@ -1980,4 +2100,1118 @@ export const benchmarkReviewApi = {
       `/api/knowledge-bases/${kbId}/answer-benchmark/versions/${versionId}/verify`,
       { method: "POST" }
     ),
+
+  /** V11: generate a corpus-grounded DRAFT for one question.
+   * The result is a starting point for a human, never a label. */
+  generateDraft: (
+    kbId: string,
+    questionId: string,
+    body: { benchmark_path?: string; persist?: boolean } = {},
+  ) =>
+    request<DraftSuggestion>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/questions/${questionId}/draft-suggestions`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+
+  /** Every draft ever generated for a question, oldest first (append-only). */
+  draftHistory: (
+    kbId: string,
+    questionId: string,
+    benchmarkPath = DEFAULT_ANSWER_BENCHMARK_PATH,
+  ) =>
+    request<DraftSuggestion[]>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/questions/${questionId}/draft-suggestions?benchmark_path=${encodeURIComponent(benchmarkPath)}`
+    ),
+
+  /** Generate drafts for the whole benchmark (or a subset). */
+  generateDrafts: (
+    kbId: string,
+    body: { benchmark_path?: string; question_ids?: string[]; persist?: boolean } = {},
+  ) =>
+    request<DraftBatchResponse>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/draft-suggestions`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+
+  /** V11: read-only pre-freeze quality audit. Findings are reported, never applied. */
+  qualityAudit: (kbId: string, benchmarkPath = DEFAULT_ANSWER_BENCHMARK_PATH) =>
+    request<BenchmarkQualityAudit>(
+      `/api/knowledge-bases/${kbId}/answer-benchmark/quality-audit?benchmark_path=${encodeURIComponent(benchmarkPath)}`
+    ),
+};
+
+// ---------------------------------------------------------------------------
+// V12 retrieval diagnostics
+//
+// MEASURED vs INFERRED vs PROPOSED, kept apart everywhere below:
+//   * a metric with `measured: false` is UNKNOWN and must render as such —
+//     never as 0.0, and never as a pass;
+//   * a `classification` is a MEASURED verdict produced by a named rule from
+//     the observations in `evidence`;
+//   * a `recommendation` is a PROPOSED experiment with the measurements that
+//     support it, never an applied configuration change.
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_RETRIEVAL_BENCHMARK_PATH =
+  "benchmarks/automobile-engineering-baseline-v1.json";
+
+/** Every published retrieval outcome. LOW_PRECISION is documented as reserved. */
+export type RetrievalFailureCode =
+  | "RETRIEVAL_SUCCESS"
+  | "RANKING_FAILURE"
+  | "LOW_RECALL"
+  | "LOW_PRECISION"
+  | "NO_RELEVANT_EVIDENCE"
+  | "RETRIEVAL_FAILURE"
+  | "EXPECTED_EVIDENCE_UNAVAILABLE"
+  | "CORPUS_OR_SOURCE_DEFICIENCY"
+  | "UNKNOWN";
+
+export type EvidenceAvailabilityStatus =
+  | "indexed"
+  | "corpus_only"
+  | "missing_from_index"
+  | "missing_from_corpus"
+  | "unknown";
+
+export interface EvidenceAvailability {
+  chunk_id: string;
+  expected_document_ids: string[];
+  in_corpus: boolean | null;
+  in_index: boolean | null;
+  status: EvidenceAvailabilityStatus;
+  actual_document_id: string | null;
+  document_matches_benchmark: boolean | null;
+  section: string | null;
+  source_title: string | null;
+  content_hash: string | null;
+  notes: string[];
+  /** null when the index could not be probed — never assume a vector exists. */
+  retrievable: boolean | null;
+}
+
+export interface RetrievalClassification {
+  code: RetrievalFailureCode;
+  rule: string;
+  confidence: "deterministic" | "partial" | "unknown";
+  evidence: string[];
+  reason: string;
+  limitations: string[];
+  is_critical: boolean;
+}
+
+export interface RetrievalProbe {
+  candidate_depth: number;
+  candidate_chunk_ids: string[];
+  required_ranks_in_probe: Record<string, number>;
+  required_beyond_cutoff: Record<string, number>;
+  absent_from_probe: string[];
+  required_recall_in_probe: number | null;
+  truncated: boolean;
+}
+
+export interface RetrievedItem {
+  rank: number;
+  chunk_id: string;
+  score: number | null;
+  score_breakdown: Record<string, unknown>;
+  document_id: string | null;
+  source_id: string | null;
+  source_title: string | null;
+  source_url: string | null;
+  source_type: string | null;
+  publisher: string | null;
+  section: string | null;
+  page: number | null;
+  trust_score: number | null;
+  content_hash: string | null;
+  is_required: boolean;
+  selected_for_generation: boolean;
+}
+
+export interface QuestionDiagnosticSummaryMetrics {
+  recall_at_k: Measured;
+  precision_at_k: Measured;
+  mrr: Measured;
+  ndcg_at_k: Measured;
+  required_recall_at_depth: Measured;
+  first_relevant_rank: Measured;
+  latency_ms: Measured;
+  required_recall_in_probe: Measured;
+}
+
+export interface StrategyDiagnosticsSummary extends QuestionDiagnosticSummaryMetrics {
+  question_count: number;
+  ground_truth_question_count: number;
+  no_ground_truth_question_count: number;
+  evaluated_question_count: number;
+  code_counts: Record<string, number>;
+  availability_counts: Record<string, number>;
+  first_relevant_rank_histogram: Record<string, number>;
+  critical_question_ids: string[];
+  not_retrieved_question_ids: string[];
+  evidence_gap_question_ids: string[];
+  no_candidate_question_ids: string[];
+  unknown_metrics: string[];
+  warnings: string[];
+}
+
+export interface QuestionRetrievalDiagnostic {
+  question_id: string;
+  question: string;
+  subdomain: string;
+  strategy: string;
+  top_k: number | null;
+  expected_chunk_ids: string[];
+  expected_document_ids: string[];
+  availability: EvidenceAvailability[];
+  availability_rollup: string;
+  probe: RetrievalProbe;
+  classification: RetrievalClassification;
+  latency_ms: number | null;
+  evidence: {
+    question_id: string;
+    question: string;
+    subdomain: string;
+    strategy: string;
+    top_k: number | null;
+    retrieval_params: Record<string, unknown>;
+    retrieved: RetrievedItem[];
+    retrieval_depth: number;
+    required_chunk_ids: string[];
+    required_document_ids: string[];
+    ground_truth_available: boolean;
+    first_relevant_rank: number | null;
+    required_retrieved: boolean | null;
+    recall_at_k: Measured;
+    precision_at_k: Measured;
+    mrr: Measured;
+    ndcg_at_k: Measured;
+    required_recall_at_depth: Measured;
+    latency_ms: number | null;
+    warnings: string[];
+  };
+}
+
+export interface StrategyDiagnostics {
+  strategy: string;
+  status: "completed" | "failed" | "skipped" | string;
+  failure_reason: string;
+  top_k: number;
+  candidate_depth: number;
+  retrieval_params: Record<string, unknown>;
+  config_fingerprint: string;
+  embedding_model: string;
+  retrieval_backend: string;
+  reranker_status: string;
+  corpus_version: string | null;
+  corpus_fingerprint: string | null;
+  index_points: number | null;
+  notes: string[];
+  questions: QuestionRetrievalDiagnostic[];
+  summary: StrategyDiagnosticsSummary;
+  duration_ms: number | null;
+}
+
+export interface RetrievalIntegritySnapshot {
+  kb_id: string;
+  index_points_before: number | null;
+  index_points_after: number | null;
+  chunk_rows_before: number | null;
+  chunk_rows_after: number | null;
+  corpus_revision_before: number | null;
+  corpus_revision_after: number | null;
+  benchmark_sha256_before: string;
+  benchmark_sha256_after: string;
+  retrieval_runs_persisted: number;
+  protected_kb_unchanged: boolean | null;
+  benchmark_unchanged: boolean | null;
+}
+
+export interface RetrievalRecommendation {
+  action: string;
+  reason: string;
+  supporting_measurements: Record<string, unknown>;
+  expected_effect: string;
+  risk: string;
+  strength: "strong" | "moderate" | "weak" | "insufficient_evidence";
+  affected_question_ids: string[];
+  proposed_config_change: Record<string, unknown>;
+  experiment_required: boolean;
+  thresholds_used: Record<string, unknown>;
+}
+
+export interface RetrievalDiagnosticReport {
+  id: string;
+  kb_id: string;
+  kb_name: string;
+  created_at: string;
+  benchmark_name: string;
+  benchmark_version: number;
+  benchmark_path: string;
+  benchmark_fingerprint: string;
+  relevance_model: string;
+  benchmark_authorship: Record<string, unknown>;
+  top_k: number;
+  question_count: number;
+  matched_question_ids: string[];
+  strategies: StrategyDiagnostics[];
+  comparisons: StrategyComparison[];
+  recommendations: {
+    recommendations: RetrievalRecommendation[];
+    total_questions: number;
+    questions_with_ground_truth: number;
+    questions_analysed: number;
+    unknown_failure_count: number;
+    data_gaps: string[];
+    notes: string[];
+  };
+  integrity: RetrievalIntegritySnapshot;
+  limitations: string[];
+  notes: string[];
+}
+
+export interface MetricComparisonRow {
+  metric: string;
+  direction: "higher_is_better" | "lower_is_better";
+  questions: number;
+  paired_count: number;
+  unknown_count: number;
+  baseline_mean: number | null;
+  candidate_mean: number | null;
+  mean_delta: number | null;
+  improved_count: number;
+  regressed_count: number;
+  tie_count: number;
+  outcome: "IMPROVED" | "REGRESSED" | "UNCHANGED" | "UNKNOWN";
+  reason: string;
+  deltas: Array<{
+    question_id: string;
+    baseline: number | null;
+    candidate: number | null;
+    delta: number | null;
+    outcome: string;
+    unknown_reason: string;
+  }>;
+}
+
+export interface StrategyComparison {
+  baseline_label: string;
+  candidate_label: string;
+  baseline_config_fingerprint: string;
+  candidate_config_fingerprint: string;
+  benchmark_fingerprint: string;
+  pairing: "COMPARABLE" | "INCONCLUSIVE" | "NOT_COMPARABLE";
+  pairing_reason: string;
+  comparable_question_ids: string[];
+  protocol_differences: string[];
+  metric_comparisons: MetricComparisonRow[];
+  significance_tests: Array<{
+    name: string;
+    statistic: number | null;
+    p_value: number | null;
+    n: number;
+    exploratory: boolean;
+    note: string;
+    assumptions: string;
+  }>;
+  improved_metric_count: number;
+  regressed_metric_count: number;
+  unchanged_metric_count: number;
+  unknown_metric_count: number;
+  exploratory: boolean;
+  notes: string[];
+}
+
+export interface RetrievalDiagnosticsRunSummary {
+  id: string;
+  kb_id: string;
+  created_at: string;
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  top_k: number;
+  question_count: number;
+  strategies: Array<{
+    strategy: string;
+    status: string;
+    failure_reason: string;
+    code_counts: Record<string, number>;
+    recall_at_k: Measured;
+    mrr: Measured;
+    ndcg_at_k: Measured;
+    latency_ms: Measured;
+  }>;
+  protected_kb_unchanged: boolean | null;
+  benchmark_unchanged: boolean | null;
+  limitations: string[];
+}
+
+export interface EvidenceAuditQuestion {
+  question_id: string;
+  availability_rollup: string;
+  expected_chunk_ids: string[];
+  availability: EvidenceAvailability[];
+}
+
+export interface EvidenceAudit {
+  kb_id: string;
+  benchmark: string;
+  benchmark_fingerprint: string;
+  benchmark_path: string;
+  benchmark_sha256: string;
+  relevance_model: string;
+  authorship: Record<string, unknown>;
+  question_count: number;
+  expected_chunk_count: number;
+  expected_document_count: number;
+  index_probe: "verified" | "unavailable" | string;
+  index_points: number | null;
+  index_probe_notes: string[];
+  probe_notes: string[];
+  availability_counts: Record<string, number>;
+  questions: EvidenceAuditQuestion[];
+  verdict: string;
+  note: string;
+}
+
+export interface RetrievalBenchmarkIdentity {
+  benchmark: string;
+  version: number;
+  created_at: string;
+  kb_id: string;
+  kb_name: string;
+  relevance_model: string;
+  authorship: Record<string, unknown>;
+  fingerprint: string;
+  path: string;
+  question_count: number;
+  matches_this_kb: boolean;
+  questions: Array<{
+    id: string;
+    subdomain: string;
+    question: string;
+    expected_chunk_ids: string[];
+    expected_document_ids: string[];
+    provenance: string;
+  }>;
+  note: string;
+}
+
+export interface RetrievalDiagnosticsTaxonomy {
+  codes: RetrievalFailureCode[];
+  critical_codes: RetrievalFailureCode[];
+  not_emitted: Record<string, string>;
+  measured_vs_inferred: string;
+}
+
+/**
+ * V12 retrieval diagnostics. Every call is READ-ONLY against the knowledge base,
+ * the vector index and both benchmark artifacts; creating a run only INSERTs the
+ * run's own report row.
+ */
+export const retrievalDiagnosticsApi = {
+  benchmark: (kbId: string, benchmarkPath = DEFAULT_RETRIEVAL_BENCHMARK_PATH) =>
+    request<RetrievalBenchmarkIdentity>(
+      `/api/knowledge-bases/${kbId}/retrieval-diagnostics/benchmark?benchmark_path=${encodeURIComponent(benchmarkPath)}`
+    ),
+
+  evidenceAudit: (kbId: string, benchmarkPath = DEFAULT_RETRIEVAL_BENCHMARK_PATH) =>
+    request<EvidenceAudit>(
+      `/api/knowledge-bases/${kbId}/retrieval-diagnostics/evidence-audit?benchmark_path=${encodeURIComponent(benchmarkPath)}`
+    ),
+
+  strategies: (kbId: string) =>
+    request<{ strategies: Array<Record<string, unknown>>; note: string }>(
+      `/api/knowledge-bases/${kbId}/retrieval-diagnostics/strategies`
+    ),
+
+  taxonomy: (kbId: string) =>
+    request<RetrievalDiagnosticsTaxonomy>(
+      `/api/knowledge-bases/${kbId}/retrieval-diagnostics/taxonomy`
+    ),
+
+  runDiagnostics: (
+    kbId: string,
+    body: {
+      benchmark_path?: string;
+      strategies?: string[];
+      top_k?: number;
+      candidate_depth?: number | null;
+      question_ids?: string[];
+      persist?: boolean;
+      persist_retrieval_runs?: boolean;
+    } = {},
+  ) =>
+    request<RetrievalDiagnosticReport>(
+      `/api/knowledge-bases/${kbId}/retrieval-diagnostics/runs`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+
+  runs: (kbId: string, benchmarkName?: string, limit = 50) => {
+    const qs = new URLSearchParams();
+    if (benchmarkName) qs.set("benchmark_name", benchmarkName);
+    qs.set("limit", String(limit));
+    return request<RetrievalDiagnosticsRunSummary[]>(
+      `/api/knowledge-bases/${kbId}/retrieval-diagnostics/runs?${qs.toString()}`
+    );
+  },
+
+  run: (kbId: string, runId: string) =>
+    request<RetrievalDiagnosticReport>(
+      `/api/knowledge-bases/${kbId}/retrieval-diagnostics/runs/${runId}`
+    ),
+
+  question: (kbId: string, runId: string, questionId: string) =>
+    request<{
+      run_id: string;
+      question_id: string;
+      benchmark_name: string;
+      benchmark_fingerprint: string;
+      strategies: Array<{
+        strategy: string;
+        status: string;
+        top_k?: number;
+        classification?: RetrievalClassification;
+        availability_rollup?: string;
+        availability?: EvidenceAvailability[];
+        expected_chunk_ids?: string[];
+        retrieved_chunk_ids?: string[];
+        rank_of_expected?: Record<string, number | null>;
+        required_ranks_in_probe?: Record<string, number>;
+        required_beyond_cutoff?: Record<string, number>;
+        absent_from_probe?: string[];
+        required_recall_in_probe?: number | null;
+        candidate_depth?: number;
+        retrieved?: RetrievedItem[];
+        metrics?: Record<string, Measured>;
+        latency_ms?: number | null;
+        warnings?: string[];
+        note?: string;
+      }>;
+    }>(`/api/knowledge-bases/${kbId}/retrieval-diagnostics/runs/${runId}/questions/${questionId}`),
+
+  recommendations: (kbId: string, runId: string) =>
+    request<{
+      run_id: string;
+      recommendations: RetrievalRecommendation[];
+      data_gaps: string[];
+      notes: string[];
+      limitations: string[];
+      notice: string;
+    }>(`/api/knowledge-bases/${kbId}/retrieval-diagnostics/runs/${runId}/recommendations`),
+
+  comparisons: (kbId: string, runId: string) =>
+    request<{
+      run_id: string;
+      comparisons: StrategyComparison[];
+      notice: string;
+    }>(`/api/knowledge-bases/${kbId}/retrieval-diagnostics/runs/${runId}/comparisons`),
+};
+
+// ---------------------------------------------------------------------------
+// V13 controlled retrieval experiments
+// ---------------------------------------------------------------------------
+
+/** One arm of an experiment: a strategy plus the configuration under test. */
+export interface ExperimentArmConfig {
+  label: string;
+  strategy: string;
+  top_k: number;
+  candidate_depth: number | null;
+  params: Record<string, unknown>;
+  role: string;
+  rationale: string;
+}
+
+/** Descriptive statistics for ONE metric over the measured questions. */
+export interface ExperimentMetricStats {
+  metric: string;
+  mean: number | null;
+  median: number | null;
+  min: number | null;
+  max: number | null;
+  sample_size: number;
+  direction: "higher_is_better" | "lower_is_better" | string;
+  measured: boolean;
+  reason: string;
+}
+
+/** One question's baseline vs candidate value for the PRIMARY metric. */
+export interface ExperimentPerQuestion {
+  question_id: string;
+  question: string;
+  baseline: number | null;
+  candidate: number | null;
+  delta: number | null;
+  direction: string;
+  outcome: "IMPROVED" | "REGRESSED" | "UNCHANGED" | "UNKNOWN" | string;
+  note: string;
+}
+
+/** One measured arm, recorded exactly as it ran. */
+export interface ExperimentArm {
+  label: string;
+  strategy: string;
+  role: string;
+  config: ExperimentArmConfig;
+  status: string;
+  failure_reason: string;
+  top_k: number;
+  candidate_depth: number;
+  config_fingerprint: string;
+  embedding_model: string;
+  retrieval_backend: string;
+  reranker_status: string;
+  index_points: number | null;
+  duration_ms: number | null;
+  question_count: number;
+  code_counts: Record<string, number>;
+  latency_ms: number | null;
+  metric_stats: Record<string, ExperimentMetricStats>;
+  per_question: ExperimentPerQuestion[];
+  errors: string[];
+  notes: string[];
+}
+
+/** One candidate's verdict, with the rules that produced it. */
+export interface ExperimentCandidateOutcome {
+  label: string;
+  strategy: string;
+  config_fingerprint: string;
+  acceptance: "ACCEPT" | "REJECT" | "INCONCLUSIVE" | "NOT_VALID" | string;
+  acceptance_reason: string;
+  outcome: RetrievalExperimentOutcome;
+  outcome_explanation: string;
+  pairing: string;
+  pairing_reason: string;
+  primary_metric: string;
+  primary_mean_delta: number | null;
+  primary_required_delta: number;
+  primary_improved: boolean;
+  paired_question_count: number;
+  paired_wins: number | null;
+  paired_losses: number | null;
+  guardrails_regressed: string[];
+  guardrail_assessment: string[];
+  rules_applied: string[];
+}
+
+export type RetrievalExperimentOutcome =
+  | "PENDING"
+  | "BLOCKED"
+  | "INCONCLUSIVE"
+  | "NO_MEANINGFUL_IMPROVEMENT"
+  | "REGRESSION"
+  | "IMPROVED";
+
+/**
+ * A stored experiment: the declaration, the measurements and the derived verdict.
+ * `promoted_to_default` is always false — an experiment never changes the
+ * default retrieval configuration.
+ */
+export interface RetrievalExperiment {
+  id: string;
+  kb_id: string;
+  kb_name: string;
+  name: string;
+  slug: string;
+
+  hypothesis: string;
+  targeted_failure_code: string;
+  targeted_question_ids: string[];
+  proposed_change: string;
+  expected_effect: string;
+  primary_metric: string;
+  guardrail_metrics: string[];
+  comparison_method: string;
+  rejection_conditions: string[];
+
+  baseline: ExperimentArmConfig;
+  candidates: ExperimentArmConfig[];
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  benchmark_path: string;
+  benchmark_sha256_before: string;
+  benchmark_sha256_after: string;
+  corpus_fingerprint: string | null;
+  corpus_version: string | null;
+  matched_question_ids: string[];
+  question_set_fingerprint: string;
+
+  status: string;
+  arms: ExperimentArm[];
+  comparisons: StrategyComparison[];
+  candidate_outcomes: ExperimentCandidateOutcome[];
+  outcome: RetrievalExperimentOutcome;
+  outcome_explanation: string;
+  accepted_candidate: string;
+  promoted_to_default: boolean;
+
+  integrity: Record<string, unknown>;
+  limitations: string[];
+  notes: string[];
+  errors: string[];
+
+  created_at: string;
+  completed_at: string | null;
+  created_by: string;
+}
+
+/** A row of the experiment list: the declaration plus the verdict, no arms. */
+export interface RetrievalExperimentSummary {
+  id: string;
+  name: string;
+  kb_id: string;
+  created_at: string;
+  completed_at: string | null;
+  hypothesis: string;
+  primary_metric: string;
+  guardrail_metrics: string[];
+  targeted_failure_code: string;
+  targeted_question_ids: string[];
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  question_set_fingerprint: string;
+  matched_question_count: number;
+  baseline: ExperimentArmConfig;
+  candidates: ExperimentArmConfig[];
+  outcome: RetrievalExperimentOutcome;
+  outcome_explanation: string;
+  accepted_candidate: string;
+  promoted_to_default: boolean;
+  candidate_outcomes: Array<{
+    label: string;
+    outcome: RetrievalExperimentOutcome;
+    acceptance: string;
+    pairing: string;
+    primary_mean_delta: number | null;
+    paired_question_count: number;
+  }>;
+  integrity: Record<string, unknown>;
+  errors: string[];
+}
+
+export interface RetrievalExperimentMeta {
+  outcomes: RetrievalExperimentOutcome[];
+  meaningful_delta: Record<string, number>;
+  comparison_method: string;
+  promotion_policy: string;
+  notice: string;
+}
+
+/**
+ * V13 controlled experiments.
+ *
+ * `run` executes real retrieval over the benchmark and is READ-ONLY with respect
+ * to the index; `list`/`get`/`meta` are pure reads. Nothing here changes the
+ * saved retrieval configuration.
+ */
+export const retrievalExperimentsApi = {
+  meta: (kbId: string) =>
+    request<RetrievalExperimentMeta>(
+      `/api/knowledge-bases/${kbId}/retrieval-experiments/meta`
+    ),
+
+  list: (kbId: string) =>
+    request<RetrievalExperimentSummary[]>(
+      `/api/knowledge-bases/${kbId}/retrieval-experiments`
+    ),
+
+  get: (kbId: string, experimentId: string) =>
+    request<RetrievalExperiment>(
+      `/api/knowledge-bases/${kbId}/retrieval-experiments/${experimentId}`
+    ),
+
+  run: (
+    kbId: string,
+    body: {
+      name: string;
+      hypothesis: string;
+      baseline: Omit<ExperimentArmConfig, "role" | "rationale"> | Partial<ExperimentArmConfig>;
+      candidates: Array<Partial<ExperimentArmConfig>>;
+      primary_metric: string;
+      guardrail_metrics?: string[];
+      proposed_change?: string;
+      expected_effect?: string;
+      targeted_failure_code?: string;
+      targeted_question_ids?: string[];
+      rejection_conditions?: string[];
+      benchmark_path?: string;
+      question_ids?: string[];
+      persist?: boolean;
+    },
+  ) =>
+    request<RetrievalExperiment>(
+      `/api/knowledge-bases/${kbId}/retrieval-experiments`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+};
+
+// ---------------------------------------------------------------------------
+// V14 held-out validation
+// ---------------------------------------------------------------------------
+
+/** Where a held-out question stands. `draft` means nobody has decided yet. */
+export type HeldOutCandidateStatus = "draft" | "approved" | "edited" | "rejected";
+
+/**
+ * The two-tier lifecycle. PROVISIONAL means the artifact is sealed but at least
+ * one question was never reviewed, so every result from it is exploratory.
+ * VALIDATED requires a human decision on every surviving question, recorded
+ * BEFORE the freeze.
+ */
+export type HeldOutLifecycle = "draft" | "provisional" | "validated";
+export type HeldOutClaimStrength = "exploratory" | "confirmatory";
+
+/** One validation finding. `error` blocks a freeze; `warning` does not. */
+export interface HeldOutFinding {
+  severity: "error" | "warning" | "info" | string;
+  code: string;
+  detail: string;
+  action: string;
+  question_id: string;
+  applies_to_frozen: boolean;
+}
+
+/** One candidate's validation verdict. */
+export interface HeldOutQuestionValidation {
+  question_id: string;
+  status: string;
+  subdomain: string;
+  question: string;
+  expected_chunk_ids: string[];
+  evidence_resolved: number;
+  evidence_total: number;
+  evidence_in_index: number | null;
+  needs_review: boolean;
+  findings: HeldOutFinding[];
+}
+
+/** Everything the validator established, and what it could not run. */
+export interface HeldOutValidationReport {
+  benchmark: string;
+  kb_id: string;
+  candidate_fingerprint: string;
+  question_count: number;
+  surviving_count: number;
+  rejected_count: number;
+  checks_run: string[];
+  checks_not_run: Array<{ check: string; reason: string }>;
+  errors: string[];
+  warnings: string[];
+  questions: HeldOutQuestionValidation[];
+  separation: {
+    development_benchmark_questions: number;
+    development_benchmark_chunk_ids: number;
+    development_document_ids: string[];
+    thresholds: { token_jaccard: number; char_ngram_jaccard: number };
+    candidates_sharing_expected_chunk_with_development: number;
+    max_token_jaccard_vs_development: number;
+    max_char_ngram_jaccard_vs_development: number;
+    per_question: Record<
+      string,
+      {
+        shared_expected_chunk_ids: string[];
+        shared_with_development_questions: string[];
+        nearest_development_question_id: string;
+        nearest_development_question: string;
+        token_jaccard: number;
+        char_ngram_jaccard: number;
+        paraphrase_suspected: boolean;
+      }
+    >;
+    note: string;
+  };
+  composition: {
+    subdomains: Record<string, number>;
+    query_types: Record<string, number>;
+    difficulty: Record<string, number>;
+    documents_covered: string[];
+    documents_not_covered_by_development: string[];
+  };
+  review: HeldOutReviewCompleteness;
+  verdict: string;
+  limitations: string[];
+}
+
+export interface HeldOutReviewCompleteness {
+  candidates_total: number;
+  candidates_surviving: number;
+  candidates_rejected: number;
+  candidates_reviewed: number;
+  candidates_unreviewed: number;
+  unreviewed_question_ids: string[];
+  reviewers: string[];
+  complete: boolean;
+}
+
+/** The held-out instrument's identity, validation state and freeze tier. */
+export interface HeldOutStatus {
+  kb_id: string;
+  candidate_path: string;
+  benchmark_path: string;
+  dev_benchmark_path: string;
+  candidate_fingerprint: string;
+  candidate_sha256: string;
+  candidate_count: number;
+  surviving_count: number;
+  rejected_count: number;
+  review: HeldOutReviewCompleteness;
+  composition: {
+    subdomains: Record<string, number>;
+    query_types: Record<string, number>;
+    difficulty: Record<string, number>;
+  };
+  validation: HeldOutValidationReport;
+  lifecycle: HeldOutLifecycle;
+  claim_strength: HeldOutClaimStrength;
+  frozen: null | {
+    benchmark: string;
+    version: number;
+    fingerprint: string;
+    sha256: string;
+    frozen_at: string;
+    frozen_by: string;
+    question_count: number;
+    lifecycle: HeldOutLifecycle;
+    claim_strength: HeldOutClaimStrength;
+    review: HeldOutReviewCompleteness;
+    composition: Record<string, unknown>;
+    authorship: Record<string, unknown>;
+    protocol: Record<string, string>;
+    can_be_run: boolean;
+    supports_confirmatory_claim: boolean;
+  };
+  notice: string;
+}
+
+/** A candidate with the FULL text of the evidence its label rests on. */
+export interface HeldOutReviewQuestion {
+  id: string;
+  question: string;
+  subdomain: string;
+  query_type: string;
+  difficulty: string;
+  status: HeldOutCandidateStatus;
+  review: null | {
+    decision: string;
+    reviewer: string;
+    reviewed_at: string;
+    notes: string;
+    previous_question: string;
+    previous_chunk_ids: string[];
+    previous_subdomain: string;
+    results_seen: boolean;
+  };
+  expected_chunk_ids: string[];
+  expected_document_ids: string[];
+  evidence_quote: string;
+  coverage_rationale: string;
+  provenance: string;
+  draft_origin: string;
+  needs_review: boolean;
+  evidence: Array<{
+    chunk_id: string;
+    document_id: string;
+    document_title: string;
+    section: string;
+    char_count: number;
+    text: string;
+    resolves_in_corpus: boolean;
+    present_in_index: boolean | null;
+  }>;
+  findings: HeldOutFinding[];
+}
+
+export interface HeldOutReviewView {
+  kb_id: string;
+  benchmark: string;
+  candidate_fingerprint: string;
+  question_count: number;
+  review: HeldOutReviewCompleteness;
+  questions: HeldOutReviewQuestion[];
+  notice: string;
+}
+
+/** What the artifacts allow right now, so the UI never offers a dead action. */
+export interface HeldOutConfig {
+  kb_id: string;
+  can_review: boolean;
+  can_freeze: boolean;
+  can_run: boolean;
+  supports_confirmatory_claim: boolean;
+  review_complete: boolean;
+  lifecycle: HeldOutLifecycle;
+  question_count: number;
+  notice: string;
+}
+
+/** A cross-instrument generalization summary: dev vs held-out, unpaired. */
+export interface HeldOutGeneralizationSummary {
+  experiment: string;
+  heldout_artifact: string;
+  dev_artifact: string;
+  retests: string;
+  primary_metric: string;
+  heldout_outcome: RetrievalExperimentOutcome;
+  dev_outcome: RetrievalExperimentOutcome | "";
+  heldout_claim_strength: string;
+  heldout_benchmark_lifecycle: string;
+  heldout_question_count: number;
+  dev_question_count: number;
+  arms: Record<
+    string,
+    {
+      heldout: Record<string, number | null | string> | null;
+      development: Record<string, number | null | string> | null;
+    }
+  >;
+  agreement: Record<
+    string,
+    {
+      comparable: boolean;
+      reason?: string;
+      heldout_delta?: number;
+      heldout_outcome?: string;
+      development_delta?: number;
+      dev_outcome?: string;
+      direction_agrees?: boolean;
+    }
+  >;
+  note: string;
+}
+
+/** A held-out experiment row, including the arms and per-question movement. */
+export interface HeldOutExperimentRow {
+  id: string;
+  name: string;
+  instrument: string;
+  benchmark_name: string;
+  benchmark_fingerprint: string;
+  benchmark_lifecycle: string;
+  claim_strength: string;
+  retests: string;
+  hypothesis: string;
+  primary_metric: string;
+  guardrail_metrics: string[];
+  rejection_conditions: string[];
+  outcome: RetrievalExperimentOutcome;
+  outcome_explanation: string;
+  accepted_candidate: string;
+  promoted_to_default: boolean;
+  question_count: number;
+  question_set_fingerprint: string;
+  status: string;
+  created_at: string;
+  integrity: Record<string, unknown>;
+  limitations: string[];
+  arms: Array<{
+    label: string;
+    strategy: string;
+    top_k: number;
+    candidate_depth: number;
+    params: Record<string, unknown>;
+    status: string;
+    failure_reason: string;
+    reranker_status: string;
+    metrics: Record<string, ExperimentMetricStats>;
+  }>;
+  candidate_outcomes: Array<{
+    label: string;
+    outcome: RetrievalExperimentOutcome;
+    acceptance: string;
+    acceptance_reason: string;
+    outcome_explanation: string;
+    pairing: string;
+    primary_mean_delta: number | null;
+    primary_required_delta: number;
+    primary_sign_test_p: number | null;
+    primary_sign_test_n: number;
+    paired_question_count: number;
+    paired_wins: number | null;
+    paired_losses: number | null;
+    guardrails_regressed: string[];
+    guardrail_assessment: string[];
+  }>;
+  per_question: Array<{
+    label: string;
+    question_id: string;
+    question: string;
+    baseline: number | null;
+    candidate: number | null;
+    delta: number | null;
+    outcome: string;
+    direction: string;
+  }>;
+}
+
+/**
+ * V14 held-out validation. Reads are pure reads; `review` and `freeze` write only
+ * the two held-out benchmark artifacts under `benchmarks/`. The dev benchmark and
+ * the knowledge base are never written.
+ */
+export const heldOutApi = {
+  status: (kbId: string) =>
+    request<HeldOutStatus>(`/api/knowledge-bases/${kbId}/held-out/benchmark`),
+
+  reviewView: (kbId: string) =>
+    request<HeldOutReviewView>(`/api/knowledge-bases/${kbId}/held-out/review-view`),
+
+  config: (kbId: string) =>
+    request<HeldOutConfig>(`/api/knowledge-bases/${kbId}/held-out/config`),
+
+  review: (
+    kbId: string,
+    decisions: Array<{
+      question_id: string;
+      decision: "approve" | "edit" | "reject";
+      reviewer: string;
+      notes?: string;
+      question?: string | null;
+      expected_chunk_ids?: string[] | null;
+      subdomain?: string | null;
+      results_seen?: boolean;
+    }>,
+  ) =>
+    request<{
+      candidates: Record<string, unknown>;
+      review: HeldOutReviewCompleteness;
+      validation: HeldOutValidationReport;
+      notice: string;
+    }>(`/api/knowledge-bases/${kbId}/held-out/review`, {
+      method: "POST",
+      body: JSON.stringify({ decisions }),
+    }),
+
+  freeze: (kbId: string, body: { frozen_by: string; notes?: string[] }) =>
+    request<{
+      benchmark: Record<string, unknown>;
+      fingerprint: string;
+      sha256: string;
+      lifecycle: HeldOutLifecycle;
+      claim_strength: HeldOutClaimStrength;
+      path: string;
+      validation: HeldOutValidationReport;
+    }>(`/api/knowledge-bases/${kbId}/held-out/freeze`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  experiments: (kbId: string) =>
+    request<{
+      kb_id: string;
+      heldout: null | {
+        benchmark: string;
+        fingerprint: string;
+        lifecycle: HeldOutLifecycle;
+        claim_strength: HeldOutClaimStrength;
+        question_count: number;
+        frozen_at: string;
+        frozen_by: string;
+      };
+      experiments: HeldOutExperimentRow[];
+      development_references: HeldOutExperimentRow[];
+      generalization_summaries: HeldOutGeneralizationSummary[];
+      notice: string;
+    }>(`/api/knowledge-bases/${kbId}/held-out/experiments`),
 };

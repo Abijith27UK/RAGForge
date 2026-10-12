@@ -75,6 +75,17 @@ class RecommendationAction(str, Enum):
     INVESTIGATE_EVIDENCE_SELECTION = "INVESTIGATE_EVIDENCE_SELECTION"
     CORPUS_OR_SOURCE_DEFICIENCY = "CORPUS_OR_SOURCE_DEFICIENCY"
     REVIEW_BENCHMARK_LABELS = "REVIEW_BENCHMARK_LABELS"
+    # --- V12 retrieval diagnostics (additive) -------------------------------
+    # V9 could not tell "the passage is not in the corpus" from "the passage is
+    # in the corpus and indexed but was never retrieved": both looked like
+    # "absent from the candidate set". V12 measures the difference, so it needs
+    # actions that name the two distinct remedies.
+    #: The chunk exists but has no vector: fix the index, not the ranking.
+    RESTORE_INDEX_INTEGRITY = "RESTORE_INDEX_INTEGRITY"
+    #: Available evidence that never entered the candidate set: query/representation.
+    INVESTIGATE_RETRIEVAL = "INVESTIGATE_RETRIEVAL"
+    #: Retrieval returned nothing at all: the pipeline itself needs inspection.
+    INVESTIGATE_RETRIEVAL_PIPELINE = "INVESTIGATE_RETRIEVAL_PIPELINE"
     NO_ACTION_JUSTIFIED = "NO_ACTION_JUSTIFIED"
 
 
@@ -272,7 +283,19 @@ def analyse_retrieval(
         )
 
     # -- retrieved but unselected: selection deficiency ----------------------
-    unselected = [d for d in grounded if d.required_missing_from_generation]
+    # `required_missing_from_generation` is DERIVED: it is the set difference
+    # between required evidence and whatever was passed to the generator. When no
+    # selection step ran, that list is simply "all required evidence" and says
+    # nothing about selection — V12's retrieval-only diagnostics hit exactly that
+    # case and were being told, for every question, that a selection step had
+    # discarded their evidence. So the rule now also requires evidence that a
+    # selection step EXISTS (`evidence_selected_ids` non-empty), which is the same
+    # signal the diagnostic's own warning already used.
+    unselected = [
+        d
+        for d in grounded
+        if d.required_missing_from_generation and d.evidence_selected_ids
+    ]
     retrieved_but_unselected = [
         d
         for d in unselected

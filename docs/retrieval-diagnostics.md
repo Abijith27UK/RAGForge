@@ -132,6 +132,28 @@ An empty input list returns an UNKNOWN summary with
 
 ---
 
+## V12 — retrieval-side failure taxonomy and evidence availability
+
+V12 extends V9 with:
+
+- **Evidence availability checks** — each required chunk is checked against the
+  live corpus AND the live vector index, and the verdict distinguishes
+  `indexed`, `corpus_only`, `missing_from_index`, `missing_from_corpus`, and
+  `unknown`.
+- **A retrieval-specific closed-set classification** (`RetrievalFailureCode`):
+  `CORPUS_OR_SOURCE_DEFICIENCY`, `EXPECTED_EVIDENCE_UNAVAILABLE`, `RETRIEVAL_FAILURE`,
+  `NO_RELEVANT_EVIDENCE`, `LOW_RECALL`, `RANKING_FAILURE`, `RETRIEVAL_SUCCESS`,
+  `LOW_PRECISION` (reserved, never fires on this benchmark), and `UNKNOWN`.
+- **A deeper candidate probe** (`RetrievalProbe`) that lets the classifier
+  separate "retrieved below your evaluated k" from "never retrieved at all".
+- **Matched-question strategy comparison** reusing V9's protocol gate and paired
+  statistics (`comparison.py`).
+
+The full taxonomy, precedence order, honesty rules, and the probe rationale are
+documented in `backend/app/services/answer_eval/retrieval_diagnostics.py`.
+
+---
+
 ## Live evidence captured for this build
 
 `snapshot_vector_counts()` was run against the local Qdrant during the V9 build
@@ -168,11 +190,41 @@ V9 did not attempt to repair it.
 
 ---
 
+## V13 — what happens to a diagnostic finding
+
+A classification is a HYPOTHESIS about a cause, not a fix. V13 is the stage that
+tests one: declare a hypothesis, run the change in isolation, compare against the
+baseline on matched questions, and record whether it helped. It reuses this
+module's metrics and the V9 comparison utilities, and adds no new retrieval
+capability. The experiment layer, the outcome rules, the integrity snapshot and
+the four measured experiments are documented in
+[`v13-controlled-retrieval-optimization.md`](v13-controlled-retrieval-optimization.md).
+
+What a diagnostic run supplies to an experiment: the failing question ids, their
+measured metrics, the availability rollup, and the failure code that names the
+observed failure (`targeted_failure_code` on the experiment artifact).
+
+Two results from V13 are worth knowing when reading a k=3 diagnostic:
+
+* `LOW_RECALL` at a small `k` is a **window** effect when
+  `required_recall_in_probe` is 1.0 — the evidence was retrievable, it was just
+  ranked below the cut-off. Raising `k` from 3 to 10 took dense recall@10 from
+  0.8214 to 1.0000 with 0 questions regressed.
+* `RANKING_FAILURE` does **not** imply that reranking will fix it. Reordering the
+  same candidate pool with a cross-encoder raised MRR by only +0.0083 against a
+  declared 0.02 bar, and it *lowered* recall@10 to 0.9643, because a reranker
+  that reorders a 20-candidate pool and then cuts to 10 can push required
+  evidence out of the returned window.
+
+---
+
 ## What is NOT implemented
 
 - **Reranker-stage diagnostics.** `RetrievalTrace` records stage timings, and
   `RerankerStatus` reports `applied` / `not_requested` / `unavailable_fallback`,
-  but a pre/post-rerank rank comparison per question is not built.
+  but a pre/post-rerank rank comparison per question is not built. V13's
+  Experiment A measured the aggregate effect and showed the coverage loss is real,
+  which makes this the natural next diagnostic.
 - **Query-decomposition attribution.** The multi-part question path is still a
   recorded warning (V8 limitation), so a diagnostic cannot yet say which
   sub-query failed.
