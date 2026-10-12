@@ -482,9 +482,13 @@ class TestFreeze:
 class TestShippedCandidateArtifact:
     """The real artifact written by the authoring script, read through the gate.
 
-    Read-only: this asserts the shipped drafts are structurally sound and that
-    they are still unreviewed, which is the honest state for agent-drafted
-    questions and the reason a freeze of them can only be PROVISIONAL.
+    Read-only. This artifact is authored by a script and then reviewed by a
+    human, so its state moves: initially every question is a draft, and decisions
+    accumulate afterwards. What must hold at EVERY point in that life is that the
+    drafting script never produced a decision (it writes ``review=None``) — so a
+    decision can only exist if a named human recorded one through the review
+    view. That is the invariant asserted here, rather than a snapshot of a
+    particular review progress.
     """
 
     PATH = BACKEND_DIR.parent / "benchmarks" / "automobile-engineering-heldout-v1-candidates.json"
@@ -495,15 +499,27 @@ class TestShippedCandidateArtifact:
         assert candidates.derived_from.endswith("automobile-engineering-baseline-v1.json")
         assert len(candidates.candidates) >= 20
 
-    def test_every_shipped_question_is_still_a_draft(self):
+    def test_any_recorded_decision_names_the_human_who_made_it(self):
         candidates = load_candidate_set(self.PATH)
-        assert candidates.review_completeness()["candidates_unreviewed"] == len(
-            candidates.candidates
-        ), (
-            "the authoring script cannot mark its own work reviewed; if this fails, "
-            "something approved questions without a human decision"
-        )
-        assert all(c.review is None for c in candidates.candidates)
+        decided = [c for c in candidates.candidates if c.review is not None]
+        for cand in decided:
+            review = cand.review
+            assert review is not None
+            assert review.reviewer.strip(), (
+                f"{cand.id} carries a decision with no reviewer: the authoring "
+                "script writes review=None, so an unnamed decision means something "
+                "other than the review view wrote it"
+            )
+            assert review.reviewed_at is not None
+            assert review.decision in set(ReviewDecision)
+        completeness = candidates.review_completeness()
+        assert completeness["candidates_reviewed"] == len(decided)
+        assert completeness["reviewers"] == sorted({c.review.reviewer for c in decided})
+        # Everything not decided stays a draft: an undecided question cannot be
+        # published as approved by anything other than a recorded decision.
+        for cand in candidates.candidates:
+            if cand.review is None:
+                assert cand.status is CandidateStatus.DRAFT
 
     def test_it_carries_a_complete_creation_protocol(self):
         candidates = load_candidate_set(self.PATH)

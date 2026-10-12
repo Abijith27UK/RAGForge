@@ -56,16 +56,25 @@ logger = logging.getLogger(__name__)
 
 
 def resolve_artifact(path: str | Path) -> Path:
-    """Resolve a benchmark artifact path repo-relative, then CWD-relative.
+    """Resolve a benchmark artifact path against the repository root.
 
     ``benchmarks/foo.json`` is how a versioned artifact is named, and the server
-    may have been started from anywhere, so the repository root is tried first.
+    may have been started from anywhere, so a relative path is ALWAYS resolved
+    under the repository root — including when the file does not exist yet.
+
+    That last part is the point. Freezing CREATES the artifact, and this helper
+    originally fell back to the process CWD in exactly that case, so a freeze
+    triggered from the API (server started in ``backend/``) wrote the sealed
+    instrument to ``backend/benchmarks/`` while every document names
+    ``benchmarks/`` at the repository root. An artifact whose location depends on
+    the directory a server happened to be started in cannot be relied on by a
+    reader, a script or a reviewer. Absolute paths pass through untouched, which
+    is how tests and callers point at one specific file.
     """
     given = Path(path)
     if given.is_absolute():
         return given
-    candidate = (REPO_ROOT / str(path)).resolve()
-    return candidate if candidate.exists() else given
+    return REPO_ROOT / given
 
 
 class HeldOutService:

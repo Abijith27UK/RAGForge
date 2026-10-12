@@ -33,6 +33,8 @@ from app.services.answer_eval.heldout_benchmark import (  # noqa: E402
     CandidateStatus,
     HeldOutCandidate,
     HeldOutCandidateSet,
+    HeldOutLifecycle,
+    load_heldout_benchmark,
     save_candidate_set,
 )
 
@@ -231,11 +233,81 @@ class TestArtifactIntegrity:
                 "never write the shipped research artifacts"
             )
 
-    def test_no_shipped_frozen_benchmark_was_created(self):
-        assert not (REPO_ROOT / "benchmarks" / "automobile-engineering-heldout-v1.json").exists(), (
-            "the shipped frozen held-out instrument exists; a test run must not be "
-            "able to create it, because that would pre-empt the human review gate"
-        )
+    def test_the_shipped_frozen_instrument_can_only_be_a_sealed_human_artifact(
+        self, shipped_hashes
+    ):
+        """A test may never create the shipped instrument; a human may.
+
+        The original form of this test asserted the file did not exist, which was
+        true only while nobody had frozen anything. It exists now because a human
+        sealed it through the API, so the property worth pinning is that whatever
+        sits at that path is a SEALED, ATTRIBUTED artifact and is byte-identical
+        before and after this module runs. A stray draft written by a test would
+        have no ``frozen_by`` and would change the hash.
+        """
+        path = REPO_ROOT / "benchmarks" / "automobile-engineering-heldout-v1.json"
+        if not path.exists():
+            assert shipped_hashes[path.name] == ""
+            pytest.skip("no shipped frozen instrument at this path yet")
+        frozen = load_heldout_benchmark(path)
+        assert frozen.frozen_by.strip(), "an unattributed freeze cannot be audited"
+        assert frozen.lifecycle is not HeldOutLifecycle.DRAFT
+        assert frozen.review["reviewers"], "a sealed instrument names its reviewers"
+        assert _sha(path) == shipped_hashes[path.name]
+
+
+class TestArtifactPathResolution:
+    """Where a RELATIVE held-out path points, independently of the process CWD.
+
+    Not a detail. Freezing CREATES the artifact, and the first version of the
+    resolver fell back to the process CWD in exactly that case, so a freeze
+    triggered from the API (server started in ``backend/``) sealed the instrument
+    at ``backend/benchmarks/`` while every document names ``benchmarks/`` at the
+    repository root. An artifact whose location depends on the directory a server
+    happened to be started in is one no reader or script can rely on.
+    """
+
+    def test_a_relative_path_resolves_under_the_repo_root_even_if_it_is_missing(
+        self, tmp_path, monkeypatch
+    ):
+        from app.services.answer_eval.heldout_service import resolve_artifact
+
+        monkeypatch.chdir(tmp_path)
+        target = resolve_artifact("benchmarks/not-created-yet.json")
+        assert target == REPO_ROOT / "benchmarks" / "not-created-yet.json"
+        assert not target.exists()
+
+    def test_a_relative_path_is_not_read_from_the_cwd(
+        self, tmp_path, monkeypatch
+    ):
+        from app.services.answer_eval.heldout_service import resolve_artifact
+
+        # A same-named file next to the CWD must not shadow the repo-root one.
+        (tmp_path / "benchmarks").mkdir()
+        decoy = tmp_path / "benchmarks" / "automobile-engineering-baseline-v1.json"
+        decoy.write_text("{}", encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+
+        resolved = resolve_artifact("benchmarks/automobile-engineering-baseline-v1.json")
+        assert resolved == REPO_ROOT / "benchmarks" / "automobile-engineering-baseline-v1.json"
+        assert resolved != decoy
+
+    def test_an_absolute_path_is_passed_through(self, tmp_path):
+        from app.services.answer_eval.heldout_service import resolve_artifact
+
+        given = tmp_path / "explicit.json"
+        assert resolve_artifact(given) == given
+
+    def test_the_service_defaults_point_into_the_repository_benchmarks_directory(
+        self, repo
+    ):
+        from app.services.answer_eval.heldout_service import HeldOutService
+
+        service = HeldOutService(repo)
+        for path in (service.candidate_path, service.benchmark_path, service.dev_benchmark_path):
+            assert path.parent == REPO_ROOT / "benchmarks", (
+                f"{path} is not under the repository benchmarks/ directory"
+            )
 
 
 class TestReadEndpoints:

@@ -1195,41 +1195,56 @@ benchmark `edf3c586fe9fa296` (28 questions), all exploratory:
 Tests: **1210 backend**, 0 failed. Frontend `tsc --noEmit` + `npm run build` clean.
 Protected KB `kb_f278c283c748` **812 → 812** points. Frozen benchmark artifacts: **0 modified**.
 
-### Implemented (V14 held-out validation — instrument complete, review pending)
+### Implemented (V14 held-out validation — instrument sealed, three arms run)
 
-The stage that exists specifically so a V13-style finding can be tested on
-questions that were never used to choose it: a **separate instrument**, a
-**human review gate**, and a **one-way freeze**.
+The stage that tests whether the V13 retrieval findings hold on questions that
+were never used to choose them: a **separate instrument**, a **human review
+gate**, a **one-way freeze**, and three **pre-registered arms** retesting V13's
+results unchanged. Full analysis:
+[`docs/v14-held-out-validation.md`](./docs/v14-held-out-validation.md).
 
 | Item | Status |
 |---|---|
-| Held-out candidate set — 26 draft questions over 11 subdomains, each with a verbatim evidence quote, the chunk it came from and a coverage rationale | implemented |
-| Human review gate — one recorded decision per question (approve / edit / reject) carrying the reviewer's name; drafts never share storage with human ground truth | implemented, **0 of 26 decided** |
-| Validation of the labels — 9 checks (evidence in corpus, evidence in index, quote matches chunk, schema, provenance, uniqueness, separation from the development set); 0 errors, 0 warnings | implemented, PASSED |
-| Freeze — computes the tier from the review records and writes it into the artifact; the tier cannot be raised afterwards, because a reviewer who has seen results is no longer blind to them | implemented, **not run** |
-| Pre-registered arms `b-depth`, `c-hybrid`, `a-rerank-windowed` — declared in `backend/scripts/run_heldout_validation.py`, each retesting a V13 result at the configuration V13 left it | implemented, **not run** |
-| Frozen artifact `benchmarks/automobile-engineering-heldout-v1.json` | **does not exist** |
-| Held-out results | **none — no held-out measurement has been taken** |
+| Held-out candidate set — 26 questions over 11 subdomains, each with a verbatim evidence quote, its chunk and a coverage rationale | implemented |
+| Human review gate — one recorded decision per question with the reviewer's name; drafts never share storage with human ground truth | **25 approve / 0 edit / 0 reject / 1 pending** by `Abijith` |
+| Validation of the labels — 9 checks (evidence in corpus, evidence in index, quote matches chunk, schema, provenance, uniqueness, separation) | PASSED, 0 errors |
+| Freeze — derives its own tier from the review records; the tier cannot be raised afterwards | **frozen: PROVISIONAL → EXPLORATORY**, fingerprint `c738f73c9fd52c4a`, sha256 `536e6541…95e4` |
+| Pre-registered arms `b-depth`, `c-hybrid`, `a-rerank-windowed`, declared in `backend/scripts/run_heldout_validation.py` | **run once, unchanged** — hypotheses, metrics, thresholds and fusion weights were not touched afterwards |
+| Promotion | **none** — `promoted_to_default` is `false` on all six runs |
 
-Current gate state, reported by the instrument itself: candidate fingerprint
-`c738f73c9fd52c4a`, 0 shared expected chunks with the development set (max
-lexical similarity 0.30 token / 0.31 char), lifecycle `draft`, claim strength
-`exploratory`, verdict *"FREEZEABLE AS PROVISIONAL — no errors, but 26
-question(s) carry no human decision, which caps every result at EXPLORATORY."*
-Lexical separation is all those numbers measure; they make overlap detectable,
-they do not make independence provable.
+Held-out results (26 questions, exploratory; development re-measured in the same
+run and configuration, 28 questions):
 
-Also in this stage: **one product defect found and fixed.** The repository shared
-a single SQLite connection across request threads, so the review page — which
-issues several requests at once — returned 500 and rendered "Knowledge base not
-found". Connections are now per thread, with statements serialised by the
-repository lock; `backend/tests/test_repo_thread_safety.py` reproduces the
-failure (3/3 fail before the fix, 15/16 threads) and pins it.
+| Arm | Held-out | Development | Direction |
+|---|---|---|---|
+| `b-depth` — recall@k | **0.8846 → 0.9231** (+0.0385, 1 improved / 0 regressed), saturates at k=5 | 0.8214 → 1.0000 (+0.1786, 5/0) | agrees, 4.6× smaller |
+| `c-hybrid` — MRR | BM25 **0.7705 → 1.0000** (+0.2295, 9/0) and **2072 ms/query faster**; hybrid +0.1910 but **rejected: latency guardrail +54.6 ms > 50 ms** | hybrid +0.0744 accepted; BM25 −0.0273 rejected | **BM25 inverts** |
+| `a-rerank-windowed` — MRR | 0.9615 → **1.0000** with recall invariant, **rejected: +1223.3 ms (+56%)** | +0.0140, rejected | agrees |
 
-Tests: **1299 backend**, 0 failed. Frontend `tsc --noEmit` clean. Protected KB
-`kb_f278c283c748` **812 → 812** points; both frozen benchmark artifacts
-byte-identical; `PRAGMA integrity_check` ok. Detail: [`docs/verification.md`](./docs/verification.md) (V14 section).
+* **What replicates:** the depth/window direction and the reranker rejection.
+* **What does not:** V13's rejection of BM25. On held-out questions BM25 returns
+  every required chunk at rank 1 while being ~48× faster; the two questions dense
+  misses at k=10 (`auto-eng-hout-007`, `auto-eng-hout-018`) are exactly the ones
+  lexical matching recovers.
+* **What changed by declaring a guardrail first:** the V13-accepted hybrid is a
+  rejection here, because latency was declared as a gate before the run instead
+  of being reported as a caveat after it.
+* **No significance is claimed.** Both instruments are below the 30-question
+  inference floor, the instrument is provisional, and every artifact is stamped
+  `exploratory`.
 
+Also in this stage, two defects found by verifying rather than assuming: the
+review page returned 500 under parallel requests because the repository shared
+one SQLite connection across request threads (now one connection per thread,
+pinned by `backend/tests/test_repo_thread_safety.py`), and the sealed instrument
+was written to `backend/benchmarks/` because a relative artifact path resolved
+against the server's working directory when the file did not exist yet (now
+always repo-root anchored, with the artifact relocated byte-identically).
+
+Tests: **1303 backend**, 0 failed. Frontend `tsc --noEmit` clean, `npm run build`
+exit 0 with both new pages in the output. Protected KB `kb_f278c283c748`
+**812 → 812** points; both frozen benchmark artifacts and the sealed instrument
+byte-identical before and after the runs; `PRAGMA integrity_check` ok.
 ---
 
 # Running RAGForge Locally

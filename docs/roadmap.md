@@ -514,3 +514,38 @@ nothing here is a claim of statistical significance.
    measured on the benchmark.
 6. **Promote an accepted change** only after (1) — as an explicit, recorded user
    decision, never automatically.
+
+### V14 status — held-out validation (provisional tier)
+
+Items 1 and 2 of the order above are now done, and one promotion decision is open.
+
+1. **DONE — held-out validation set.** 26 questions, frozen at
+   **PROVISIONAL → EXPLORATORY** (25 of 26 carry a human decision; one could not
+   be reviewed before the one-way freeze). B and C were re-run unchanged against
+   it, with the development baseline re-measured in the same run:
+   [`docs/v14-held-out-validation.md`](./v14-held-out-validation.md).
+   * depth **replicates in direction, not in size** (+0.0385 vs +0.1786; one
+     improved question out of 26; saturates at k=5);
+   * the **reranker rejection replicates** (perfect ranking, +1223 ms);
+   * the **BM25 verdict inverts** — perfect MRR 1.0 at 43 ms on held-out, while
+     the development set rejected it. One question out of 26 carries the entire
+     depth effect and two carry BM25's perfect score;
+   * the V13-accepted **hybrid now fails its own declared latency guardrail**
+     (+54.6 ms > 50 ms). Nothing was promoted.
+2. **DONE — windowed reranking re-test.** Recall held exactly (it is invariant
+   by construction when the reranked slice equals the window) and ranking reached
+   1.0, but the latency guardrail rejects it on both instruments.
+3. **NEXT (smallest justified step) — mechanism probe, not a new
+   configuration.** Run the existing V12 diagnostics with the frozen held-out
+   instrument and the `dense_k10` configuration to establish whether the two
+   dense misses (`auto-eng-hout-007`, `auto-eng-hout-018`) have their required
+   chunk present in the probed pool but ranked low (ranking failure → fix the
+   ranker) or absent from the pool (representation failure → fix the embedding).
+   No weight, threshold or question is changed; acceptance is that the mechanism
+   is identified per question.
+4. **Open decision, not automatic — the default retriever for this corpus.** A
+   43 ms lexical retriever answered every held-out question at rank 1. Whether it
+   becomes the default is an explicit promotion decision, to be taken on a
+   validated instrument and after (3), never automatically.
+5. Still open from V13: the 28 answer-benchmark questions, reranker-stage
+   diagnostics, and the MMR/diversity experiment.

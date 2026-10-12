@@ -1276,74 +1276,106 @@ module and after the live runs: unchanged.
   depth declaration reports it instead of guardrailing it. The strict
   declaration is kept next to it rather than deleted.
 
-## V14 — held-out instrument, human review gate and the review-page defect (in progress)
+## V14 — held-out instrument, freeze, held-out runs and two defects fixed
 
-Status at this checkpoint: the held-out candidate set is authored and validated,
-but **no human decision has been recorded yet**, so nothing is frozen and no
-held-out experiment has been run. This section records what WAS measured.
+The instrument existed but had never been sealed or run at the end of the
+previous checkpoint. It has now been reviewed, frozen and run. Full analysis:
+[`docs/v14-held-out-validation.md`](./v14-held-out-validation.md).
 
-### Human review gate — actual state
+### Human review and the tier the records justify
 
 | Quantity | Value |
 |---|---|
-| Candidate questions | 26 |
-| Approved / edited / rejected | **0 / 0 / 0** |
-| Awaiting a decision | **26** (`auto-eng-hout-001` … `auto-eng-hout-026`) |
-| Reviewers recorded | none |
-| Candidate fingerprint | `c738f73c9fd52c4a` |
-| Candidate file sha256 | `e1bfb97ff0d28b3ec026a254b480b801eaff167cd8a8a14a3a8de29120eb1a9b` |
-| Lifecycle / claim strength | `draft` / `exploratory` |
-| Frozen artifact `benchmarks/automobile-engineering-heldout-v1.json` | **does not exist** |
+| Decisions recorded | **25 approve, 0 edit, 0 reject, 1 pending** (`auto-eng-hout-007`) |
+| Reviewer | `Abijith` (named on every decision; no decision was written by a script) |
+| Freeze | `automobile-engineering-heldout-v1` v1, fingerprint `c738f73c9fd52c4a` |
+| Frozen sha256 | `536e6541718ae5010a2d6f7400fc1f91d874d6d9edcb1d8bc1ca424c4ee795e4` |
+| Tier | **PROVISIONAL → EXPLORATORY** (one question unreviewed caps the tier; the gate computed this, it was not chosen) |
+| Frozen at / by | 2026-10-12T17:29:19.306865+00:00 / Abijith |
 
-Validation verdict reported by the instrument itself (0 errors, 0 warnings, all
-9 checks run):
+Freezing is a one-way door, so `auto-eng-hout-007` cannot be reviewed in v1 and
+its results are flagged as unreviewed rather than silently accepted. No
+validation rule was weakened, and no decision was created, inferred or edited by
+this work.
 
-> FREEZEABLE AS PROVISIONAL — no errors, but 26 question(s) carry no human
-> decision, which caps every result at EXPLORATORY.
+### Held-out runs (26 questions, exploratory)
 
-Separation from the development set: 0 shared expected chunks, max token
-Jaccard 0.30 (threshold 0.6), max character-ngram Jaccard 0.3136 (threshold
-0.55). Lexical separation is all this measures; it does not prove independence.
+| Arm | Verdict | Headline (held-out) |
+|---|---|---|
+| `b-depth` | **IMPROVED**, `dense_k5` accepted | recall@k 0.8846 → **0.9231** (+0.0385, 1 improved / 0 regressed / 25 unchanged); saturates at k=5; latency guardrail held |
+| `c-hybrid` | **IMPROVED**, `bm25_k10` accepted; `hybrid_k10` **REJECTED** | BM25 MRR 0.7705 → **1.0000** (+0.2295, 9/0) and 2072 ms/query faster; hybrid MRR +0.1910 but **latency guardrail +54.6 ms** > 50 ms bar |
+| `a-rerank-windowed` | **REGRESSION**, rejected | MRR 0.9615 → **1.0000** with recall invariant, but **+1223.3 ms/query (+56%)** |
 
-### Defect found and fixed while verifying the review page
+Development baseline re-measured in the same configuration, same run, same
+machine (28 questions): `b-depth` IMPROVED (+0.1786 recall, 5/0), `c-hybrid`
+hybrid IMPROVED (+0.0744 MRR) and BM25 REGRESSION (−0.0273), `a-rerank` REGRESSION
+(+0.0140, +1080.7 ms) — the V13 verdicts reproduce.
 
-The review page rendered "Knowledge base 'kb_f278c283c748' not found" although
-every endpoint answered 200 to `curl`. The page issues several requests at once
-and the backend logged, from `Repository.get_kb`:
+**Cross-instrument result:** depth agrees in direction but is 4.6× smaller on
+held-out questions; the reranker rejection agrees; **the BM25 verdict inverts**
+(dev: REGRESSION −0.0273, held-out: perfect MRR 1.0 at rank 1 for every
+question); the V13-accepted hybrid is rejected on a guardrail that V13 reported
+only as a post-hoc caveat. Two questions (`auto-eng-hout-007`, the unreviewed one,
+and `auto-eng-hout-018`) are unreachable by dense at k=10 and recovered by BM25
+at rank 1.
 
-```
-sqlite3.InterfaceError: bad parameter or other API misuse
--> 500 Internal Server Error -> the browser reported it as a CORS failure
-```
+**Nothing was promoted.** `promoted_to_default` is `false` on all six runs; every
+artifact is stamped `exploratory`, and both instruments are below the
+30-question inference floor, so no significance claim is made from p-values.
 
-Cause: `Repository` kept ONE `sqlite3.Connection` with
-`check_same_thread=False` and guarded only `_execute` with its lock, so ~60 read
-paths (and two direct users of `repo._conn`) called `execute()` from whatever
-FastAPI worker thread happened to serve the request. Mixing threads on one
-connection is not safe even with the statement call itself guarded, because
-pysqlite caches prepared statements per connection: a second `execute()` of the
-same SQL resets the statement the first cursor is still reading.
+### Defect 1 — the review page returned 500 (found while verifying the UI)
+
+The page renders "Knowledge base not found" whenever the backend is under
+parallel requests, although every endpoint answers 200 to `curl`. The backend
+logged `sqlite3.InterfaceError: bad parameter or other API misuse` from
+`Repository.get_kb`.
+
+Cause: `Repository` kept ONE `sqlite3.Connection` with `check_same_thread=False`
+and guarded only `_execute`, so ~60 read paths called `execute()` from whatever
+FastAPI worker thread served the request. Mixing threads on one connection is
+unsafe even with the statement call itself guarded, because pysqlite caches
+prepared statements per connection: a second `execute()` of the same SQL resets
+the statement a first cursor is still reading.
 
 Fix ([`backend/app/repositories/sqlite_repo.py`](../backend/app/repositories/sqlite_repo.py)):
-one connection **per thread** (`threading.local`), each wrapped so that
-`execute` / `executemany` / `executescript` / `commit` / `rollback` hold the
-repository's re-entrant lock. Thread-local connections remove the shared
-statement cache; the lock keeps SQLite's single-writer rule from surfacing as
-`database is locked` inside the process. No query, schema or API changed.
+one connection **per thread** (`threading.local`), each wrapped so `execute` /
+`executemany` / `executescript` / `commit` / `rollback` hold the repository's
+re-entrant lock. Regression test:
+[`backend/tests/test_repo_thread_safety.py`](../backend/tests/test_repo_thread_safety.py)
+— **3 of 3 tests fail before the fix (15/16 threads), 3 of 3 pass after**.
 
-Regression test (`backend/tests/test_repo_thread_safety.py`): 16 threads released
-by a barrier against one shared repository, mixing reads and writes; assert
-there are no exceptions AND that all rows landed. **Before the fix: 3 of 3 tests
-fail, 15/16 threads with `InterfaceError`.** After: 3 of 3 pass.
+### Defect 2 — the frozen artifact landed in the wrong directory
+
+The instrument froze through the API to
+`backend/benchmarks/automobile-engineering-heldout-v1.json`, while every
+document — and the README — name `benchmarks/` at the repository root.
+
+Cause: `resolve_artifact` returned the process-CWD-relative path whenever the
+repo-root file did not exist yet, and freezing is exactly the operation that
+CREATES the artifact. The artifact's location therefore depended on the directory
+the server happened to be started in, which no reader, script or reviewer can
+rely on.
+
+Fix ([`backend/app/services/answer_eval/heldout_service.py`](../backend/app/services/answer_eval/heldout_service.py)):
+relative artifact paths always resolve against the repository root, for missing
+files too. The sealed instrument was then **copied byte-identically** to its
+documented path (`536e6541…` before and after) and the stray directory removed.
+Four new tests pin the resolution rules
+(`TestArtifactPathResolution` in
+[`backend/tests/test_v14_heldout_api.py`](../backend/tests/test_v14_heldout_api.py)).
+The artifact's content, hash and audit trail are unchanged.
 
 ### Verification at this checkpoint
 
 | Check | Result |
 |---|---|
-| Backend suite (`pytest -q`) | **1299 passed, 0 failed** (563 s; 1296 before this change + 3 new) |
-| Frontend `tsc --noEmit` | clean (run before this change; runtime-unchanged) |
-| Review page in the browser | 26/26 candidates render with evidence, quote and per-question decisions |
-| `PRAGMA integrity_check` | `ok` (21 KBs, 9506 chunk rows) |
-| Protected KB `kb_f278c283c748` | present, `status: ready`, Qdrant collection `green`, **812 points** |
-| `automobile-engineering-baseline-v1.json` | sha256 `08601f58b33c178263f4446ec4443489a142a8a30b0c9c09682acb86a228a656` — unchanged |
-| `answer-quality-automobile-v1.json` | sha256 `16db9dbd46cb90077cf5240cda5a85c78aebfe6483bc9c22a5ddb9c1c9fe9f25` — unchanged |
+| Backend suite (`pytest -q`) | see the V14 run log below |
+| Frontend `tsc --noEmit` / `npm run build` | clean / exit 0 (both new pages in the build output) |
+| Held-out run command | `HF_HUB_OFFLINE=1 py -m scripts.run_heldout_validation --experiment all` → exit 0, 6 experiment artifacts + 3 generalization summaries |
+| Protected KB `kb_f278c283c748` | 812 → **812** Qdrant points; 812 → **812** chunk rows; corpus revision 0 → **0** |
+| Qdrant collections | 14 → **14** (no scratch collection) |
+| `automobile-engineering-baseline-v1.json` | `08601f58…a656` **unchanged** |
+| `answer-quality-automobile-v1.json` | `16db9dbd…9f25` **unchanged** |
+| `automobile-engineering-heldout-v1.json` | `536e6541…95e4` **unchanged** |
+| `automobile-engineering-heldout-v1-candidates.json` | `e4a75253…be264` **unchanged** |
+| SQLite `PRAGMA integrity_check` | **ok** |
