@@ -1,18 +1,27 @@
-# V17 — RAGForge MCP integration
+# RAGForge MCP integration (V17 read surface + V18 agentic operations)
 
 **What this adds.** A working Model Context Protocol server that exposes RAGForge
-knowledge bases to any MCP-compatible AI client (Claude Desktop, Cursor, VS Code
-MCP clients, the `mcp` CLI, custom agents). The client can discover knowledge
-bases, inspect their real index state, retrieve evidence, get grounded answers
-with citations, and run official retrieval evaluations — all through the same
-services the web UI uses.
+to any MCP-compatible AI client (Claude Desktop, Cursor, VS Code MCP clients, the
+`mcp` CLI, custom agents):
+
+* **V17 — reading** (6 read-only tools): discover knowledge bases, inspect their
+  real index state, retrieve evidence, get grounded answers with citations, and
+  run official retrieval evaluations;
+* **V18 — constructing** (12 agentic tools): propose a domain specification,
+  discover and explain source-quality decisions, plan a corpus, then — only after
+  an explicit, parameter-bound user confirmation — create the knowledge base,
+  ingest approved sources, add user-provided documents, chunk/embed/index, and
+  validate readiness from measured evidence. See
+  [`docs/v18-agentic-operations.md`](v18-agentic-operations.md) for the operation
+  lifecycle, the confirmation gates and the demonstrated runs.
 
 **What it is not.** It is not a second retrieval system, a second answer
-pipeline, or an agent framework. There is no MCP code path that ranks, scores,
-generates or validates anything itself: `app/mcp/bridge.py` calls
-`RetrievalService`, `AnsweringService`, `Evaluator` and `Repository` — the exact
-services behind `/api/knowledge-bases/...`. If a behaviour is not in RAGForge, it
-is not in the MCP surface either.
+pipeline, a second orchestrator or an agent framework. There is no MCP code path
+that ranks, scores, generates, parses or validates anything itself:
+`app/mcp/bridge.py` and `app/mcp/agent_ops.py` call `RetrievalService`,
+`AnsweringService`, `Evaluator`, the ingestion/document/build pipelines and
+`Repository` — the exact services behind `/api/knowledge-bases/...`. If a
+behaviour is not in RAGForge, it is not in the MCP surface either.
 
 ---
 
@@ -27,25 +36,33 @@ is not in the MCP surface either.
  backend/app/mcp/server.py              ← MCPServer: tools, resources, stdio
         │
  backend/app/mcp/bridge.py              ← validation, limits, error vocabulary
+ backend/app/mcp/planning.py            ← V18: what WOULD happen, fingerprints
+ backend/app/mcp/operations.py          ← V18: operation rows, confirmation gate
+ backend/app/mcp/agent_ops.py           ← V18: the execution half of the bridge
         │
  backend/app/services/…                 ← the EXISTING services
    retrieval.service.RetrievalService   (registry, persisted config, run record)
    answering.service.AnsweringService   (query plan → gate → generator → validation)
    evaluation.evaluator.Evaluator       (FROZEN-version gate, real metrics)
-   repositories.sqlite_repo.Repository  (chunks, documents, versions, runs)
+   ingestion / documents / build         (V18: parse, intake, chunk, embed, index)
+   repositories.sqlite_repo.Repository  (chunks, documents, versions, runs, operations)
         │
  SQLite (backend/data/ragforge.db) + Qdrant (vectors)
 ```
 
 | Module | Responsibility |
 |---|---|
-| [`app/mcp/server.py`](../backend/app/mcp/server.py) | MCP wiring only: 6 tools, 4 read-only resources, stdio transport, stderr logging |
+| [`app/mcp/server.py`](../backend/app/mcp/server.py) | MCP wiring only: 18 tools (6 read-only + 12 agentic), 4 read-only resources, stdio transport, stderr logging |
 | [`app/mcp/bridge.py`](../backend/app/mcp/bridge.py) | The only RAGForge-facing code: argument validation, resource lookups, service calls, result shaping |
+| [`app/mcp/planning.py`](../backend/app/mcp/planning.py) | V18 plans: exact action parameters, fingerprints, URL/document/chunker/strategy validation |
+| [`app/mcp/operations.py`](../backend/app/mcp/operations.py) | V18 lifecycle: operation rows, confirmation issuance/validation/consumption/expiry, audit reads |
+| [`app/mcp/agent_ops.py`](../backend/app/mcp/agent_ops.py) | V18 execution: creation, discovery, ingestion, document intake, build, validation, comparison |
 | [`app/mcp/schemas.py`](../backend/app/mcp/schemas.py) | The structured payloads a client receives (measured-or-UNKNOWN metrics, provenance copied verbatim) |
 | [`app/mcp/limits.py`](../backend/app/mcp/limits.py) | Input/result bounds for untrusted callers |
 | [`app/mcp/errors.py`](../backend/app/mcp/errors.py) | Error codes whose messages are safe to show a client |
 | [`scripts/run_mcp_server.py`](../backend/scripts/run_mcp_server.py) | Launcher that works from any cwd (clients pass absolute paths, no cwd) |
-| [`scripts/mcp_smoke_client.py`](../backend/scripts/mcp_smoke_client.py) | A real client that runs the documented flow for manual checks |
+| [`scripts/mcp_smoke_client.py`](../backend/scripts/mcp_smoke_client.py) | A real client that runs the documented read flow for manual checks |
+| [`scripts/mcp_agent_workflow.py`](../backend/scripts/mcp_agent_workflow.py) | V18: the live end-to-end construction workflow against the real workspace |
 
 **Transport: stdio only, deliberately.** RAGForge is a local, single-user
 application with no authentication, no accounts and no tenant isolation. A stdio
@@ -126,9 +143,18 @@ Notes:
 
 ## 3. Tools
 
-All six are annotated `read_only_hint=true`, `destructive_hint=false`. There is
-no ingest, delete, benchmark-edit, review or configuration tool: an MCP client
-cannot change a knowledge base, a benchmark or a review decision.
+**Read-only (6)** — annotated `read_only_hint=true`, `destructive_hint=false`.
+Nothing in this group changes workspace state beyond recording the retrieval run
+a search would record in the UI.
+
+**Agentic (12, V18)** — annotated by what they do: planning tools are not
+read-only (some register candidate rows) but none of them require confirmation;
+the four that change a corpus (`create_knowledge_base`, `ingest_sources`,
+`build_knowledge_base`, `add_user_documents`) are `destructive_hint=false` but
+require a recorded, parameter-bound confirmation. There is still no delete,
+bulk-destructive, benchmark-edit, review or configuration tool. The full table,
+with the lifecycle and the gates, is in
+[`docs/v18-agentic-operations.md`](v18-agentic-operations.md#3-tools).
 
 ### `list_knowledge_bases`
 Returns id, name, domain/purpose/audience/depth, status, real document/chunk
@@ -188,6 +214,23 @@ carry the real aggregate and per-question metrics, the evaluator identity
 per-question lifecycle statuses, and `unavailable_metrics` (answer correctness,
 key-point recall, citation support, abstention quality) with the reason — the
 answer-quality benchmark is still in `draft`, so those metrics stay UNKNOWN.
+
+### Agentic operations (V18, summary)
+
+| Tool | Needs confirmation |
+|---|---|
+| `analyze_domain` | no — returns a proposal, persists nothing |
+| `discover_sources` | no — registers candidate rows and scores them; downloads nothing |
+| `assess_sources` | no — explains stored decisions, signals, reasons, warnings |
+| `plan_knowledge_base` | no — proposes actions, parameters and fingerprints (`mutates=false`) |
+| `confirm_plan` | n/a — issues the single-use confirmation the next four tools require |
+| `create_knowledge_base` | **yes** |
+| `ingest_sources` | **yes** — ACCEPTED sources only; REVIEW needs a recorded human decision |
+| `build_knowledge_base` | **yes** — the existing chunk → embed → index pipeline |
+| `add_user_documents` | **yes** — content, never paths; bound to each document's sha256 |
+| `get_operation_status` | no — lifecycle, authorized parameters, run and stages |
+| `validate_knowledge_base` | no — readiness from measured evidence, `UNKNOWN` never a pass |
+| `compare_retrieval_strategies` | no — lifecycle-gated on the benchmark instrument; promotes nothing |
 
 ### Resources (read-only)
 
@@ -290,7 +333,8 @@ embedding configuration are usable. No other strategy was tried on your behalf.
 | Errors | Anticipated failures become coded tool errors the model can act on; unexpected ones are logged with a traceback on stderr and reported to the client as a generic failure with no internals |
 | Dependencies | An unreachable vector store, a missing embedding model or a failed generation produces a capability error naming what is missing. There is no silent fallback to another strategy, another corpus or another model |
 | Prompt injection | Retrieved text is returned as data inside `text`/`content` fields, every text-bearing payload carries `content_warning`, and the server `instructions` tell the client that corpus text is untrusted. Tests index a document containing "IGNORE ALL PREVIOUS INSTRUCTIONS…" and assert it comes back as quotable evidence with the warning intact, not as an instruction |
-| Read-only surface | Six read-only tools plus four read-only resources; a test pins the exact public method set of the bridge so a mutating operation cannot be added unnoticed |
+| V18 upload/write path | No tool accepts a path; documents travel as content (≤ 20 per call, ≤ 8 MiB each, ≤ 24 MiB per call), file names are sanitised, extensions **and** magic bytes are validated, and every URL passes the existing SSRF validation before any request |
+| Read-only surface | Six read-only tools plus four read-only resources; every state-changing tool is allow-listed by name and requires a parameter-bound confirmation; tests pin the exact public method set of the bridge, assert no destructive tool exists, and assert that only the four allow-listed actions can be authorized |
 | Protected data | Tests use a scratch `DATA_DIR` and an in-memory vector store; `kb_f278c283c748` is never opened, listed or written by the test suite |
 
 **Multi-user:** RAGForge has no accounts or per-user isolation, so the tools do
@@ -308,7 +352,9 @@ mock LLM):
 
 * **Protocol**: initialization/handshake, tool discovery, published input and
   output schemas, required arguments, tool annotations, resource and template
-  discovery, unknown-tool handling.
+  discovery, unknown-tool handling. (V18 extends the same class of checks to the
+  18-tool surface and adds the confirmation-argument requirement, in
+  [`tests/test_v18_mcp_agentic.py`](../backend/tests/test_v18_mcp_agentic.py).)
 * **Tools**: success and failure paths for all six; provenance and score
   semantics; retrieval trace and run persistence; strategy honoured without
   fallback; grounding statuses preserved; abstention behaviour; citation
@@ -322,9 +368,21 @@ mock LLM):
   requests, path-shaped ids, no path or secret leakage, read-only surface guard,
   prompt-injection handling.
 * **Real stdio**: a subprocess launched through `StdioServerParameters` with the
-  project's launcher script completes the handshake, lists the six tools, calls
-  tools successfully and receives coded errors — proving the transport and the
-  stdout protocol channel.
+  project's launcher script completes the handshake, lists the tools, calls tools
+  successfully and receives coded errors — proving the transport and the stdout
+  protocol channel. (V18's suite repeats this against the 18-tool surface and
+  drives V18 tools through it.)
+
+V18's suite is hermetic in the same way and adds deterministic network doubles,
+with the real parser still exercised over fixture bytes:
+[`tests/test_v18_mcp_agentic.py`](../backend/tests/test_v18_mcp_agentic.py) — 95
+tests covering planning, the confirmation gates (missing, wrong fingerprint,
+wrong action, replay, expiry, changed document bytes, a source downgraded after
+confirmation), KB creation, ingestion, the build, user-document intake and its
+provenance, operation status, validation, strategy comparison, and the safety
+assertions (allow-listed surface, no path or secret leakage, untrusted text stays
+data, protected artifacts untouched). Together with the V17 suite that is 149
+tests.
 
 A defect this suite caught and V17 fixed: `AnsweringService._failure_answer` was
 called with `kb_id=` while its parameter is `kb=`, so **any** generation failure
@@ -342,8 +400,16 @@ the MCP test now covers that path.
 * **No prompts** are registered: the value is in the tools and the honest
   resource views, and inventing prompt templates was not part of the objective.
   Elicitation/sampling are unused.
-* **No write tool by design.** A client can learn and answer from the corpus, not
-  change it (no ingestion, no review, no benchmark edits, no configuration).
+* **Writes exist in V18, but only four of them and only behind a confirmation:**
+  create a KB, ingest approved sources, add user-provided documents, build the
+  index. There is still no delete, rename, review, benchmark-edit or
+  configuration tool, and no bulk destructive operation.
+* **No cancellation and no background progress.** Every operation runs
+  synchronously inside the tool call, so there is nothing safe to cancel;
+  `get_operation_status` reports what a run did rather than a live ticker.
+* **Uploading a file needs the host.** stdio has no file channel, so
+  `add_user_documents` takes content: the client reads the bytes and passes them.
+  The tool refuses path-shaped arguments instead of pretending to read disk.
 * **No per-user access control** (single-user local install), and no rate
   limiting: a client can issue as many searches as it likes. Each search records
   a retrieval run, exactly like a UI query, which is what makes the usage

@@ -30,6 +30,7 @@ from typing import Any
 
 from app.config import Settings, get_settings
 from app.mcp import limits
+from app.mcp.agent_ops import AgentOperationsMixin
 from app.mcp.errors import (
     CapabilityUnavailableError,
     InvalidArgumentError,
@@ -118,8 +119,13 @@ def _iso(value: Any) -> str | None:
     return str(value)
 
 
-class RAGForgeBridge:
-    """Implements the MCP surface over RAGForge's own services."""
+class RAGForgeBridge(AgentOperationsMixin):
+    """Implements the MCP surface over RAGForge's own services.
+
+    V17 tools (reads) live in this class; the V18 agentic operations live in
+    :class:`app.mcp.agent_ops.AgentOperationsMixin`, which uses the wiring
+    helpers here (`repo`, `settings`, `_kb`, `_store`, `list_knowledge_bases`).
+    """
 
     def __init__(
         self,

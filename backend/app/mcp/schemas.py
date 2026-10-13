@@ -487,4 +487,428 @@ __all__ = [
     "LifecycleCheck",
     "MetricUnavailable",
     "EvaluationReport",
+    # ---- V18: agentic operations -------------------------------------------
+    "KnowledgeRequirementOut",
+    "DomainProposal",
+    "DomainAnalysisResult",
+    "ProposedSourcePreview",
+    "DiscoveryResult",
+    "SourceAssessment",
+    "SourceAssessmentList",
+    "PlanAction",
+    "ChunkingPlan",
+    "RetrievalPlan",
+    "ProposedDocument",
+    "KnowledgeBasePlan",
+    "ConfirmationResult",
+    "AgentActionResult",
+    "OperationStage",
+    "OperationStatusReport",
+    "ReadinessCheck",
+    "ValidationReport",
+    "StrategyComparison",
+    "StrategyComparisonReport",
+    "DocumentIntakeItem",
+    "DocumentIntakeResult",
+    "OperationSummary",
 ]
+
+
+# ---------------------------------------------------------------------------
+# V18 — agentic operations
+#
+# The agentic tools do not add a second retrieval, scoring or evaluation path:
+# every field below is a view over what the existing services computed. Two
+# properties are load-bearing and are therefore explicit in the shapes:
+#
+# * `mutates` says whether a call changed anything, so a client can never
+#   confuse a plan with an execution.
+# * a plan lists its `actions` with the EXACT parameters and fingerprint that a
+#   confirmation would authorize — the caller confirms what it was shown.
+# ---------------------------------------------------------------------------
+
+
+class KnowledgeRequirementOut(BaseModel):
+    """One knowledge requirement from an existing DomainSpec, copied verbatim."""
+
+    area: str
+    description: str = ""
+    priority: str = ""
+
+
+class DomainProposal(BaseModel):
+    """A proposed domain specification / knowledge map. Never persisted here.
+
+    `is_mock` and `generated_by` are carried through from the LLM provider: when
+    no LLM is configured RAGForge's labelled development mock answers, and a
+    client must be able to tell that apart from a real analysis.
+    """
+
+    domain: str
+    description: str = ""
+    subdomains: list[str] = Field(default_factory=list)
+    key_concepts: list[str] = Field(default_factory=list)
+    entities: list[str] = Field(default_factory=list)
+    terminology: list[str] = Field(default_factory=list)
+    knowledge_requirements: list[KnowledgeRequirementOut] = Field(default_factory=list)
+    recommended_source_categories: list[str] = Field(default_factory=list)
+
+
+class DomainAnalysisResult(BaseModel):
+    """What `analyze_domain` returns: a PROPOSAL, plus how it was produced."""
+
+    kb_id: str | None = Field(
+        default=None,
+        description="Set when the analysis used an existing knowledge base's metadata",
+    )
+    kb_exists: bool = False
+    persisted: bool = Field(
+        default=False,
+        description="Always false from MCP: this tool never writes a DomainSpec",
+    )
+    generated_by: str = Field(description="provider:model that produced the proposal")
+    is_mock: bool = Field(
+        description="True when a labelled development mock provider produced this — not a real analysis"
+    )
+    provider_available: bool = True
+    proposal: DomainProposal
+    notes: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    content_warning: str = UNTRUSTED_CONTENT_WARNING
+
+
+class ProposedSourcePreview(BaseModel):
+    """One source a plan would register, validated but NOT fetched."""
+
+    url: str
+    source_type: str
+    accepted_for_planning: bool
+    reason: str = ""
+    provider: str = "user-url"
+
+
+class SourceAssessment(BaseModel):
+    """The stored, explainable quality decision for one source.
+
+    Every number here was computed by the existing scorer (external model for
+    discovered sources, integrity model for user-provided material) and is
+    copied as-is, including the component signals and the probe evidence.
+    """
+
+    source_id: str
+    url: str
+    title: str | None = None
+    source_type: str
+    publisher: str | None = None
+    user_provided: bool = False
+    decision: str
+    trust_score: float | None = Field(default=None, description="None when the source was never scored")
+    assessed_by: str = Field(default="", description="Which scorer produced this assessment")
+    signals: dict[str, float] = Field(default_factory=dict)
+    weights: dict[str, float] = Field(default_factory=dict)
+    reasons: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    probe: dict | None = Field(
+        default=None, description="Accessibility probe evidence (performed/status/last-modified)"
+    )
+    ingested: bool = Field(default=False, description="A document exists for this source")
+
+
+class SourceAssessmentList(BaseModel):
+    kb_id: str
+    total: int
+    counts_by_decision: dict[str, int] = Field(default_factory=dict)
+    sources: list[SourceAssessment] = Field(default_factory=list)
+    unassessed: list[str] = Field(
+        default_factory=list,
+        description="Source ids with no stored assessment (cannot be shown as a score)",
+    )
+    content_warning: str = UNTRUSTED_CONTENT_WARNING
+    notes: list[str] = Field(default_factory=list)
+
+
+class DiscoveryResult(BaseModel):
+    """Outcome of `discover_sources` (candidates are registered, not ingested)."""
+
+    kb_id: str
+    provider: str
+    query: str
+    requested_limit: int
+    discovered: int
+    registered_new: int
+    duplicates_skipped: int
+    rejected_invalid: int
+    sources: list[SourceAssessment] = Field(default_factory=list)
+    mutates: bool = Field(
+        default=True,
+        description=(
+            "True: candidate Source rows with their quality assessment are written. "
+            "No document is downloaded and no vector is created."
+        ),
+    )
+    operation_id: str = ""
+    notes: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class PlanAction(BaseModel):
+    """One consequential action a plan proposes, with its exact parameters."""
+
+    operation_id: str = Field(description="The proposed operation row (plan-scoped)")
+    action: str
+    parameters: dict = Field(description="The exact parameter set that would be authorized")
+    parameters_fingerprint: str = Field(description="Pass this to confirm_plan")
+    summary: str = ""
+    already_satisfied: bool = Field(
+        default=False, description="True when the workspace already matches this action's intent"
+    )
+    warnings: list[str] = Field(default_factory=list)
+
+
+class ChunkingPlan(BaseModel):
+    chunker: str
+    target_size: int
+    overlap: int
+    available_chunkers: list[str] = Field(default_factory=list)
+    note: str = ""
+
+
+class RetrievalPlan(BaseModel):
+    strategy: str
+    available_strategies: list[str] = Field(default_factory=list)
+    configured: dict = Field(
+        default_factory=dict, description="The knowledge base's persisted retrieval configuration, if any"
+    )
+    note: str = ""
+
+
+class ProposedDocument(BaseModel):
+    """A user-provided document a plan proposes to add (validated, not stored)."""
+
+    file_name: str
+    size_bytes: int
+    sha256: str
+    detected_format: str
+    valid: bool
+    error: str = ""
+    warnings: list[str] = Field(default_factory=list)
+    duplicate_of: str | None = Field(
+        default=None, description="Existing document id with identical bytes, when one exists"
+    )
+
+
+class KnowledgeBasePlan(BaseModel):
+    """A proposed construction plan. Authorizes nothing until confirmed."""
+
+    plan_id: str
+    plan_fingerprint: str
+    mode: str = Field(description="create (no KB yet) or extend (existing KB)")
+    kb_id: str | None = None
+    request: dict = Field(default_factory=dict, description="The validated request this plan answers")
+    mutates: bool = Field(default=False, description="Always false: planning writes plan rows only")
+    domain_spec_present: bool = False
+    knowledge_requirements: list[KnowledgeRequirementOut] = Field(default_factory=list)
+    source_categories: list[str] = Field(default_factory=list)
+    proposed_corpus: list[ProposedSourcePreview] = Field(default_factory=list)
+    proposed_documents: list[ProposedDocument] = Field(default_factory=list)
+    current_state: dict = Field(default_factory=dict, description="Measured facts the plan was derived from")
+    selection_rules: list[str] = Field(default_factory=list)
+    ingestion_plan: list[str] = Field(default_factory=list)
+    chunking: ChunkingPlan | None = None
+    retrieval: RetrievalPlan | None = None
+    validation_plan: list[str] = Field(default_factory=list)
+    actions: list[PlanAction] = Field(default_factory=list)
+    confirmation_instructions: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    content_warning: str = UNTRUSTED_CONTENT_WARNING
+
+
+class ConfirmationResult(BaseModel):
+    """The recorded user confirmation for one plan action."""
+
+    confirmation_id: str
+    plan_id: str
+    action: str
+    parameters_fingerprint: str
+    parameters: dict = Field(description="What this confirmation authorizes, verbatim")
+    kb_id: str | None = None
+    confirmed_at: str
+    expires_at: str | None = None
+    single_use: bool = True
+    note: str = ""
+    next_step: str = ""
+    limitations: list[str] = Field(default_factory=list)
+
+
+class OperationStage(BaseModel):
+    stage: str
+    status: str
+    message: str = ""
+    items_processed: int | None = None
+
+
+class AgentActionResult(BaseModel):
+    """What a CONFIRMED, executed action returned.
+
+    `status` here is the operation's own status (done/error), never a readiness
+    claim: a succeeded build says so only about the build.
+    """
+
+    operation_id: str
+    action: str
+    status: str
+    lifecycle_stage: str = "execution"
+    kb_id: str | None = None
+    run_id: str | None = Field(default=None, description="The real run record this produced")
+    run_status: str = ""
+    result_summary: dict = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    details: dict = Field(default_factory=dict)
+    knowledge_base: dict | None = Field(
+        default=None, description="Knowledge-base summary, when this action created one"
+    )
+    build: BuildRunSummary | None = Field(
+        default=None, description="The build/ingestion run record, when one was produced"
+    )
+    notes: list[str] = Field(default_factory=list)
+    next_step: list[str] = Field(default_factory=list)
+
+
+class OperationStatusReport(BaseModel):
+    """The REPORT stage: what really happened, joined with the run record."""
+
+    operation_id: str
+    kind: str
+    action: str = ""
+    lifecycle_stage: str = Field(description="request|plan|confirmation|execution|validation|report")
+    status: str
+    kb_id: str | None = None
+    plan_id: str | None = None
+    parameters: dict = Field(default_factory=dict)
+    parameters_fingerprint: str = ""
+    confirmation_id: str | None = None
+    confirmation_used: bool = False
+    created_at: str
+    updated_at: str
+    started_at: str | None = None
+    finished_at: str | None = None
+    result_summary: dict = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    error_code: str = ""
+    error_message: str = ""
+    #: Real record the operation produced, resolved from the existing services.
+    run_id: str | None = Field(default=None, description="BuildRun / diagnostics / evaluation run id")
+    run_status: str | None = None
+    run_stages: list[OperationStage] = Field(default_factory=list)
+    run_message: str = ""
+    resolves_to: str = Field(default="", description="Which record family the id resolved to")
+    notes: list[str] = Field(default_factory=list)
+
+
+class ReadinessCheck(BaseModel):
+    check: str
+    passed: bool | None = Field(
+        default=None, description="None = could not be measured, which is never a pass"
+    )
+    detail: str = ""
+
+
+class ValidationReport(BaseModel):
+    """`validate_knowledge_base`: measured evidence, never a metadata claim."""
+
+    kb_id: str
+    ready_for_retrieval: bool
+    verdict: str = Field(description="READY | NOT_READY | UNKNOWN")
+    basis: list[str] = Field(default_factory=list)
+    blocking: list[str] = Field(default_factory=list)
+    checks: list[ReadinessCheck] = Field(default_factory=list)
+    document_counts: dict[str, int] = Field(default_factory=dict)
+    chunk_rows: int = 0
+    vector_points: int | None = None
+    vector_points_measured: bool = False
+    integrity_status: str = ""
+    integrity_counts: dict[str, int] = Field(default_factory=dict)
+    integrity_unknown: list[str] = Field(default_factory=list)
+    integrity_findings: list[dict] = Field(default_factory=list)
+    embedding_identity: dict | None = None
+    diagnostics: dict = Field(
+        default_factory=dict, description="Whether a permitted retrieval diagnostic could run, and why not"
+    )
+    operation_id: str = ""
+    notes: list[str] = Field(default_factory=list)
+
+
+class StrategyComparison(BaseModel):
+    strategy: str
+    metrics: dict[str, float | None] = Field(default_factory=dict)
+    measured: bool = Field(default=False, description="True only when real metrics were computed")
+    note: str = ""
+
+
+class StrategyComparisonReport(BaseModel):
+    """Comparison over EXISTING infrastructure, gated on the benchmark lifecycle."""
+
+    kb_id: str
+    permitted: bool
+    reason: str = ""
+    benchmark: dict = Field(default_factory=dict, description="Which instrument would be scored, and its state")
+    strategies: list[StrategyComparison] = Field(default_factory=list)
+    top_k: int | None = None
+    label: str = ""
+    claim_strength: str = Field(default="", description="exploratory until a human-reviewed instrument exists")
+    promoted: bool = Field(default=False, description="Always false: nothing is promoted by this tool")
+    run_id: str | None = None
+    warnings: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+
+
+class DocumentIntakeItem(BaseModel):
+    file_name: str
+    document_id: str = ""
+    source_id: str = ""
+    status: str = ""
+    content_hash: str = ""
+    size_bytes: int = 0
+    text_length: int = 0
+    page_count: int | None = None
+    slide_count: int | None = None
+    section_count: int | None = None
+    user_provided: bool = True
+    decision: str = ""
+    score: float | None = None
+    accepted: bool = False
+    error: str = ""
+    warnings: list[str] = Field(default_factory=list)
+
+
+class DocumentIntakeResult(BaseModel):
+    kb_id: str
+    submitted: int
+    accepted: int
+    rejected: int
+    duplicates_skipped: int
+    indexed: int = 0
+    chunks_created: int = 0
+    vectors_indexed: int = 0
+    stale_vectors_removed: int | None = None
+    stale_vectors_removed_label: str = ""
+    items: list[DocumentIntakeItem] = Field(default_factory=list)
+    operation_id: str = ""
+    run_id: str | None = None
+    notes: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    content_warning: str = UNTRUSTED_CONTENT_WARNING
+
+
+class OperationSummary(BaseModel):
+    """One row of the workspace's agent-operation audit trail."""
+
+    operation_id: str
+    kind: str
+    action: str = ""
+    status: str
+    kb_id: str | None = None
+    plan_id: str | None = None
+    created_at: str
+    updated_at: str
+    summary: str = ""

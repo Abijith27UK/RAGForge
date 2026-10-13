@@ -77,6 +77,43 @@ class LifecycleBlockedError(MCPToolError):
     )
 
 
+class ConfirmationRequiredError(MCPToolError):
+    """A state-changing action was called without a recorded confirmation."""
+
+    code = "CONFIRMATION_REQUIRED"
+    default_hint = (
+        "Plan the change, have the user approve the exact parameters, then call "
+        "confirm_plan and pass the returned confirmation id."
+    )
+
+
+class ConfirmationError(MCPToolError):
+    """A confirmation exists but does not authorize THIS call.
+
+    Used for an unknown id, a used/expired id, an action mismatch, or a
+    parameter mismatch — the confirmation is bound to one exact parameter set,
+    so any difference is a different operation.
+    """
+
+    code = "CONFIRMATION_INVALID"
+    default_hint = (
+        "Confirmations are single-use and parameter-bound. Re-plan the change and "
+        "confirm the parameters you intend to run."
+    )
+
+
+class ConfirmationExpiredError(ConfirmationError):
+    code = "CONFIRMATION_EXPIRED"
+    default_hint = "Plan and confirm the change again; an expired confirmation authorizes nothing."
+
+
+class DuplicateOperationError(MCPToolError):
+    """The same operation appears to have been requested twice."""
+
+    code = "DUPLICATE_OPERATION"
+    default_hint = "Reuse the existing artifact named in the details, or change the parameters."
+
+
 __all__ = [
     "MCPToolError",
     "KnowledgeBaseNotFoundError",
@@ -84,4 +121,8 @@ __all__ = [
     "InvalidArgumentError",
     "CapabilityUnavailableError",
     "LifecycleBlockedError",
+    "ConfirmationRequiredError",
+    "ConfirmationError",
+    "ConfirmationExpiredError",
+    "DuplicateOperationError",
 ]

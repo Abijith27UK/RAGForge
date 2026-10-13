@@ -727,23 +727,26 @@ This would move RAGForge from a **RAG construction system** toward an **automate
 
 ---
 
-# MCP Integration (implemented — V17)
+# MCP Integration (implemented — V17 read surface, V18 agentic operations)
 
-RAGForge exposes its knowledge bases through the **Model Context Protocol (MCP)**, so AI agents such as Claude and other MCP-compatible clients can interact with them directly. Setup, client configuration and the full behaviour contract live in **[docs/mcp-integration.md](./docs/mcp-integration.md)**.
+RAGForge exposes its knowledge bases through the **Model Context Protocol (MCP)**, so AI agents such as Claude and other MCP-compatible clients can interact with them directly — and, since V18, **build** them. Setup, client configuration and the full behaviour contract live in **[docs/mcp-integration.md](./docs/mcp-integration.md)**; the operation lifecycle, confirmation gates and demonstrated runs live in **[docs/v18-agentic-operations.md](./docs/v18-agentic-operations.md)**.
 
 ```text
 backend\scripts\run_mcp_server.py     ← launcher (absolute path, any cwd)
         │  stdio
-backend/app/mcp/server.py             ← MCP server: 6 tools, 4 resources
+backend/app/mcp/server.py             ← MCP server: 18 tools, 4 resources
         │
 backend/app/mcp/bridge.py             ← validation + limits, then…
+backend/app/mcp/planning.py           ← V18: what WOULD happen, + fingerprints
+backend/app/mcp/operations.py         ← V18: operation rows, confirmation gate
+backend/app/mcp/agent_ops.py          ← V18: the execution half of the bridge
         │
 RAGForge services                     ← …the SAME services the API/UI use
         │
-   SQLite (chunks, documents, versions, runs) + Qdrant (vectors)
+   SQLite (chunks, documents, versions, runs, operations) + Qdrant (vectors)
 ```
 
-Implemented tools (all read-only):
+Read tools (read-only, V17):
 
 ```text
 list_knowledge_bases          ids, metadata, real counts, capability flags
@@ -754,6 +757,27 @@ answer_from_knowledge_base    grounded answer with citations, or an abstention
 evaluate_retrieval            official metrics on a FROZEN benchmark version
 ```
 
+Construction tools (V18) — the lifecycle is `REQUEST → PLAN → USER CONFIRMATION → EXECUTION → VALIDATION → REPORT`:
+
+```text
+analyze_domain                a PROPOSED domain specification (persists nothing)
+discover_sources              real candidates + the real quality scoring
+assess_sources                why each decision was made (signals, reasons, warnings)
+plan_knowledge_base           corpus/ingestion/chunking/retrieval plan, mutates=false
+confirm_plan                  records approval of ONE action + ONE parameter set
+─────────── confirmation required below this line ───────────
+create_knowledge_base         an empty KB (refuses a duplicate name+domain)
+ingest_sources                download/parse APPROVED sources only
+build_knowledge_base          chunk → embed → index (real counts from the run)
+add_user_documents            the user's own files as CONTENT (never a path)
+──────────────────────────────────────────────────────────────
+get_operation_status          lifecycle, authorized parameters, run and stages
+validate_knowledge_base       readiness from measured evidence (UNKNOWN ≠ pass)
+compare_retrieval_strategies  existing diagnostics, lifecycle-gated, promotes nothing
+```
+
+A confirmation is bound to one action and to the sha256 fingerprint of its exact parameters, is single-use and expires after 30 minutes: editing a plan invalidates the approval. The MCP surface cannot delete, bulk-mutate, edit a benchmark or override a source decision — accepting a REVIEW source stays a human action in the API/UI.
+
 Read-only resources: `ragforge://knowledge-bases`, and templates for one knowledge base, one document and one evidence chunk.
 
 Install and run:
@@ -763,7 +787,11 @@ cd backend
 .venv\Scripts\python.exe -m pip install -r requirements-mcp.txt
 .venv\Scripts\python.exe -m app.mcp            # stdio server (or scripts/run_mcp_server.py)
 .venv\Scripts\python.exe scripts\mcp_smoke_client.py --kb kb_f278c283c748
+.venv\Scripts\python.exe scripts\mcp_agent_workflow.py             # full V18 workflow, offline
+.venv\Scripts\python.exe scripts\mcp_agent_workflow.py --external  # + real URL discovery/ingestion
 ```
+
+`scripts/mcp_agent_workflow.py` runs the whole lifecycle over a real stdio MCP subprocess against the real workspace, on a **scratch** knowledge base it deletes at the end; it refuses to start unless the protected KB measures exactly 812 points and re-measures it afterwards.
 
 An external agent can therefore do:
 
@@ -772,9 +800,17 @@ An external agent can therefore do:
  Automobile Engineering knowledge base, then answer with citations."
 ```
 
-and RAGForge returns the ranked evidence with provenance plus a grounded answer whose citations are validated, or an explicit abstention when the corpus does not cover the question.
+and RAGForge returns the ranked evidence with provenance plus a grounded answer whose citations are validated, or an explicit abstention when the corpus does not cover the question — or, with the V18 tools:
 
-Deliberately **not** implemented in V17: write/ingest/review tools, streamable-HTTP transport (stdio only, because RAGForge has no auth to secure a port with), and any parallel retrieval or evaluation path. See §7 of the MCP document for the full limitation list.
+```text
+"Here is a domain and use case. Propose the domain specification, discover and
+ assess sources, plan the knowledge base, and — after I approve each step —
+ build it and tell me whether it is actually ready."
+```
+
+and RAGForge answers with a plan whose every action carries the exact parameters a confirmation would authorize, refuses to execute anything not approved, and reports readiness only from the index measurements it could take.
+
+Deliberately **not** implemented: deletion/bulk destructive tools, streamable-HTTP transport (stdio only, because RAGForge has no auth to secure a port with), cancellation or background progress (there is no job runner), and any parallel retrieval or evaluation path. See §8 of the V18 document and §7 of the MCP document for the full limitation lists.
 
 ### Important distinction
 
@@ -1283,29 +1319,39 @@ held-out instrument byte-identical; `PRAGMA integrity_check` ok.
 The remaining step is human: review the 28 questions, then freeze v1. See §4 of the
 V16 report for the exact procedure.
 
-### Implemented (V17 MCP integration)
+### Implemented (V17 MCP integration + V18 agentic operations)
 
 A working MCP server that exposes RAGForge knowledge bases to MCP-compatible AI
-clients over **stdio**. Full guide: [`docs/mcp-integration.md`](./docs/mcp-integration.md).
+clients over **stdio**, and that lets them construct one under an explicit
+confirmation gate. Guides: [`docs/mcp-integration.md`](./docs/mcp-integration.md)
+and [`docs/v18-agentic-operations.md`](./docs/v18-agentic-operations.md).
 
 | Item | Status |
 |---|---|
 | SDK / transport | official `mcp` 2.3.0 (`MCPServer`), stdio only — no unauthenticated HTTP listener |
-| Tools | `list_knowledge_bases`, `get_knowledge_base_status`, `search_knowledge_base`, `get_evidence`, `answer_from_knowledge_base`, `evaluate_retrieval` — all `read_only_hint`, none mutating |
+| Read tools (6) | `list_knowledge_bases`, `get_knowledge_base_status`, `search_knowledge_base`, `get_evidence`, `answer_from_knowledge_base`, `evaluate_retrieval` — all `read_only_hint`, none mutating |
+| Construction tools (12) | `analyze_domain`, `discover_sources`, `assess_sources`, `plan_knowledge_base`, `confirm_plan`, `create_knowledge_base`, `ingest_sources`, `build_knowledge_base`, `add_user_documents`, `get_operation_status`, `validate_knowledge_base`, `compare_retrieval_strategies` |
+| Confirmation gate | the four corpus-changing tools require a single-use, 30-minute, parameter-bound confirmation; a plan id is not a confirmation, changed parameters are refused naming both fingerprints, and a replay is refused |
+| Operation audit trail | the new `mcp_operations` table records every plan and execution with its authorized parameters, fingerprint, result summary and honest warnings |
 | Resources | `ragforge://knowledge-bases` plus templates for a knowledge base, a document and an evidence chunk (targeted by id, no corpus dumps) |
-| Reuse, not duplication | every tool calls `RetrievalService`, `AnsweringService`, `Evaluator` and `Repository`; no parallel retrieval, scoring or validation path |
-| Honesty preserved | real scores with per-pool breakdowns, trace with config fingerprint and corpus version, pipeline grounding states, `dry_run` lifecycle check, UNKNOWN-not-zero metrics, answer-level metrics listed as unavailable with the human-review reason |
-| Security | argument bounds, no filesystem access, no paths or secrets in results, coded non-internal errors, untrusted-content marking, read-only surface pinned by a test |
+| Reuse, not duplication | every tool calls `RetrievalService`, `AnsweringService`, `Evaluator`, the ingestion/intake/build pipelines and `Repository`; no parallel orchestrator, retrieval, scoring or validation path |
+| Honesty preserved | real scores with per-pool breakdowns, trace with config fingerprint and corpus version, pipeline grounding states, `dry_run` lifecycle check, UNKNOWN-not-zero metrics, readiness only from measured evidence, answer-level metrics listed as unavailable with the human-review reason, nothing promoted |
+| Security | argument bounds (≤ 20 documents/call, ≤ 8 MiB each, ≤ 50 URLs/plan), SSRF validation, no path arguments (content only, sanitised names, extension + magic bytes), no paths or secrets in results, coded non-internal errors, untrusted-content marking, allow-listed surface pinned by tests |
 | Installation | `backend/requirements-mcp.txt` (optional; the API/UI never import `mcp`) |
-| Startup | `python -m app.mcp` or `scripts/run_mcp_server.py`; client config example with absolute Windows paths in the doc |
+| Startup | `python -m app.mcp` or `scripts/run_mcp_server.py`; live workflows in `scripts/mcp_smoke_client.py` (read) and `scripts/mcp_agent_workflow.py` (build) |
 
-Tests: **53 focused MCP tests** (protocol, schemas, all six tools, validation and
-capability errors, lifecycle gates, security boundaries, prompt injection) plus a
-**real stdio subprocess client** that completes the handshake exactly as an MCP
-client does. They also caught and fixed a real defect: `AnsweringService` called
-`_failure_answer(kb_id=…)` while the parameter is `kb=`, so any generation
-failure raised `TypeError` instead of returning the documented
-`generation_failed` answer.
+Tests: **149 MCP tests** — 54 V17 (protocol, schemas, all six read tools,
+validation and capability errors, lifecycle gates, security boundaries, prompt
+injection) and 95 V18 (planning, every confirmation gate including expiry and
+post-approval parameter/content changes, creation, ingestion, build, document
+intake and provenance, operation status, validation, strategy comparison, surface
+and safety), plus **real stdio subprocess clients** that complete the handshake
+exactly as an MCP client does. They also caught and fixed a real defect:
+`AnsweringService` called `_failure_answer(kb_id=…)` while the parameter is `kb=`,
+so any generation failure raised `TypeError` instead of returning the documented
+`generation_failed` answer. The live workflow was additionally run twice against
+the real workspace (offline and with real network discovery) and left the
+protected KB at 812 points both times.
 ---
 
 # Running RAGForge Locally

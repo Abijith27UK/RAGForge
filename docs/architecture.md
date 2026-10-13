@@ -755,3 +755,69 @@ Design detail: [`v13-controlled-retrieval-optimization.md`](./v13-controlled-ret
     no run control; definitions live in the repository
     (`backend/scripts/run_retrieval_experiment.py`) so the hypothesis, the bar and
     the arm configurations are versioned with the code that measures them.
+
+---
+
+## V18 — Agentic operations over MCP (2026-10-14)
+
+MCP clients can now drive the construction of a knowledge base, not only read
+one. The read half (V17) is unchanged:
+[`docs/mcp-integration.md`](./mcp-integration.md). The lifecycle, gates and
+demonstrated runs are in
+[`docs/v18-agentic-operations.md`](./v18-agentic-operations.md).
+
+### Decision 92 — The lifecycle is a table, not a job runner
+
+`REQUEST → PLAN → USER CONFIRMATION → EXECUTION → VALIDATION → REPORT` is
+recorded in SQLite (`mcp_operations`, modelled by
+[`app/schemas/agent_ops.py`](../backend/app/schemas/agent_ops.py)). A *plan* row
+has status `proposed` and authorizes nothing; *execution* rows carry the exact
+authorized parameters, their fingerprint, the consumed confirmation, the result
+summary and warnings. Nothing runs in the background, so there is no queue, no
+worker and no cancellation to expose: the tool performs the work synchronously
+and writes the outcome back to its own row. Reusing the existing `BuildRun` and
+diagnostics records for the stage detail keeps agent-driven work auditable with
+the same tooling as everything else, without a parallel orchestration stack.
+
+### Decision 93 — Confirmation is bound to one action and one parameter set
+
+`confirm_plan` issues a single-use, expiring (30-minute) confirmation for exactly
+one action and one sha256 fingerprint of its parameters. Any difference between
+the confirmed set and the executing call — a changed domain, a different chunking
+parameter, another action's confirmation, a replayed confirmation, a document
+whose bytes changed — is refused (`CONFIRMATION_INVALID` /
+`CONFIRMATION_REQUIRED` / `CONFIRMATION_EXPIRED`) rather than executed. The
+consequence is deliberate: *editing a plan invalidates the approval and forces a
+new one*, because the thing a user approved is a specific change, not a general
+permission. The server cannot verify who approved: it records the note the host
+supplied, and the tool description says the host owns that.
+
+### Decision 94 — The agent cannot promote its own inputs
+
+Source discovery produces candidates with the *existing* quality engine's
+decisions; an agent can read and explain them but cannot override a REVIEW or
+REJECT — that remains a human decision recorded through the API/UI. Likewise
+`analyze_domain` returns a proposal and persists nothing, and
+`compare_retrieval_strategies` inherits the existing lifecycle gates (an
+instrument authored for another KB, or without completed human review, is
+refused) and promotes nothing. Automation is allowed to *propose* and to *execute
+approved work*; it is not allowed to manufacture the evidence that justifies it.
+
+### Decision 95 — No path-based document intake
+
+`add_user_documents` accepts content (`content_text` / `content_base64`), never a
+filesystem path: a path argument is an argument error naming the accepted fields.
+The bytes then go through the same validation (extension **and** magic bytes),
+size caps, parsers and provenance capture as an upload through the API, and the
+file is written under the KB's own upload directory after its name is sanitised.
+Because stdio has no file channel, an MCP host reads the file and passes the
+bytes; that limitation is documented rather than worked around with a path tool.
+
+### Decision 96 — Readiness is measured, never inferred
+
+`validate_knowledge_base` reuses the corpus integrity audit and the index
+measurements. A build that returns `done` is only a build: readiness requires
+parsed documents, chunk rows, vector points matching those rows, a consistent
+embedding identity and a clean integrity audit. Any measurement that could not be
+taken is reported `UNKNOWN` and can never satisfy a check, so an unreachable
+vector store yields `verdict=UNKNOWN` rather than a pass.

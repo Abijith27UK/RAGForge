@@ -275,15 +275,16 @@ def _freeze_benchmark(api, kb_id: str, questions: list[dict], version="mcp-v1") 
 
 class TestProtocol:
     def test_initialization_and_tool_discovery(self, mcp):
+        """V17's six read tools are still present and still work (V18 added more)."""
         names = {t.name for t in mcp.tools()}
-        assert names == {
+        assert {
             "list_knowledge_bases",
             "get_knowledge_base_status",
             "search_knowledge_base",
             "get_evidence",
             "answer_from_knowledge_base",
             "evaluate_retrieval",
-        }
+        } <= names
 
     def test_every_tool_publishes_input_and_output_schemas(self, mcp):
         for tool in mcp.tools():
@@ -303,12 +304,29 @@ class TestProtocol:
         assert by_name["evaluate_retrieval"].input_schema["required"] == ["kb_id"]
         assert by_name["list_knowledge_bases"].input_schema.get("required", []) == []
 
-    def test_tools_are_annotated_read_only_and_non_destructive(self, mcp):
+    def test_tools_are_annotated_and_never_destructive(self, mcp):
+        """V18 added state-changing tools; NONE of them may be destructive.
+
+        The V17 tests required `read_only_hint is True` everywhere. That is now
+        false by design for the four confirmed actions, so the invariant they
+        protect is stated directly: every tool is annotated, nothing is
+        destructive, and anything not read-only is one of the allow-listed
+        actions that require a confirmation (see TestSurfaceIsReadOnly).
+        """
+        from app.mcp.operations import CONSEQUENTIAL_ACTIONS
+
+        allowed_writes = set(CONSEQUENTIAL_ACTIONS) | {
+            "discover_sources",
+            "plan_knowledge_base",
+            "confirm_plan",
+            "compare_retrieval_strategies",
+        }
         for tool in mcp.tools():
             annotations = tool.annotations
             assert annotations is not None, f"{tool.name} has no annotations"
-            assert annotations.read_only_hint is True
-            assert annotations.destructive_hint is False
+            assert annotations.destructive_hint is False, tool.name
+            if annotations.read_only_hint is False:
+                assert tool.name in allowed_writes, tool.name
 
     def test_resources_and_templates_are_discoverable(self, mcp):
         resources, templates = mcp.resources()
@@ -990,7 +1008,8 @@ class TestStdioInteroperability:
                 }
 
         result = asyncio.run(_run())
-        assert result["tools"] == [
+        # The six V17 tools, then the twelve V18 ones, in registration order.
+        assert result["tools"][:6] == [
             "list_knowledge_bases",
             "get_knowledge_base_status",
             "search_knowledge_base",
@@ -998,6 +1017,7 @@ class TestStdioInteroperability:
             "answer_from_knowledge_base",
             "evaluate_retrieval",
         ]
+        assert len(result["tools"]) == 18
         assert result["listed"].is_error is False
         # The subprocess read the SCRATCH data dir, not the developer's workspace.
         assert result["listed"].structured_content["total"] == 0
@@ -1042,26 +1062,56 @@ class TestStdioInteroperability:
 
 
 class TestSurfaceIsReadOnly:
-    def test_bridge_exposes_no_mutating_operations(self):
+    """V17 shipped a read-only surface; V18 added four CONFIRMED actions.
+
+    The invariant these tests defend is no longer "nothing can change state" but
+    "nothing can change state except through the four allow-listed actions, each
+    of which requires a parameter-bound user confirmation". The exact public
+    method set is pinned in tests/test_v18_mcp_agentic.py.
+    """
+
+    #: Tools that never need a confirmation (reads + planning).
+    READ_ONLY_SURFACE = {
+        "list_knowledge_bases",
+        "get_knowledge_base_status",
+        "search_knowledge_base",
+        "get_evidence",
+        "answer_from_knowledge_base",
+        "evaluate_retrieval",
+        "document_metadata",
+        "evidence_chunk",
+        "analyze_domain",
+        "assess_sources",
+        "plan_knowledge_base",
+        "get_operation_status",
+        "validate_knowledge_base",
+        "compare_retrieval_strategies",
+    }
+
+    def test_only_allowlisted_actions_can_change_state(self):
         from app.mcp.bridge import RAGForgeBridge
+        from app.mcp.operations import CONSEQUENTIAL_ACTIONS
 
         public = {
             name
             for name in dir(RAGForgeBridge)
             if not name.startswith("_") and callable(getattr(RAGForgeBridge, name, None))
         }
-        assert public == {
-            "list_knowledge_bases",
-            "get_knowledge_base_status",
-            "search_knowledge_base",
-            "get_evidence",
-            "answer_from_knowledge_base",
-            "evaluate_retrieval",
-            "document_metadata",
-            "evidence_chunk",
-        }, "the MCP surface must not grow mutating operations by accident"
+        non_consequential = self.READ_ONLY_SURFACE | {"discover_sources", "confirm_plan"}
+        unexpected = public - non_consequential - set(CONSEQUENTIAL_ACTIONS)
+        assert not unexpected, f"unreviewed bridge operation(s): {sorted(unexpected)}"
+        assert set(CONSEQUENTIAL_ACTIONS) <= public
+
+    def test_every_state_changing_tool_requires_a_confirmation(self, mcp):
+        from app.mcp.operations import CONSEQUENTIAL_ACTIONS
+
+        by_name = {tool.name: tool for tool in mcp.tools()}
+        for action in CONSEQUENTIAL_ACTIONS:
+            tool = by_name[action]
+            assert "confirmation_id" in (tool.input_schema.get("required") or []), action
+            assert tool.annotations.read_only_hint is False, action
 
     def test_no_destructive_verb_appears_in_the_tool_names(self, mcp):
-        forbidden = ("delete", "create", "update", "write", "ingest", "remove", "drop", "reset")
+        forbidden = ("delete", "remove", "drop", "reset", "destroy", "purge", "wipe")
         for tool in mcp.tools():
             assert not any(verb in tool.name for verb in forbidden), tool.name

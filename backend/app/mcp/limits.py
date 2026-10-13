@@ -38,6 +38,67 @@ MAX_EVALUATION_QUESTIONS = 200
 MAX_ANSWER_CLAIMS = 100
 
 
+#: V18: how much material an agent may hand over in ONE call. Chosen so a
+#: legitimate lecture-notes handover fits, while a bulk corpus dump does not:
+#: a corpus is built with the HTTP upload workflow, not through a tool result.
+MAX_USER_DOCUMENTS = 20
+MAX_USER_DOCUMENT_BYTES = 8 * 1024 * 1024
+MAX_USER_DOCUMENTS_TOTAL_BYTES = 24 * 1024 * 1024
+
+#: V18: URLs a plan may validate at once.
+MAX_PLAN_URLS = 50
+
+#: V18: sources one discovery call may register.
+MAX_DISCOVERY_LIMIT = 20
+
+
+def check_documents(documents: list[dict] | None) -> list[dict]:
+    """Validate the shape and total size of a caller-supplied document list."""
+    items = list(documents or [])
+    if not items:
+        return []
+    if len(items) > MAX_USER_DOCUMENTS:
+        raise InvalidArgumentError(
+            f"{len(items)} documents in one call; the maximum is {MAX_USER_DOCUMENTS}.",
+            hint="Split the handover into several calls and confirm each one.",
+        )
+    total = 0
+    for item in items:
+        if not isinstance(item, dict):
+            raise InvalidArgumentError("Each document must be an object with file_name and content.")
+        text = item.get("content_text")
+        encoded = item.get("content_base64")
+        size = len(text.encode("utf-8")) if isinstance(text, str) else 0
+        if isinstance(encoded, str):
+            size = (len(encoded) * 3) // 4
+        if size > MAX_USER_DOCUMENT_BYTES:
+            raise InvalidArgumentError(
+                f"Document {item.get('file_name')!r} is about {size} bytes; the per-document cap is "
+                f"{MAX_USER_DOCUMENT_BYTES} bytes.",
+                hint="Use the HTTP upload workflow for large files.",
+            )
+        total += size
+    if total > MAX_USER_DOCUMENTS_TOTAL_BYTES:
+        raise InvalidArgumentError(
+            f"The documents total about {total} bytes; the cap per call is "
+            f"{MAX_USER_DOCUMENTS_TOTAL_BYTES} bytes.",
+            hint="Split the handover into several calls, each with its own confirmation.",
+        )
+    return items
+
+
+def check_urls(urls: list[str] | None) -> list[str]:
+    """Validate a list of URLs a plan is asked to consider (not fetched here)."""
+    items = [str(u).strip() for u in (urls or []) if str(u).strip()]
+    if len(items) > MAX_PLAN_URLS:
+        raise InvalidArgumentError(
+            f"{len(items)} URLs in one call; the maximum is {MAX_PLAN_URLS}.",
+            hint="Plan a smaller batch, or register sources in the UI/API.",
+        )
+    return items
+
+
+
 def check_top_k(top_k: int | None) -> int:
     """Validate a requested retrieval window."""
     if top_k is None:
@@ -101,8 +162,15 @@ __all__ = [
     "MAX_ANSWER_EVIDENCE",
     "MAX_EVALUATION_QUESTIONS",
     "MAX_ANSWER_CLAIMS",
+    "MAX_USER_DOCUMENTS",
+    "MAX_USER_DOCUMENT_BYTES",
+    "MAX_USER_DOCUMENTS_TOTAL_BYTES",
+    "MAX_PLAN_URLS",
+    "MAX_DISCOVERY_LIMIT",
     "check_top_k",
     "check_query",
     "check_max_chunks",
+    "check_documents",
+    "check_urls",
     "truncate_text",
 ]

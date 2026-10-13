@@ -727,3 +727,92 @@ MCP test now covering that path.
 4. **Only if a real need appears:** a secured HTTP transport (with auth and
    per-client scoping) or curated MCP prompts. Neither is required today and
    neither should be added speculatively.
+
+---
+
+## V18 — Agentic RAGForge: knowledge-base operations through MCP (2026-10-14, delivered)
+
+An MCP client can now take a domain description and *build* a knowledge base, not
+only query one. Full guide: [`docs/v18-agentic-operations.md`](./v18-agentic-operations.md);
+the read surface is unchanged ([`docs/mcp-integration.md`](./mcp-integration.md)).
+
+### What was built
+
+* **An explicit lifecycle, reused rather than reinvented:**
+  `REQUEST → PLAN → USER CONFIRMATION → EXECUTION → VALIDATION → REPORT`. Each
+  agent-requested action is a row in the new `mcp_operations` table with a stable
+  id (`plan_…` / `op_…`), status, the exact authorized parameters, its
+  fingerprint, the confirmation, the result summary and honest warnings.
+* **Twelve new tools** (18 total): `analyze_domain`, `discover_sources`,
+  `assess_sources`, `plan_knowledge_base`, `confirm_plan`,
+  `create_knowledge_base`, `ingest_sources`, `build_knowledge_base`,
+  `add_user_documents`, `get_operation_status`, `validate_knowledge_base`,
+  `compare_retrieval_strategies`.
+* **A confirmation gate that a model cannot satisfy on its own behalf.** A plan
+  authorizes nothing (`mutates=false`); `confirm_plan` issues a single-use,
+  30-minute, parameter-bound confirmation; the four consequential tools refuse
+  without one, refuse a plan id, refuse changed parameters (naming both
+  fingerprints), refuse a replayed confirmation and refuse another action's
+  confirmation. `add_user_documents` is additionally bound to each document's
+  sha256, and an `ingest_sources` plan invalidated by a later source decision is
+  refused at execution.
+* **Readiness from evidence, not from a 200.** `validate_knowledge_base` runs the
+  existing corpus audit (parsed documents, chunk rows, vector points vs chunk
+  rows, recorded embedding identity, missing/orphan/stale vectors, duplicates,
+  provenance gaps, failed/partial documents) and returns
+  `READY | NOT_READY | UNKNOWN`, with a measurement it could not take reported as
+  UNKNOWN and never as a pass.
+* **User-provided documents through the real intake path.** `add_user_documents`
+  takes content (never a path), enforces the same format/size/magic-byte
+  validation as the upload API, preserves page/slide/section provenance and
+  content hashes, skips duplicates, and makes it unambiguous which material came
+  from the user rather than from discovery.
+* **Service reuse throughout.** `app/mcp/planning.py`, `operations.py` and
+  `agent_ops.py` call the same discovery, scoring, ingestion, intake, build and
+  diagnostics services the HTTP API calls; no second orchestrator, queue or
+  scheduler was introduced.
+
+### Demonstrated, not just described
+
+`scripts/mcp_agent_workflow.py` drives the whole cycle over a real stdio MCP
+subprocess against the real workspace (real SQLite, real Qdrant, real MiniLM
+embeddings) on a scratch KB, and refuses to run unless the protected KB measures
+exactly 812 points. Two runs are recorded with their real values (offline: 4
+chunks, `verdict=READY`, three confirmed gates with real refusals, out-of-corpus
+question abstained; with `--external`: two real Wikipedia downloads, `REVIEW`
+0.5475 → human ACCEPT → 118 vector points, integrity `HEALTHY`). The scratch KB
+and its vectors were deleted afterwards; the protected KB measured 812 before and
+812 after in both runs.
+
+### Tests
+
+[`tests/test_v18_mcp_agentic.py`](../backend/tests/test_v18_mcp_agentic.py) — 95
+new hermetic tests (scratch `DATA_DIR`, in-memory store, hashing embeddings, mock
+LLM, deterministic probe/arXiv doubles, real parser over fixture bytes), including
+a genuine stdio protocol test. Two V17 tests were updated because the surface
+intentionally changed (it is no longer read-only-only, and stdio now exposes 18
+tools). Both MCP suites together: **149 passing**.
+
+### Honesty kept
+
+No fabricated reference answers, no UNKNOWN turned into 0, no confirmatory claim
+from the provisional held-out instrument, no retrieval promotion.
+`compare_retrieval_strategies` inherits the existing lifecycle gates and promoted
+nothing (in the live run it refused, naming the KB the instrument was authored
+for). Retrieval quality itself is unchanged by V18: this milestone adds
+construction *control*, not better ranking.
+
+### V18 recommended order
+
+1. **Review and freeze the answer-quality benchmark** (still the only blocker for
+   answer-correctness metrics; the agentic workflow reports readiness without
+   them).
+2. **Use the workflow on a real domain end to end** with an LLM key configured, so
+   `analyze_domain` stops returning the labelled mock and the source plan is driven
+   by a real domain specification.
+3. **Human-reviewed source acceptance in the UI** for the REVIEW band: V18 makes
+   the decision explicit and auditable, but a general reference page still needs a
+   person to accept it.
+4. **Only if a real need appears:** cancellation/background progress (needs a job
+   runner), a secured HTTP transport, or bulk operations. Exposing unrestricted
+   deletion through MCP remains explicitly out of scope.

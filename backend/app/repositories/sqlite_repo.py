@@ -291,6 +291,29 @@ CREATE TABLE IF NOT EXISTS retrieval_diagnostic_runs (
 );
 CREATE INDEX IF NOT EXISTS idx_rdx_kb
     ON retrieval_diagnostic_runs(kb_id, created_at);
+
+-- ---------------------------------------------------------------------------
+-- V18 agent operations: plans, user confirmations and the executions they
+-- authorize. Additive table; nothing above it is altered. A row is written by
+-- the MCP operation service only, and it is what makes
+-- "a plan is not a confirmation" enforceable rather than advisory.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS mcp_operations (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL,
+    status TEXT NOT NULL,
+    kb_id TEXT NOT NULL DEFAULT '',
+    plan_id TEXT NOT NULL DEFAULT '',
+    action TEXT NOT NULL DEFAULT '',
+    fingerprint TEXT NOT NULL DEFAULT '',
+    confirmation_id TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    data TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mcp_ops_kb ON mcp_operations(kb_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_mcp_ops_plan ON mcp_operations(plan_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_mcp_ops_confirmation ON mcp_operations(confirmation_id);
 """
 
 
@@ -1244,6 +1267,86 @@ class Repository:
 
     # -- benchmark versions (V3 Phase A) -------------------------------------
 
+    # -- V18 agent operations (plans, confirmations, executions) -----------
+    # The MCP layer is the only writer. Rows are updated in place as the
+    # lifecycle advances (proposed -> confirmed -> running -> done|error), so
+    # one row is the complete audit trail of one agent-requested action.
+
+    def create_mcp_operation(self, op) -> None:
+        self._execute(
+            "INSERT INTO mcp_operations "
+            "(id, kind, status, kb_id, plan_id, action, fingerprint, "
+            " confirmation_id, created_at, updated_at, data) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                op.id,
+                op.kind,
+                op.status.value if hasattr(op.status, "value") else str(op.status),
+                op.kb_id or "",
+                op.plan_id or "",
+                op.action or "",
+                op.fingerprint or "",
+                op.confirmation_id or "",
+                op.created_at.isoformat(),
+                op.updated_at.isoformat(),
+                self._to_row(op),
+            ),
+        )
+
+    def update_mcp_operation(self, op) -> None:
+        self._execute(
+            "UPDATE mcp_operations SET status = ?, kb_id = ?, plan_id = ?, "
+            "action = ?, fingerprint = ?, confirmation_id = ?, updated_at = ?, "
+            "data = ? WHERE id = ?",
+            (
+                op.status.value if hasattr(op.status, "value") else str(op.status),
+                op.kb_id or "",
+                op.plan_id or "",
+                op.action or "",
+                op.fingerprint or "",
+                op.confirmation_id or "",
+                op.updated_at.isoformat(),
+                self._to_row(op),
+                op.id,
+            ),
+        )
+
+    def get_mcp_operation(self, operation_id: str):
+        from app.schemas.agent_ops import AgentOperation
+
+        row = self._conn.execute(
+            "SELECT data FROM mcp_operations WHERE id = ?", (operation_id,)
+        ).fetchone()
+        return self._from_row(row, AgentOperation)  # type: ignore[misc]
+
+    def list_mcp_operations(
+        self, kb_id: str | None = None, plan_id: str | None = None, limit: int = 100
+    ):
+        from app.schemas.agent_ops import AgentOperation
+
+        sql = "SELECT data FROM mcp_operations WHERE 1 = 1"
+        params: list = []
+        if kb_id is not None:
+            sql += " AND kb_id = ?"
+            params.append(kb_id)
+        if plan_id is not None:
+            sql += " AND plan_id = ?"
+            params.append(plan_id)
+        sql += " ORDER BY created_at DESC, id DESC LIMIT ?"
+        params.append(limit)
+        rows = self._conn.execute(sql, tuple(params)).fetchall()
+        return [self._from_row(r, AgentOperation) for r in rows]  # type: ignore[misc]
+
+    def find_mcp_operation_by_confirmation(self, confirmation_id: str):
+        """The one row a confirmation id refers to (ids are unique)."""
+        from app.schemas.agent_ops import AgentOperation
+
+        rows = self._conn.execute(
+            "SELECT data FROM mcp_operations WHERE confirmation_id = ? LIMIT 1",
+            (confirmation_id,),
+        ).fetchall()
+        return self._from_row(rows[0], AgentOperation) if rows else None  # type: ignore[misc]
+
     def create_benchmark_version(self, bv: BenchmarkVersion) -> None:
         self._execute(
             "INSERT INTO benchmark_versions (id, kb_id, version, data) VALUES (?, ?, ?, ?)",
@@ -1291,6 +1394,21 @@ class Repository:
 
     def update_build_run(self, run: BuildRun) -> None:
         self._execute("UPDATE build_runs SET data = ? WHERE id = ?", (self._to_row(run), run.id))
+
+    def get_build_run(self, run_id: str) -> BuildRun | None:
+        """One build run by id — used to resolve an operation to its real record."""
+        row = self._conn.execute(
+            "SELECT data FROM build_runs WHERE id = ?", (run_id,)
+        ).fetchone()
+        return self._from_row(row, BuildRun)
+
+    def list_build_runs(self, kb_id: str, limit: int = 50) -> list[BuildRun]:
+        rows = self._conn.execute(
+            "SELECT data FROM build_runs WHERE kb_id = ? "
+            "ORDER BY data->>'$.started_at' DESC LIMIT ?",
+            (kb_id, limit),
+        ).fetchall()
+        return [self._from_row(r, BuildRun) for r in rows]  # type: ignore[misc]
 
     def latest_build_run(self, kb_id: str) -> BuildRun | None:
         rows = self._conn.execute(

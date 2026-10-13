@@ -42,14 +42,24 @@ from app.mcp import limits
 from app.mcp.bridge import RAGForgeBridge
 from app.mcp.errors import MCPToolError, NotFoundError
 from app.mcp.schemas import (
+    AgentActionResult,
+    ConfirmationResult,
+    DiscoveryResult,
+    DocumentIntakeResult,
+    DocumentMetadata,
+    DomainAnalysisResult,
+    EvaluationReport,
     EvidenceBundle,
     EvidenceChunk,
-    EvaluationReport,
     GroundedAnswerResult,
     KnowledgeBaseList,
+    KnowledgeBasePlan,
     KnowledgeBaseStatusReport,
+    OperationStatusReport,
     SearchResponse,
-    DocumentMetadata,
+    SourceAssessmentList,
+    StrategyComparisonReport,
+    ValidationReport,
 )
 
 logger = logging.getLogger("ragforge.mcp")
@@ -146,6 +156,50 @@ def _json(payload: Any) -> str:
 #: review, which is why every annotation says so.
 _READ_ONLY = ToolAnnotations(
     read_only_hint=True,
+    destructive_hint=False,
+    idempotent_hint=False,
+    open_world_hint=False,
+)
+
+#: Reads that reach outside the machine (discovery providers) or inside a corpus
+#: the caller asked about. Still no writes, so `read_only_hint` stays true.
+_DISCOVERY = ToolAnnotations(
+    read_only_hint=False,
+    destructive_hint=False,
+    idempotent_hint=True,
+    open_world_hint=True,
+)
+
+#: Writes plan and proposed-action rows only. No corpus change.
+_PLANNING = ToolAnnotations(
+    read_only_hint=False,
+    destructive_hint=False,
+    idempotent_hint=False,
+    open_world_hint=False,
+)
+
+#: Records an approval. Changes authorization state, never the corpus.
+_CONFIRMATION = ToolAnnotations(
+    read_only_hint=False,
+    destructive_hint=False,
+    idempotent_hint=False,
+    open_world_hint=False,
+)
+
+#: State-changing actions: they need a confirmation bound to their exact
+#: parameters, are never destructive in the sense of deleting user data, and are
+#: idempotent in effect (a re-run replaces its own artifacts rather than
+#: duplicating the corpus).
+_CONSEQUENTIAL = ToolAnnotations(
+    read_only_hint=False,
+    destructive_hint=False,
+    idempotent_hint=True,
+    open_world_hint=True,
+)
+
+#: Writes a diagnostics report; reads a benchmark artifact. Nothing promoted.
+_COMPARISON = ToolAnnotations(
+    read_only_hint=False,
     destructive_hint=False,
     idempotent_hint=False,
     open_world_hint=False,
@@ -464,6 +518,445 @@ def create_server(bridge: RAGForgeBridge | None = None) -> MCPServer:
             label=label,
             dry_run=dry_run,
             allow_keyword_fallback=allow_keyword_fallback,
+        )
+
+    # ------------------------------------------------- V18 agentic operations
+
+    @server.tool(
+        name="analyze_domain",
+        title="Propose a domain specification",
+        annotations=_READ_ONLY,
+    )
+    def analyze_domain(
+        domain: Annotated[
+            str | None,
+            Field(description="The domain to analyse, e.g. 'Automobile Engineering'. Omit when kb_id is given."),
+        ] = None,
+        purpose: Annotated[
+            str, Field(description="Intended use case for the knowledge base.")
+        ] = "",
+        target_audience: Annotated[str, Field(description="Who will use the knowledge base.")] = "",
+        depth: Annotated[str, Field(description="Desired depth, e.g. introductory/intermediate/technical.")] = "intermediate",
+        kb_id: Annotated[
+            str | None,
+            Field(description="Use an existing knowledge base's metadata instead of new parameters."),
+        ] = None,
+    ) -> DomainAnalysisResult:
+        """Derive a PROPOSED domain specification and knowledge map. Nothing is stored.
+
+        Runs the existing domain analyzer (the configured LLM provider, or the
+        labelled development mock when no key is configured - in which case
+        is_mock=true and the proposal must be treated as a placeholder). The
+        result lists subdomains, key concepts, entities, terminology, knowledge
+        requirements and recommended source categories. This tool never writes a
+        DomainSpec: persist one through the API/UI if the user wants it stored.
+        """
+        return _tool_call(
+            bridge.analyze_domain,
+            domain=domain,
+            purpose=purpose,
+            target_audience=target_audience,
+            depth=depth,
+            kb_id=kb_id,
+        )
+
+    @server.tool(
+        name="discover_sources",
+        title="Discover and score candidate sources",
+        annotations=_DISCOVERY,
+    )
+    def discover_sources(
+        kb_id: Annotated[str, Field(description="Knowledge base id to register candidates under.")],
+        provider: Annotated[
+            str,
+            Field(description="'user-url' (URLs the user supplied) or 'arxiv' (research query)."),
+        ] = "user-url",
+        query: Annotated[
+            str,
+            Field(description="Whitespace/comma separated URLs for user-url, or a search phrase for arxiv."),
+        ] = "",
+        limit: Annotated[
+            int, Field(description=f"Maximum candidates to register, 1-{limits.MAX_DISCOVERY_LIMIT}.")
+        ] = 5,
+    ) -> DiscoveryResult:
+        """Register candidate sources and score them with the real quality engine.
+
+        Writes candidate Source rows with their assessment. It never downloads a
+        document, never embeds and never indexes: ingestion is a separate,
+        confirmed action. URLs are SSRF-validated before any request is made.
+        """
+        return _tool_call(
+            bridge.discover_sources,
+            kb_id=kb_id,
+            provider=provider,
+            query=query,
+            limit=limit,
+        )
+
+    @server.tool(
+        name="assess_sources",
+        title="Explain source-quality decisions",
+        annotations=_READ_ONLY,
+    )
+    def assess_sources(
+        kb_id: Annotated[str, Field(description="Knowledge base id.")],
+        source_ids: Annotated[
+            list[str] | None, Field(description="Only these source ids (default: every source).")
+        ] = None,
+        decision: Annotated[
+            str | None, Field(description="Filter by decision: ACCEPT, REVIEW or REJECT.")
+        ] = None,
+        user_provided_only: Annotated[
+            bool, Field(description="Only material the user supplied.")
+        ] = False,
+    ) -> SourceAssessmentList:
+        """Return every stored score, signal, reason and warning, per source.
+
+        Read-only. The numbers are the assessments the quality engine already
+        made (external model for discovered sources, integrity model for
+        user-provided material); nothing is recomputed here. Sources with no
+        stored assessment are listed as unassessed rather than scored 0.
+        """
+        return _tool_call(
+            bridge.assess_sources,
+            kb_id=kb_id,
+            source_ids=source_ids,
+            decision=decision,
+            user_provided_only=user_provided_only,
+        )
+
+    @server.tool(
+        name="plan_knowledge_base",
+        title="Plan the next construction steps",
+        annotations=_PLANNING,
+    )
+    def plan_knowledge_base(
+        kb_id: Annotated[
+            str | None, Field(description="Plan for an existing knowledge base. Omit to plan its creation.")
+        ] = None,
+        name: Annotated[str | None, Field(description="Name for a new knowledge base.")] = None,
+        domain: Annotated[str | None, Field(description="Domain for a new knowledge base.")] = None,
+        purpose: Annotated[str, Field(description="Intended use case.")] = "",
+        target_audience: Annotated[str, Field(description="Who will use it.")] = "",
+        depth: Annotated[str, Field(description="Desired depth.")] = "intermediate",
+        source_mode: Annotated[
+            str, Field(description="external | user_provided | mixed.")
+        ] = "external",
+        urls: Annotated[
+            list[str] | None,
+            Field(description="URLs to validate as part of the plan (validated, never fetched here)."),
+        ] = None,
+        user_documents: Annotated[
+            list[dict] | None,
+            Field(
+                description=(
+                    "Documents to plan adding: [{file_name, content_text|content_base64}]. The plan "
+                    "validates and hashes them and proposes the exact intake parameters."
+                )
+            ),
+        ] = None,
+        chunking: Annotated[
+            dict | None,
+            Field(description="Optional {chunker, target_size, overlap} for the build."),
+        ] = None,
+        retrieval: Annotated[
+            dict | None, Field(description="Optional {strategy} to test after the build.")
+        ] = None,
+        index_documents: Annotated[
+            bool, Field(description="Whether a proposed document intake would also index them.")
+        ] = True,
+    ) -> KnowledgeBasePlan:
+        """Propose the corpus, ingestion plan, chunking and retrieval config. Read-only.
+
+        Nothing is created, downloaded, ingested or indexed: this computes what
+        WOULD happen and returns one confirmable action per step with its exact
+        parameters and fingerprint. Call confirm_plan with the fingerprint the
+        user approves, then run that action. Changing a parameter invalidates the
+        confirmation. Adds nothing to the corpus itself.
+        """
+        return _tool_call(
+            bridge.plan_knowledge_base,
+            kb_id=kb_id,
+            name=name,
+            domain=domain,
+            purpose=purpose,
+            target_audience=target_audience,
+            depth=depth,
+            source_mode=source_mode,
+            urls=urls,
+            user_documents=user_documents,
+            chunking=chunking,
+            retrieval=retrieval,
+            index_documents=index_documents,
+        )
+
+    @server.tool(
+        name="confirm_plan",
+        title="Record a user confirmation for one planned action",
+        annotations=_CONFIRMATION,
+    )
+    def confirm_plan(
+        plan_id: Annotated[str, Field(description="plan_id returned by plan_knowledge_base.")],
+        action: Annotated[
+            str,
+            Field(description="The action being approved: create_knowledge_base, ingest_sources, build_knowledge_base or add_user_documents."),
+        ],
+        parameters_fingerprint: Annotated[
+            str, Field(description="parameters_fingerprint of that action, exactly as the plan returned it.")
+        ],
+        note: Annotated[
+            str, Field(description="Optional note recording who approved it and any condition.")
+        ] = "",
+    ) -> ConfirmationResult:
+        """Record approval of ONE action with ONE exact parameter set. Ask the user first.
+
+        Call this only after the user has approved the exact action and
+        parameters shown in the plan. It records a single-use confirmation that
+        expires, and it authorizes nothing by itself: the action tool must still
+        be called with the same parameters. A plan is not a confirmation, and this
+        server cannot verify who approved it - that is the host client's
+        responsibility.
+        """
+        return _tool_call(
+            bridge.confirm_plan,
+            plan_id=plan_id,
+            action=action,
+            parameters_fingerprint=parameters_fingerprint,
+            note=note,
+        )
+
+    @server.tool(
+        name="create_knowledge_base",
+        title="Create a knowledge base (requires confirmation)",
+        annotations=_CONSEQUENTIAL,
+    )
+    def create_knowledge_base(
+        confirmation_id: Annotated[
+            str, Field(description="confirmation_id from confirm_plan for create_knowledge_base.")
+        ],
+        name: Annotated[str, Field(description="Knowledge base name.")],
+        domain: Annotated[str, Field(description="Domain, e.g. 'Automobile Engineering'.")],
+        purpose: Annotated[str, Field(description="Intended use case.")],
+        target_audience: Annotated[str, Field(description="Who will use it.")],
+        depth: Annotated[str, Field(description="Desired depth.")] = "intermediate",
+        source_mode: Annotated[str, Field(description="external | user_provided | mixed.")] = "external",
+    ) -> AgentActionResult:
+        """Create the knowledge base container. Requires a recorded confirmation.
+
+        Creates an EMPTY knowledge base (no sources, no documents, no vectors)
+        through the same route the API uses. It refuses when a knowledge base with
+        the same name and domain already exists, and it never deletes or recreates
+        anything. Capability is not implied: call get_knowledge_base_status or
+        validate_knowledge_base before describing it as usable.
+        """
+        return _tool_call(
+            bridge.create_knowledge_base,
+            confirmation_id=confirmation_id,
+            name=name,
+            domain=domain,
+            purpose=purpose,
+            target_audience=target_audience,
+            depth=depth,
+            source_mode=source_mode,
+        )
+
+    @server.tool(
+        name="ingest_sources",
+        title="Download and parse approved sources (requires confirmation)",
+        annotations=_CONSEQUENTIAL,
+    )
+    def ingest_sources(
+        confirmation_id: Annotated[
+            str, Field(description="confirmation_id from confirm_plan for ingest_sources.")
+        ],
+        kb_id: Annotated[str, Field(description="Knowledge base id.")],
+        source_ids: Annotated[
+            list[str], Field(description="Source ids to ingest. Every one must already be ACCEPTED.")
+        ],
+    ) -> AgentActionResult:
+        """Download and parse APPROVED sources into the knowledge base.
+
+        Requires a confirmation bound to exactly this source list. REVIEW sources
+        need a human decision first (recorded in the API/UI), REJECT is never
+        overridden, and user-provided sources are not downloaded. Nothing is
+        embedded: run build_knowledge_base afterwards.
+        """
+        return _tool_call(
+            bridge.ingest_sources,
+            confirmation_id=confirmation_id,
+            kb_id=kb_id,
+            source_ids=source_ids,
+        )
+
+    @server.tool(
+        name="build_knowledge_base",
+        title="Chunk, embed and index the corpus (requires confirmation)",
+        annotations=_CONSEQUENTIAL,
+    )
+    def build_knowledge_base(
+        confirmation_id: Annotated[
+            str, Field(description="confirmation_id from confirm_plan for build_knowledge_base.")
+        ],
+        kb_id: Annotated[str, Field(description="Knowledge base id.")],
+        chunker: Annotated[str, Field(description="Registered chunking strategy.")] = "section-aware",
+        target_size: Annotated[int, Field(description="Target characters per chunk, 200-8000.")] = 1200,
+        overlap: Annotated[int, Field(description="Chunk overlap in characters, 0-1000.")] = 150,
+    ) -> AgentActionResult:
+        """Run the existing chunk -> embed -> index pipeline. Requires a confirmation.
+
+        This is a full rebuild: the re-indexed documents' vectors are deleted
+        before the new ones are upserted and orphan points are swept afterwards,
+        exactly as POST /{kb_id}/index does. A succeeded build is not readiness -
+        validate_knowledge_base measures the index.
+        """
+        return _tool_call(
+            bridge.build_knowledge_base,
+            confirmation_id=confirmation_id,
+            kb_id=kb_id,
+            chunker=chunker,
+            target_size=target_size,
+            overlap=overlap,
+        )
+
+    @server.tool(
+        name="add_user_documents",
+        title="Add user-provided documents (requires confirmation)",
+        annotations=_CONSEQUENTIAL,
+    )
+    def add_user_documents(
+        confirmation_id: Annotated[
+            str, Field(description="confirmation_id from confirm_plan for add_user_documents.")
+        ],
+        kb_id: Annotated[str, Field(description="Knowledge base id.")],
+        documents: Annotated[
+            list[dict],
+            Field(
+                description=(
+                    "Documents as content, never paths: [{file_name, content_text}] for text-like "
+                    "formats or [{file_name, content_base64}] for pdf/docx/pptx."
+                )
+            ),
+        ],
+        index: Annotated[bool, Field(description="Chunk/embed/index the new documents immediately.")] = True,
+        chunker: Annotated[str, Field(description="Registered chunking strategy.")] = "section-aware",
+        target_size: Annotated[int, Field(description="Target characters per chunk, 200-8000.")] = 1200,
+        overlap: Annotated[int, Field(description="Chunk overlap in characters, 0-1000.")] = 150,
+    ) -> DocumentIntakeResult:
+        """Add files the user supplied, as content. Requires a confirmation.
+
+        This tool cannot read the filesystem: bytes travel in the call and go
+        through the same validation, parsers and provenance capture as an upload
+        through the API (page/slide/section numbers, content hashes, duplicate
+        detection, integrity assessment). The confirmation is bound to the sha256
+        of every document, so a different byte set is refused.
+        """
+        return _tool_call(
+            bridge.add_user_documents,
+            confirmation_id=confirmation_id,
+            kb_id=kb_id,
+            documents=documents,
+            index=index,
+            chunker=chunker,
+            target_size=target_size,
+            overlap=overlap,
+        )
+
+    @server.tool(
+        name="get_operation_status",
+        title="Inspect an operation, plan or run",
+        annotations=_READ_ONLY,
+    )
+    def get_operation_status(
+        operation_id: Annotated[
+            str, Field(description="plan_/op_ id from this server, or a build_/rdx_/eval_ run id.")
+        ],
+        kb_id: Annotated[
+            str | None, Field(description="Needed only when polling a run id that is not an MCP operation.")
+        ] = None,
+    ) -> OperationStatusReport:
+        """Report what really happened to one operation, plan or run. Read-only.
+
+        Returns the lifecycle stage (request/plan/confirmation/execution/report),
+        the exact authorized parameters, whether the confirmation was consumed,
+        the result summary, any warnings and - for executions - the underlying
+        BuildRun or diagnostics record with its per-stage detail.
+        """
+        return _tool_call(
+            bridge.get_operation_status, operation_id=operation_id, kb_id=kb_id
+        )
+
+    @server.tool(
+        name="validate_knowledge_base",
+        title="Measure readiness from evidence",
+        annotations=_READ_ONLY,
+    )
+    def validate_knowledge_base(
+        kb_id: Annotated[str, Field(description="Knowledge base id.")],
+        include_vectors: Annotated[
+            bool, Field(description="Include vector-store checks (needs Qdrant).")
+        ] = True,
+        include_diagnostics: Annotated[
+            bool, Field(description="Also report whether a permitted retrieval diagnostic exists.")
+        ] = True,
+    ) -> ValidationReport:
+        """Run the read-only corpus audit and report readiness from measured facts.
+
+        Checks parsed documents, chunk rows, vector points against chunk rows, the
+        recorded embedding identity and the full corpus integrity audit (missing /
+        orphan / stale vectors, duplicates, provenance gaps, failed or partial
+        documents). Readiness requires all of that to pass; a measurement that
+        could not be taken is reported as UNKNOWN, never as a pass, and metadata
+        alone never makes a knowledge base ready.
+        """
+        return _tool_call(
+            bridge.validate_knowledge_base,
+            kb_id=kb_id,
+            include_vectors=include_vectors,
+            include_diagnostics=include_diagnostics,
+        )
+
+    @server.tool(
+        name="compare_retrieval_strategies",
+        title="Compare retrieval strategies on a benchmark",
+        annotations=_COMPARISON,
+    )
+    def compare_retrieval_strategies(
+        kb_id: Annotated[str, Field(description="Knowledge base id.")],
+        benchmark_path: Annotated[
+            str | None,
+            Field(description="Benchmark artifact path, repo- or DATA_DIR-relative. Nothing outside those roots."),
+        ] = None,
+        strategies: Annotated[
+            list[str] | None, Field(description="Registered strategies to compare (default: dense and bm25).")
+        ] = None,
+        top_k: Annotated[int, Field(description=f"Evaluated cut-off k, 1-{limits.MAX_TOP_K}.")] = 10,
+        label: Annotated[str, Field(description="Label recorded on the diagnostics run.")] = "",
+        acknowledge_exploratory: Annotated[
+            bool,
+            Field(description="Required to run against an instrument whose review is not complete."),
+        ] = False,
+        candidate_depth: Annotated[
+            int | None, Field(description="Probe depth; defaults to max(top_k, 20) and may only widen.")
+        ] = None,
+    ) -> StrategyComparisonReport:
+        """Compare strategies with the existing diagnostics runner, lifecycle-gated.
+
+        The instrument is loaded and validated by the same loader the API uses,
+        and its authorship is inspected: an instrument whose human review is
+        incomplete is refused unless the caller explicitly acknowledges that no
+        confirmatory claim follows from it. Metrics that could not be computed are
+        null (UNKNOWN), never zero. Nothing is promoted to a default by this tool,
+        and no question, label or benchmark is modified.
+        """
+        return _tool_call(
+            bridge.compare_retrieval_strategies,
+            kb_id=kb_id,
+            benchmark_path=benchmark_path,
+            strategies=strategies,
+            top_k=top_k,
+            label=label,
+            acknowledge_exploratory=acknowledge_exploratory,
+            candidate_depth=candidate_depth,
         )
 
     # ------------------------------------------------------------ resources

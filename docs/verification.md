@@ -1638,3 +1638,125 @@ chat suites that exercise this path. The bug predates V17.
   and is not part of this commit either.
 * Both evaluation instruments remain below the 30-question inference floor:
   nothing in this phase is a significance claim.
+
+---
+
+## V18 — Agentic operations through MCP (2026-10-14)
+
+The V17 read surface was left intact; V18 added 12 tools, the operation lifecycle
+and the confirmation gate. Design, gates and transcripts:
+[`docs/v18-agentic-operations.md`](./v18-agentic-operations.md).
+
+### Tests and builds
+
+| Check | Command | Result |
+|---|---|---|
+| Focused V18 + V17 suites | `./.venv/Scripts/python.exe -m pytest tests/test_v18_mcp_agentic.py tests/test_v17_mcp_server.py -q` | **149 passed** (158 s) |
+| Full backend suite | `./.venv/Scripts/python.exe -m pytest -q` | **1468 passed**, 3 warnings, 528 s |
+| Frontend | not run — no frontend source file changed in V18 (`frontend/tsconfig.tsbuildinfo` is a tracked generated artifact inherited from V16 and stays uncommitted) | n/a |
+
+The 95 V18 tests are hermetic: a scratch `DATA_DIR`, the in-memory cosine store,
+hashing embeddings and the mock LLM, plus deterministic doubles for the
+accessibility probe and the arXiv provider, and a local-fixture replacement for
+**only** the download call so the project's own parse → hash → document path still
+runs. Two V17 tests changed on purpose: the surface is no longer read-only, and
+stdio now exposes 18 tools.
+
+### Real client interoperability (a real stdio subprocess, twice)
+
+`scripts/mcp_agent_workflow.py` starts the server exactly as a client does
+(`StdioServerParameters`, the project launcher, absolute paths) and drives the
+whole lifecycle against the **real workspace**: real SQLite, real Qdrant, real
+`all-MiniLM-L6-v2` embeddings, and the labelled development mock LLM because
+`LLM_API_KEY` is empty. It refuses to start unless the protected KB measures
+exactly 812 Qdrant points, and re-measures at the end.
+
+| Run | Command | Result |
+|---|---|---|
+| A (offline) | `scripts/mcp_agent_workflow.py --json-out …` | 18 tools discovered; plan → confirm → create → intake → build → validate → search → answer → compare → status → cleanup, **exit 0, 0 problems** |
+| B (network) | `scripts/mcp_agent_workflow.py --external --json-out …` | as A plus real discovery (2 Wikipedia candidates), real downloads (190 818 and 191 465 bytes), rebuild to 118 vector points, **exit 0, 0 problems** |
+
+Real values returned (copied from the run records, which were then deleted as
+generated artifacts):
+
+* `create_knowledge_base` → `kb_109e3d6447fb`, `status=draft`, `search: false` with
+  the basis "0 chunk row(s) and 0 document(s) in the corpus" — creation claims no
+  capability.
+* `add_user_documents` → `accepted=1`, `chunks_created=4`, `vectors_indexed=4`,
+  `content_hash=0c70f816…`, `user_provided=true`, `decision=ACCEPT`, `score=0.95`.
+* `build_knowledge_base` → run `build_b6999fca2132`, stages
+  `chunking → embedding → indexing`, `chunk_rows=4`, `vector_points=4`,
+  `vectors_match_chunks=true`.
+* `validate_knowledge_base` → `verdict=READY`, basis "1 document(s) … 4 chunk
+  row(s) … 4 vector point(s) measured … corpus integrity HEALTHY", all 11
+  integrity counters 0, `integrity_unknown=[]`, and the diagnostics check refused
+  with its real reason ("no FROZEN benchmark version exists for this knowledge
+  base").
+* `search_knowledge_base` → `applied_strategy=dense`,
+  `sentence-transformers/all-MiniLM-L6-v2 (384d)`; #1 `Radiator` 0.7053,
+  #2 `Coolant circuit` 0.6369, #3 `Engine cooling system` 0.4999.
+* `answer_from_knowledge_base` → in corpus `status=grounded`,
+  `grounding_state=ANSWERED`, 3 citations `provenance_valid`, 3 claims
+  `supported`, `generation.is_mock=true` (disclosed, not hidden); out of corpus
+  `status=abstained`, `INSUFFICIENT_EVIDENCE`, 0 citations, reason naming the
+  missing question terms.
+* `compare_retrieval_strategies` → `permitted=false`, reason "benchmark
+  'automobile-engineering-baseline-v1' was authored for knowledge base
+  'kb_f278c283c748'; scoring it here would measure a corpus it was not written
+  against", `promoted=false`. *(V18 data point: an evaluation instrument cannot be
+  borrowed across corpora.)*
+
+### Confirmation-gate behaviour, observed live (not only in tests)
+
+```
+create_knowledge_base, no confirmation      → [CONFIRMATION_REQUIRED]
+create_knowledge_base, plan id as conf      → [CONFIRMATION_INVALID] Confirmation
+                                              'plan_…' is not known to this workspace
+create_knowledge_base, domain edited after  → [CONFIRMATION_INVALID] Confirmed
+ approval                                     fingerprint 14e011aca20d, call
+                                              fingerprint b53ac3efff05
+create_knowledge_base, replayed             → [CONFIRMATION_INVALID] Confirmation
+                                              conf_… was already used (timestamp)
+add_user_documents, bytes changed after     → [CONFIRMATION_INVALID]
+ approval
+```
+
+All five refusals happened against the running server over stdio, and in every
+case nothing was written.
+
+### Integrity (measured around the tests and the two live runs)
+
+| Check | Result |
+|---|---|
+| SQLite `PRAGMA integrity_check` / `foreign_key_check` | **ok** / clean |
+| Protected KB `kb_f278c283c748` | 11 documents, **812 chunk rows**; Qdrant `status: green`, `points_count` **812** — measured 812 → 812 in run A and 812 → 812 in run B |
+| Qdrant collections | **14 → 14** (both scratch collections deleted with their KBs) |
+| Knowledge bases | **21 → 21**; newest `created_at` is still **2026-10-06**, i.e. the two scratch KBs are gone and no knowledge base was created or deleted outside them |
+| Corpus rows | `retrieval_runs` **490**, `answers` **485**, `answer_traces` **485** — **unchanged**: run A's search and answer rows went with the scratch KB it deleted, and the hermetic suites write to a scratch DB. The two live runs therefore added no rows to the research corpus |
+| `mcp_operations` (new) | **0 → 31**: 23 rows with status `proposed` (15 plan rows, 7 creation proposals, 1 build proposal — these authorize nothing) and 8 executed (`create_knowledge_base` 2, `add_user_documents` 2, `build_knowledge_base` 3, `ingest_sources` 1). **0 rows reference the protected KB** — the agent never operated on the research corpus. Kept deliberately: purging them would delete the audit trail the feature exists to produce |
+| Benchmark/review state | `benchmark_question_reviews` **0**, `benchmark_ground_truth` **0**, `benchmark_draft_suggestions` **29** (unchanged); `retrieval_diagnostic_runs` **9** (still the V15 probe row — the live comparison was refused, so it wrote nothing) |
+| Frozen artifact hashes (measured now) | held-out seal `faca16deab85`, candidates `e4a75253327a`, retrieval baseline `08601f58b33c`, `answer-quality-automobile-v1.json` `16db9dbd46cb` — **identical to the V15/V16/V17 record**; `git diff HEAD -- benchmarks/` empty |
+| Experiment outputs | `backend/data/experiments/` newest file still **2026-10-12T23:27** — nothing rewritten |
+| Scratch leftovers | the two deleted KBs' orphaned raw files and upload directories were removed; the generated run logs and JSON records were deleted after transcription (not committed) |
+| Secrets | `grep` for key patterns over every added file: no matches; `.env` stays untracked and ignored |
+
+### What was NOT verified, stated plainly
+
+* **No LLM key configured**, so `analyze_domain` returned the labelled development
+  mock (`is_mock=true`, `generated_by=mock:mock-1`) in the live run, and the
+  grounded answer came from the mock generator. A real-provider run is untested
+  here; the payloads disclose which it was.
+* **No third-party MCP host** (Claude Desktop/Cursor/VS Code) was run; interop is
+  proven with the official SDK client over a real stdio subprocess.
+* **No HTTP transport, no auth, no per-user scoping** — stdio only, by design.
+* **No cancellation and no background progress**: operations run synchronously
+  inside the tool call, so there is no cancel surface to test and
+  `get_operation_status` reports completed work rather than a live ticker.
+* **No concurrency or load testing**: two clients, a long build with a client
+  disconnect, and simultaneous writes were not exercised.
+* **No deletion tool exists**, so destructive paths could only be tested as
+  absent (a test pins the bridge's public surface); the destructive operations
+  that do exist live in the HTTP API and were not re-verified here.
+* Both evaluation instruments remain below the 30-question inference floor, and
+  the held-out review gate is still open: nothing in V18 is a significance claim,
+  and no benchmark was scored in this phase.
