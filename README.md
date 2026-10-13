@@ -727,67 +727,54 @@ This would move RAGForge from a **RAG construction system** toward an **automate
 
 ---
 
-# MCP Integration
+# MCP Integration (implemented — V17)
 
-A future version of RAGForge can expose its functionality through the **Model Context Protocol (MCP)**.
-
-This would allow AI agents such as Claude and other MCP-compatible systems to interact with RAGForge directly.
-
-The architecture would be:
+RAGForge exposes its knowledge bases through the **Model Context Protocol (MCP)**, so AI agents such as Claude and other MCP-compatible clients can interact with them directly. Setup, client configuration and the full behaviour contract live in **[docs/mcp-integration.md](./docs/mcp-integration.md)**.
 
 ```text
-                 AI Agent
-              Claude / GPT
-                    │
-                    │ MCP
-                    ▼
-           ┌──────────────────┐
-           │ RAGForge MCP     │
-           │ Server           │
-           └────────┬─────────┘
-                    │
-                    ▼
-             RAGForge Backend
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
-     Sources     Retrieval   Evaluation
-        │           │           │
-        └───────────┼───────────┘
-                    ▼
-               Vector Index
+backend\scripts\run_mcp_server.py     ← launcher (absolute path, any cwd)
+        │  stdio
+backend/app/mcp/server.py             ← MCP server: 6 tools, 4 resources
+        │
+backend/app/mcp/bridge.py             ← validation + limits, then…
+        │
+RAGForge services                     ← …the SAME services the API/UI use
+        │
+   SQLite (chunks, documents, versions, runs) + Qdrant (vectors)
 ```
 
-Potential MCP tools include:
+Implemented tools (all read-only):
 
 ```text
-analyze_domain
-discover_sources
-assess_sources
-build_knowledge_base
-retrieve
-evaluate
-compare_experiments
-inspect_source
-inspect_chunk
+list_knowledge_bases          ids, metadata, real counts, capability flags
+get_knowledge_base_status     build/index state, live vector probe, dependencies
+search_knowledge_base         ranked evidence with real scores + provenance
+get_evidence                  specific chunks/documents by id
+answer_from_knowledge_base    grounded answer with citations, or an abstention
+evaluate_retrieval            official metrics on a FROZEN benchmark version
 ```
 
-This would allow an external AI agent to perform operations such as:
+Read-only resources: `ragforge://knowledge-bases`, and templates for one knowledge base, one document and one evidence chunk.
+
+Install and run:
+
+```bash
+cd backend
+.venv\Scripts\python.exe -m pip install -r requirements-mcp.txt
+.venv\Scripts\python.exe -m app.mcp            # stdio server (or scripts/run_mcp_server.py)
+.venv\Scripts\python.exe scripts\mcp_smoke_client.py --kb kb_f278c283c748
+```
+
+An external agent can therefore do:
 
 ```text
-"Create a knowledge base for Underwater Marine Robotics."
+"Retrieve information about engine energy conversion from the
+ Automobile Engineering knowledge base, then answer with citations."
 ```
 
-RAGForge could then construct the knowledge base.
+and RAGForge returns the ranked evidence with provenance plus a grounded answer whose citations are validated, or an explicit abstention when the corpus does not cover the question.
 
-The same agent could subsequently call:
-
-```text
-"Retrieve information about AUV navigation from the
-Underwater Marine Robotics knowledge base."
-```
-
-RAGForge would return the relevant passages and provenance, allowing the AI agent to use them as grounded context for its response.
+Deliberately **not** implemented in V17: write/ingest/review tools, streamable-HTTP transport (stdio only, because RAGForge has no auth to secure a port with), and any parallel retrieval or evaluation path. See §7 of the MCP document for the full limitation list.
 
 ### Important distinction
 
@@ -1295,6 +1282,30 @@ held-out instrument byte-identical; `PRAGMA integrity_check` ok.
 
 The remaining step is human: review the 28 questions, then freeze v1. See §4 of the
 V16 report for the exact procedure.
+
+### Implemented (V17 MCP integration)
+
+A working MCP server that exposes RAGForge knowledge bases to MCP-compatible AI
+clients over **stdio**. Full guide: [`docs/mcp-integration.md`](./docs/mcp-integration.md).
+
+| Item | Status |
+|---|---|
+| SDK / transport | official `mcp` 2.3.0 (`MCPServer`), stdio only — no unauthenticated HTTP listener |
+| Tools | `list_knowledge_bases`, `get_knowledge_base_status`, `search_knowledge_base`, `get_evidence`, `answer_from_knowledge_base`, `evaluate_retrieval` — all `read_only_hint`, none mutating |
+| Resources | `ragforge://knowledge-bases` plus templates for a knowledge base, a document and an evidence chunk (targeted by id, no corpus dumps) |
+| Reuse, not duplication | every tool calls `RetrievalService`, `AnsweringService`, `Evaluator` and `Repository`; no parallel retrieval, scoring or validation path |
+| Honesty preserved | real scores with per-pool breakdowns, trace with config fingerprint and corpus version, pipeline grounding states, `dry_run` lifecycle check, UNKNOWN-not-zero metrics, answer-level metrics listed as unavailable with the human-review reason |
+| Security | argument bounds, no filesystem access, no paths or secrets in results, coded non-internal errors, untrusted-content marking, read-only surface pinned by a test |
+| Installation | `backend/requirements-mcp.txt` (optional; the API/UI never import `mcp`) |
+| Startup | `python -m app.mcp` or `scripts/run_mcp_server.py`; client config example with absolute Windows paths in the doc |
+
+Tests: **53 focused MCP tests** (protocol, schemas, all six tools, validation and
+capability errors, lifecycle gates, security boundaries, prompt injection) plus a
+**real stdio subprocess client** that completes the handshake exactly as an MCP
+client does. They also caught and fixed a real defect: `AnsweringService` called
+`_failure_answer(kb_id=…)` while the parameter is `kb=`, so any generation
+failure raised `TypeError` instead of returning the documented
+`generation_failed` answer.
 ---
 
 # Running RAGForge Locally

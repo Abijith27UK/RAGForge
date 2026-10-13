@@ -232,7 +232,7 @@ class AnsweringService:
                 )
                 recorder.skip("citation_validation", "generation failed")
                 answer = self._failure_answer(
-                    kb_id=kb, question=question, answer_id=answer_id,
+                    kb=kb, question=question, answer_id=answer_id,
                     assessment=assessment, policy=policy, generator=generator,
                     reason=str(exc), response=response, recorder=recorder,
                 )

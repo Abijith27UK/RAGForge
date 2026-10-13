@@ -1,0 +1,9 @@
+# V17 — optional MCP server dependency.
+#
+# Install only if you want to expose RAGForge to MCP clients:
+#
+#     backend> .venv\Scripts\python.exe -m pip install -r requirements-mcp.txt
+#
+# The FastAPI application does not import `mcp`, so it stays optional: the core
+# install in requirements.txt is unaffected.
+mcp==2.3.0

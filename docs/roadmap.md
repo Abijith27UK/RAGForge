@@ -663,3 +663,67 @@ gaps and does not fill them.
    accident.
 5. Unchanged: reranker-stage diagnostics, MMR/diversity, and the open
    default-retriever decision (not to be taken on one small instrument).
+
+---
+
+## V17 — MCP integration (2026-10-14, delivered)
+
+RAGForge knowledge bases are now reachable from MCP-compatible AI clients. Full
+guide: [`docs/mcp-integration.md`](./mcp-integration.md).
+
+### What was built
+
+* **Official SDK, stdio transport.** `mcp` 2.3.0 (`MCPServer`), launched by the
+  client as a subprocess. Streamable HTTP was **not** shipped: RAGForge has no
+  auth, so an unauthenticated port would expose every knowledge base on the
+  machine. stdio inherits the local process boundary instead.
+* **Six read-only tools** — `list_knowledge_bases`, `get_knowledge_base_status`,
+  `search_knowledge_base`, `get_evidence`, `answer_from_knowledge_base`,
+  `evaluate_retrieval` — plus four read-only resources (knowledge-base index,
+  one KB, one document, one evidence chunk). No ingest, delete, review, config or
+  benchmark-mutation tool exists.
+* **Service reuse, not a parallel stack.** `app/mcp/bridge.py` is the only
+  RAGForge-facing code and it calls the existing `RetrievalService`,
+  `AnsweringService`, `Evaluator` and `Repository`. Scores, provenance, grounding
+  states, lifecycle gates and recorded runs are the same ones the UI shows.
+* **Separation.** The FastAPI app never imports `app.mcp`, the MCP process starts
+  no web server, and `mcp` stays an optional dependency
+  (`backend/requirements-mcp.txt`).
+
+### Honesty and safety carried into the MCP surface
+
+* Real scores with per-pool `score_breakdown`, the retriever's own `why`, and a
+  trace with strategy, resolved params, config fingerprint, stages, timings and
+  corpus version; an unknown strategy is an error listing the registry — **no
+  silent fallback**.
+* Grounding preserved: `status` and the five `GroundingState` values, claims with
+  support verdicts, validated citations, and the abstention reason. An
+  `abstain_if_unsupported` turn with insufficient evidence makes no model call.
+* `evaluate_retrieval` refuses anything but a **FROZEN** benchmark version, has a
+  `dry_run` that executes nothing, and lists answer-level metrics as unavailable
+  with the human-review reason; metrics with no ground truth are UNKNOWN, not 0.
+* Limits and boundaries: validated ranges, truncated-text disclosure, no
+  filesystem access, no paths/secrets in any payload, coded non-internal errors,
+  and corpus text marked untrusted with a tested prompt-injection path.
+
+### Defect found and fixed
+
+While testing the answer tool: `AnsweringService._failure_answer(kb_id=…)` did
+not match its `kb=` parameter, so **every** generation failure raised `TypeError`
+instead of returning the documented `generation_failed` answer. Fixed, with the
+MCP test now covering that path.
+
+### V17 recommended order
+
+1. **Review and freeze the 28 answer-benchmark questions** (V16 §4) — the only
+   blocker left for answer-correctness metrics, which this MCP surface already
+   reports as unavailable.
+2. **Pick an MCP client and use the server for real work** — the transport,
+   tools and resources are done; the useful next evidence is a real session
+   transcript, not more surface area.
+3. Still open from V13/V15/V16: reranker-stage diagnostics, MMR/diversity, the
+   default-retriever decision, and the held-out instrument's open review gate
+   (`auto-eng-hout-007` stays pending by explicit decision).
+4. **Only if a real need appears:** a secured HTTP transport (with auth and
+   per-client scoping) or curated MCP prompts. Neither is required today and
+   neither should be added speculatively.
