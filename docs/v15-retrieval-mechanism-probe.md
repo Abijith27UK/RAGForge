@@ -304,6 +304,24 @@ and that belong on the record:
    candidate artifact plus the freeze tooling are what make the seal
    reproducible; a fresh clone can re-freeze it and compare the fingerprint.
 
+## 12. The review gate — explicit human decision (2026-10-13)
+
+`auto-eng-hout-007` was left **pending** by explicit human decision, not by
+oversight, and no v2 instrument was authorised:
+
+* the sealed v1 instrument **stays PROVISIONAL / EXPLORATORY**, and its results
+  (V14 and this probe) remain exploratory;
+* no replacement question, no re-seal and no new version was created;
+* the state is exactly what the artifact and the API already reported — 25
+  approved / 0 edit / 0 reject / **1 pending**, reviewers `["Abijith"]`;
+* the window experiment declared in §9 is likewise **recorded only** — it was not
+  run, so the instrument still has no post-probe measurement attached to it.
+
+Revisiting this requires a fresh, explicit decision: the only documented route to
+closing the gate is a **new instrument version** (new candidate set → blind review
+→ freeze), because a decision recorded after the results are known cannot raise
+the claim strength of results already seen.
+
 ## Reproduce
 
 ```bash

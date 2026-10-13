@@ -577,6 +577,8 @@ sentence claiming the misses are "not merely outside the window" is **corrected*
    falsifier are declared in the V15 report §9. k=20 is the pre-existing
    probe-depth constant, not the observed rank 12, precisely to avoid tuning
    against the result. Expected: recall 0.9231 → 1.0000; still exploratory.
+   **Decided 2026-10-13: declared only, not run** — the instrument has no
+   post-probe measurement attached to it.
 2. **Reconcile `required_recall_at_depth`** — in a V12 run it is computed over the
    windowed list and duplicates `recall_at_k`, while its documentation calls it
    depth-independent. Decide explicitly (rename, or compute over the probe list)
@@ -585,7 +587,8 @@ sentence claiming the misses are "not merely outside the window" is **corrected*
    sealed v1 instrument refuses new ones, so this needs a **new instrument
    version** (v2 candidate set → review → freeze). Until then every held-out
    result stays PROVISIONAL / EXPLORATORY. Requires a human decision; not
-   automatic.
+   automatic. **Decided 2026-10-13: the gate stays open** — `auto-eng-hout-007`
+   remains pending by explicit choice, no replacement question and no v2 seal.
 4. **Author and review the 28 answer-benchmark questions** — unchanged V11/V13
    blocker: 0 of 28 reviewed, 0 reference answers, 0 frozen versions.
 5. **The default retriever decision for this corpus** — still open, still not
