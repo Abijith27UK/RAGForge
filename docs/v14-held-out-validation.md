@@ -9,8 +9,10 @@ nothing here is promoted.**
 | Lifecycle | **provisional** → claim strength **exploratory** (no confirmatory claim is permitted) |
 | Fingerprint | `c738f73c9fd52c4a` |
 | Frozen artifact | [`benchmarks/automobile-engineering-heldout-v1.json`](../benchmarks/automobile-engineering-heldout-v1.json) |
-| Frozen sha256 | `536e6541718ae5010a2d6f7400fc1f91d874d6d9edcb1d8bc1ca424c4ee795e4` |
-| Frozen at / by | 2026-10-12T17:29:19.306865+00:00 / Abijith |
+| Frozen sha256 (as sealed now) | `faca16deab85b13754ced1f92349d6b21e2a057f3a0a36e1de3f281d9df1432b` — **re-sealed 2026-10-12T21:03:29.760078+00:00** from the same candidate set; see the revision note below |
+| Frozen sha256 the arms below actually ran against | `536e6541718ae5010a2d6f7400fc1f91d874d6d9edcb1d8bc1ca424c4ee795e4` (2026-10-12T17:29:19.306865+00:00) — recorded before and after each run in the experiment artifacts |
+| Frozen at / by | 2026-10-12T21:03:29.760078+00:00 / Abijith |
+| Instrument revision note | The content fingerprint `c738f73c9fd52c4a` is identical in both revisions, and `freeze()` refuses any write whose content fingerprint differs. Only the seal metadata (`frozen_at`, `frozen_by`, notes) changed; the tier did not (still **provisional**, 25/26), so no lifecycle transition occurred and no tier was raised after results were seen. Earlier revisions of this table cited `536e6541…` / `17:29:19` as the current seal, which was the state at the time the arms ran. See [`v15-retrieval-mechanism-probe.md`](./v15-retrieval-mechanism-probe.md) §11 |
 | Questions | 26 (11 subdomains; 12 mechanism, 6 terminology, 4 quantitative, 2 comparison, 2 enumeration; 10 advanced, 14 intermediate, 2 basic) |
 | Human review | **25 of 26 decided** (25 approve, 0 edit, 0 reject), reviewer `Abijith`. `auto-eng-hout-007` carries **no decision** |
 | Separation from the development set | 0 shared expected chunks; max lexical similarity 0.30 token / 0.3136 char over the last measured validation view |
@@ -157,6 +159,11 @@ questions: **`auto-eng-hout-007`** (the unreviewed one) and
 (BM25 MRR 1.0) and both are lifted from rank 2 to rank 1 by the reranker.
 Recall is identical for `dense_k3..k10` on these two questions, so widening the
 window does not help them — the evidence is not merely outside the window.
+*(Corrected in V15: the probe found both required chunks at **rank 12 of a
+depth-20 pool**, so they ARE outside the k=10 window and a window of k ≥ 12 would
+recover them. The "identical recall for k=3..10" observation stands; the
+conclusion drawn from it did not. See
+[`v15-retrieval-mechanism-probe.md`](./v15-retrieval-mechanism-probe.md) §7.)*
 
 Measured lexical anchoring (token Jaccard between each question and the text of
 its expected chunk) puts those two questions among the *least* anchored in the
@@ -226,6 +233,13 @@ diagnostics, which probes to depth 20 and classifies per question):
 * **Cost.** One diagnostic run, no configuration change, no tuning, and it can be
   repeated identically on the development instrument for comparison.
 
+**Status: run in V15 and the hypothesis is supported.** One read-only diagnostic
+run (`rdx_93a4f54720a9`, `dense`, k=10 over a depth-20 probe) found both required
+chunks present in the pool at **rank 12**, indexed and corpus-resolved, with
+every outranking chunk coming from the required chunk's own document. Result,
+analysis and the follow-up experiment:
+[`v15-retrieval-mechanism-probe.md`](./v15-retrieval-mechanism-probe.md).
+
 A second, larger decision that the evidence now supports but does not settle:
 this corpus' held-out questions were answered perfectly by a 43 ms lexical
 retriever, so the *default* retrieval configuration for a KB like this one is an
@@ -243,7 +257,7 @@ instrument, after the mechanism above is known.
 | Qdrant collections | 14 | **14** (no scratch collection created) |
 | `benchmarks/automobile-engineering-baseline-v1.json` | `08601f58…a656` | **unchanged** |
 | `benchmarks/answer-quality-automobile-v1.json` | `16db9dbd…9f25` | **unchanged** |
-| `benchmarks/automobile-engineering-heldout-v1.json` | `536e6541…95e4` | **unchanged** |
+| `benchmarks/automobile-engineering-heldout-v1.json` | `536e6541…95e4` | **unchanged** during these runs (the file was later re-sealed to `faca16de…432b` with the same content fingerprint; see the revision note above) |
 | `benchmarks/automobile-engineering-heldout-v1-candidates.json` | `e4a75253…be264` | **unchanged** |
 | SQLite `PRAGMA integrity_check` | `ok` | **`ok`** |
 

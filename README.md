@@ -1182,7 +1182,7 @@ matched questions → accept or reject**. Not a parameter search. Full detail:
 | **Integrity** — index points, chunk rows, corpus revision and both benchmark sha256s captured before/after each run; scratch collections created = 0 | implemented |
 | **Reproducible definitions** — the shipped experiments live in `backend/scripts/run_retrieval_experiment.py` so the bar is versioned with the code | implemented |
 | Experiments run | **4 run** — depth under two declarations, cross-encoder reranking, dense/BM25/hybrid |
-| Held-out validation set | **NOT DONE** — needed before any accepted change is treated as generalisable |
+| Held-out validation set | **DELIVERED in V14** — 26 questions, frozen PROVISIONAL → EXPLORATORY; nothing accepted in V13 is promoted until the review gate closes |
 
 Measured on the protected KB `kb_f278c283c748` (812 points) against the frozen
 benchmark `edf3c586fe9fa296` (28 questions), all exploratory:
@@ -1208,7 +1208,7 @@ results unchanged. Full analysis:
 | Held-out candidate set — 26 questions over 11 subdomains, each with a verbatim evidence quote, its chunk and a coverage rationale | implemented |
 | Human review gate — one recorded decision per question with the reviewer's name; drafts never share storage with human ground truth | **25 approve / 0 edit / 0 reject / 1 pending** by `Abijith` |
 | Validation of the labels — 9 checks (evidence in corpus, evidence in index, quote matches chunk, schema, provenance, uniqueness, separation) | PASSED, 0 errors |
-| Freeze — derives its own tier from the review records; the tier cannot be raised afterwards | **frozen: PROVISIONAL → EXPLORATORY**, fingerprint `c738f73c9fd52c4a`, sha256 `536e6541…95e4` |
+| Freeze — derives its own tier from the review records; the tier cannot be raised afterwards | **frozen: PROVISIONAL → EXPLORATORY**, fingerprint `c738f73c9fd52c4a`, sha256 `faca16de…432b` |
 | Pre-registered arms `b-depth`, `c-hybrid`, `a-rerank-windowed`, declared in `backend/scripts/run_heldout_validation.py` | **run once, unchanged** — hypotheses, metrics, thresholds and fusion weights were not touched afterwards |
 | Promotion | **none** — `promoted_to_default` is `false` on all six runs |
 
@@ -1245,6 +1245,34 @@ Tests: **1303 backend**, 0 failed. Frontend `tsc --noEmit` clean, `npm run build
 exit 0 with both new pages in the output. Protected KB `kb_f278c283c748`
 **812 → 812** points; both frozen benchmark artifacts and the sealed instrument
 byte-identical before and after the runs; `PRAGMA integrity_check` ok.
+
+### Implemented (V15 retrieval mechanism probe)
+
+The stage that answers *why* the two dense misses fail, before any configuration
+is tuned: one **read-only** diagnostic run on the frozen held-out instrument with
+the unchanged `dense_k10` configuration. Full report:
+[`docs/v15-retrieval-mechanism-probe.md`](./docs/v15-retrieval-mechanism-probe.md).
+
+| Item | Status |
+|---|---|
+| Run | `rdx_93a4f54720a9` — `dense`, evaluated `k=10` over a candidate probe at depth **20** (the pre-existing `MIN_CANDIDATE_DEPTH`), 26 questions, 201 s, one append-only report row |
+| Changes | **none** — no weight, top-k, chunking, question, label or threshold touched; 0 user-query retrieval rows persisted; index points, chunk rows and corpus revision unchanged |
+| Classification | **17 `RETRIEVAL_SUCCESS`**, **7 `RANKING_FAILURE`** (ranks 2–5), **2 `LOW_RECALL`** (`auto-eng-hout-007`, `auto-eng-hout-018`, both **rank 12**) |
+| Availability | `all_indexed` for **26 / 26**: every expected chunk is in the corpus *and* in the Qdrant index, matched to the benchmark's expected document |
+| Depth truth | `required_recall_in_probe` = **1.0** — no question fails because the evidence is missing |
+| The two misses | required chunks at **rank 12 of a depth-20 pool**, scores **0.3897** (007, boundary 0.3966) and **0.5346** (018, boundary 0.5460) — near-ties two places past the cut-off |
+| Distractors | every chunk outranking a required chunk (**11 of 11**) comes from that chunk's **own** document |
+| Verdict | both misses are **ranking/depth** failures, **not** representation failures: V14 §7's pre-declared hypothesis confirmed, V14 §5's "not merely outside the window" sentence corrected |
+| Promotion | **none** |
+
+The proposed next measurement (a `dense_k10` vs `dense_k20` window experiment, with
+hypothesis, guardrails, latency budget, acceptance and falsifier declared in
+advance) is recorded but **not run**: the mechanism had to be identified before any
+configuration was tested.
+
+Tests: **1303 backend**, 0 failed (full suite, 478.87 s). No frontend file changed.
+Protected KB `kb_f278c283c748` **812 → 812** points, 812 → 812 chunk rows, Qdrant
+collections **14 → 14**, all four benchmark artifacts byte-identical.
 ---
 
 # Running RAGForge Locally

@@ -1379,3 +1379,75 @@ The artifact's content, hash and audit trail are unchanged.
 | `automobile-engineering-heldout-v1.json` | `536e6541…95e4` **unchanged** |
 | `automobile-engineering-heldout-v1-candidates.json` | `e4a75253…be264` **unchanged** |
 | SQLite `PRAGMA integrity_check` | **ok** |
+
+---
+
+## V15 — Retrieval mechanism probe (2026-10-13)
+
+**Date:** 2026-10-13 · Windows, Git Bash · Python 3.14.7 (`backend/.venv`) · Qdrant 1.19.1 on `:6333`
+**Report:** [`v15-retrieval-mechanism-probe.md`](./v15-retrieval-mechanism-probe.md)
+**Scope:** one read-only V12 diagnostics run. No configuration, weight, threshold,
+question or expected-evidence label was changed; nothing was promoted.
+
+### Commands and results
+
+| Check | Command / evidence | Result |
+|---|---|---|
+| Live Qdrant state, protected KB | `GET /collections/kb_kb_f278c283c748` + `POST /points/count {"exact":true}` | status **green**, optimizer ok, `points_count` **812**, exact **812**, 384-d cosine |
+| SQLite integrity + counts | read-only `PRAGMA integrity_check`, `foreign_key_check`, row counts | **ok** / clean / 11 documents, 812 chunks, 11 sources for `kb_f278c283c748` |
+| Review state, disk | `benchmarks/automobile-engineering-heldout-v1-candidates.json` | **25 approved / 0 edit / 0 reject / 1 draft** (`auto-eng-hout-007`); reviewers `["Abijith"]` |
+| Review state, live API | `GET /held-out/benchmark`, `GET /held-out/review-view` | same split; `lifecycle provisional`, `claim_strength exploratory`, frozen sha `faca16de…432b`, `can_be_run true`, `supports_confirmatory_claim false`, `needs_review = [auto-eng-hout-007]` |
+| Recording a decision on the sealed instrument | `POST /held-out/review` with an **empty** decision list | **HTTP 400** — "already frozen and is immutable … Create a new version instead"; candidate file sha unchanged (`e4a75253…be264` before and after). No decision was created or inferred |
+| Mechanism probe | `POST /retrieval-diagnostics/runs` → `dense`, `top_k=10`, `candidate_depth=20`, held-out instrument | HTTP 201, run **`rdx_93a4f54720a9`**, 26 questions, 201.2 s |
+| Probe outcome | stored report | **17 `RETRIEVAL_SUCCESS`, 7 `RANKING_FAILURE`, 2 `LOW_RECALL`** (007 and 018, both **rank 12** of a depth-20 pool); availability `all_indexed` 26/26; `required_recall_in_probe` **1.0**; recall@10 0.9231, MRR 0.7705, nDCG@10 0.8093 |
+| Probe scores (read-only, same config fingerprint `6ca51d50f98bc616`, nothing persisted) | `dense` top 20 for the two questions | 007: required `chk_502dcf67ec92` rank 12, score **0.3897** (rank-10 boundary 0.3966). 018: required `chk_60b255a941d5` rank 12, score **0.5346** (boundary 0.5460) |
+| Focused tests | `pytest tests/test_v12_retrieval_diagnostics_api.py tests/test_v13_retrieval_experiments.py tests/test_v14_heldout_benchmark.py tests/test_v14_heldout_api.py tests/test_v9_diagnostics.py tests/test_v9_recommendations.py -q -p no:randomly` | **156 passed** |
+| **Full backend suite** | `pytest tests/ -q -p no:randomly` | **1303 passed, 0 failed** in 478.87 s, exit 0 |
+| Frontend | not run | **no frontend file changed** in this phase |
+| Protected KB after probe **and** after the full suite | Qdrant point count + row counts | **812 → 812** points; 812 → 812 chunk rows; 11 documents; corpus revision 0 → 0 |
+| Qdrant collections | before → after probe → after suite | **14 → 14 → 14** (no scratch collection) |
+| `retrieval_runs` rows for the protected KB | before → after | **484 → 484** — the probe persisted no user-query rows (`persist_retrieval_runs: false`) |
+| Diagnostic-run rows | before → after | 8 → **9** (one append-only report row; the probe writes nothing else) |
+| Frozen artifact hashes | `benchmarks/` | `automobile-engineering-heldout-v1.json` `faca16de…432b`, `-candidates.json` `e4a75253…be264`, `automobile-engineering-baseline-v1.json` `08601f58…a656`, `answer-quality-automobile-v1.json` `16db9dbd…9f25` — **all unchanged** by the probe and by the suite |
+| V13/V14 experiment artifacts | `backend/data/experiments/` | **not rewritten** (V14 artifacts still record instrument `536e6541…`, the revision they ran against) |
+
+### What the probe establishes
+
+Both dense misses are **ranking/depth** failures, not representation or indexing
+failures: the required chunks are in the corpus, in the Qdrant index, matched to
+the benchmark's expected document, and present in the depth-20 candidate pool at
+**rank 12** — two places beyond the k=10 cut-off, with score gaps of 0.0069 and
+0.0114. In the 7 `RANKING_FAILURE` questions, **all 11** chunks outranking a
+required chunk come from that chunk's **own** document: the retriever finds the
+right document and ranks the wrong siblings. This confirms the hypothesis V14 §7
+declared before the probe ran, and corrects V14 §5's claim that the two misses are
+not a window effect (they are, at rank 12).
+
+### Instrument revision note (surfaced by this probe)
+
+The frozen file on disk is `faca16de…432b`, re-sealed **2026-10-12T21:03:29Z**; the
+V14 arms ran against `536e6541…95e4`. Both revisions carry content fingerprint
+`c738f73c9fd52c4a`, and `freeze()` refuses any write whose fingerprint differs, so
+only seal metadata changed — no content change, no tier change (still
+PROVISIONAL, 25/26). The V14 analysis and README now record both revisions
+explicitly. The sealed artifact is deliberately **not** versioned (a test asserts
+the shipped frozen held-out artifact does not exist in the repository); the
+tracked candidate set plus the freeze tooling are what make the seal reproducible.
+
+### Still blocked / not done
+
+* **Human review gate remains open.** `auto-eng-hout-007` has no decision, and the
+  sealed v1 instrument refuses new decisions by design, so the decision cannot be
+  recorded without a new instrument version. No decision was fabricated; the tier
+  stays PROVISIONAL and every result stays exploratory.
+* **Answer-quality benchmark is still unreviewed.** `answer-quality-automobile-v1`:
+  28 questions, `human_review: pending`, `answer_labels: NONE`, **0 of 28** carry
+  an `expected_answer`, **0** per-question review rows, **0** ground-truth rows,
+  **0** frozen versions (one `answer_reviews` row exists from an earlier UI
+  verification, not per-question ground truth). Answer-correctness optimization
+  remains blocked.
+* The follow-up window experiment proposed in the V15 report was **not run** —
+  Phase 3 explicitly forbids tuning after the mechanism probe, and the declaration
+  is recorded for an explicit decision.
+* Both instruments remain below the 30-question inference floor: no significance
+  claim is available from any number above.

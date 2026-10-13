@@ -535,17 +535,62 @@ Items 1 and 2 of the order above are now done, and one promotion decision is ope
 2. **DONE — windowed reranking re-test.** Recall held exactly (it is invariant
    by construction when the reranked slice equals the window) and ranking reached
    1.0, but the latency guardrail rejects it on both instruments.
-3. **NEXT (smallest justified step) — mechanism probe, not a new
-   configuration.** Run the existing V12 diagnostics with the frozen held-out
-   instrument and the `dense_k10` configuration to establish whether the two
+3. **DONE — mechanism probe (V15).** The V12 diagnostics were run once against the
+   frozen held-out instrument with the unchanged `dense_k10` configuration. Both
    dense misses (`auto-eng-hout-007`, `auto-eng-hout-018`) have their required
-   chunk present in the probed pool but ranked low (ranking failure → fix the
-   ranker) or absent from the pool (representation failure → fix the embedding).
-   No weight, threshold or question is changed; acceptance is that the mechanism
-   is identified per question.
+   chunk **in the corpus, in the index and in the depth-20 candidate pool at rank
+   12**, i.e. they are **ranking/depth** failures, not representation failures;
+   `required_recall_in_probe = 1.0` for all 26 questions and every chunk that
+   outranks a required one comes from that chunk's own document. Full report:
+   [`docs/v15-retrieval-mechanism-probe.md`](./v15-retrieval-mechanism-probe.md).
 4. **Open decision, not automatic — the default retriever for this corpus.** A
    43 ms lexical retriever answered every held-out question at rank 1. Whether it
    becomes the default is an explicit promotion decision, to be taken on a
    validated instrument and after (3), never automatically.
 5. Still open from V13: the 28 answer-benchmark questions, reranker-stage
    diagnostics, and the MMR/diversity experiment.
+
+---
+
+## V15 — Retrieval mechanism probe (2026-10-13, delivered)
+
+V14's open item 3 is closed. One read-only V12 diagnostic run (`rdx_93a4f54720a9`,
+`dense`, k=10 evaluated over a depth-20 candidate probe) on the frozen held-out
+instrument, with no weight, threshold, question or label changed:
+
+| Question | Classification | Required chunk | Where it is |
+|---|---|---|---|
+| all 26 | availability `all_indexed`; `required_recall_in_probe` **1.0** | — | corpus **and** Qdrant index |
+| 17 | `RETRIEVAL_SUCCESS` | rank 1 in window | — |
+| 7 | `RANKING_FAILURE` | ranks 2–5 in window | every outranking chunk (**11 of 11**) is from the required chunk's own document |
+| **007**, **018** | `LOW_RECALL` | **rank 12** of the depth-20 pool (scores 0.3897 and 0.5346 vs boundaries 0.3966 / 0.5460) | two places beyond the cut-off |
+
+**Conclusion:** the two dense misses are window/ranking failures, not
+representation failures. V14 §7's declared hypothesis is confirmed; V14 §5's
+sentence claiming the misses are "not merely outside the window" is **corrected**
+(they are, at rank 12).
+
+### V15 recommended order
+
+1. **Window experiment `dense_k10` vs `dense_k20`** on the frozen held-out
+   instrument — hypothesis, controls, metrics, latency budget, acceptance and
+   falsifier are declared in the V15 report §9. k=20 is the pre-existing
+   probe-depth constant, not the observed rank 12, precisely to avoid tuning
+   against the result. Expected: recall 0.9231 → 1.0000; still exploratory.
+2. **Reconcile `required_recall_at_depth`** — in a V12 run it is computed over the
+   windowed list and duplicates `recall_at_k`, while its documentation calls it
+   depth-independent. Decide explicitly (rename, or compute over the probe list)
+   before any further comparison uses it.
+3. **Close the human review gate** — `auto-eng-hout-007` has no decision and the
+   sealed v1 instrument refuses new ones, so this needs a **new instrument
+   version** (v2 candidate set → review → freeze). Until then every held-out
+   result stays PROVISIONAL / EXPLORATORY. Requires a human decision; not
+   automatic.
+4. **Author and review the 28 answer-benchmark questions** — unchanged V11/V13
+   blocker: 0 of 28 reviewed, 0 reference answers, 0 frozen versions.
+5. **The default retriever decision for this corpus** — still open, still not
+   automatic. On 26 held-out questions BM25 scored MRR 1.0 in 43 ms, and V15 now
+   shows the dense misses live in the near-tie band a lexical match resolves; one
+   small instrument is not a basis for changing a default.
+6. Still open from V13: reranker-stage diagnostics and the MMR/diversity
+   experiment.
