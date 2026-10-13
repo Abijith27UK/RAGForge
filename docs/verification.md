@@ -1451,3 +1451,89 @@ tracked candidate set plus the freeze tooling are what make the seal reproducibl
   is recorded for an explicit decision.
 * Both instruments remain below the 30-question inference floor: no significance
   claim is available from any number above.
+
+---
+
+## V16 — Answer-quality review, repaired and audited (2026-10-13)
+
+**Date:** 2026-10-13 · Windows, Git Bash · Python 3.14.7 (`backend/.venv`) · Qdrant 1.19.1 on `:6333`
+**Report:** [`v16-answer-review-unlock.md`](./v16-answer-review-unlock.md)
+**Scope:** review-workflow hardening, a read-only draft audit, and a live check of
+both lifecycle gates. **No reference answer, review, approval, freeze or decision
+was created**, and the held-out gate decision (`auto-eng-hout-007` stays pending)
+was left exactly as decided.
+
+### Tests and builds
+
+| Check | Command | Result |
+|---|---|---|
+| New V16 regression tests | `pytest tests/test_v16_answer_review_workflow.py -q` | **16 passed** |
+| **Full backend suite** | `pytest tests/ -q` | **1319 passed, 0 failed** in 354.86 s, exit 0 |
+| Frontend typecheck | `npm run typecheck` | clean, exit 0 |
+| Frontend production build | `npm run build` | **succeeded**; `/knowledge-bases/[id]/benchmark-review` 12.4 kB / 131 kB first load |
+
+### Live API (real HTTP, backend started fresh on `:8014` with the current code)
+
+| Check | Result |
+|---|---|
+| `GET /answer-benchmark/review-packet` | **HTTP 200**, `answer-quality-automobile-v1`, fingerprint `f72c30eb5c0c363a`, lifecycle `draft`, 28 questions |
+| States | **28 pending**; `0 reviewed / 28`, 0 approved / rejected / ambiguous / insufficient evidence |
+| Coverage metrics | all four (`reference_answer_coverage`, `key_point_coverage`, `acceptable_element_coverage`, `provenance_coverage`) return `measured: false`, `value: null` — **UNKNOWN, not 0** |
+| Gate | `approved: false`; 28 blocking pending questions; below the 1-approved minimum |
+| Warnings | "no question has been approved by a human reviewer yet; the benchmark is not usable as an evaluation instrument" + "every question is PENDING: this benchmark has never been reviewed" |
+| New scope fields | `artifact_provenance` returns the pinned quote (e.g. `auto-eng-001` → `chk_d15901e67e35`, *Engine – Wikipedia* §*Introduction*, pinned 2026-09-15); `citation_requirements`, `expected_grounding_state: ANY_ACCEPTABLE`, `abstention_required: false`, `requires_units: false`, `numerical_tolerance: null` all present |
+| Scoring an unreviewed benchmark | `POST /answer-evaluation/runs` (`evaluator: reference`) → **HTTP 400** — "the reference evaluator requires a human-reviewed benchmark: lifecycle is 'draft'". Nothing written: `benchmark_ground_truth` 0 → 0, `benchmark_question_reviews` 0 → 0 after the call |
+
+### Live UI (browser, dev server `:3000` against the `:8014` backend)
+
+| Check | Result |
+|---|---|
+| Review page renders | yes — lifecycle `draft` badge, "human review pending", `0 / 28 reviewed`, gate blocked, freeze button disabled, all four coverage rows show **UNKNOWN** |
+| Intended-scope panel | shows subdomain, answerability, expected grounding, abstention, units, numeric tolerance, citation requirements and the pinned provenance text |
+| Queue controls | "awaiting a decision only (28)", state filter with per-state counts, `showing 28 of 28 · 1 of 28 in queue` |
+| Keyboard navigation | `→` on the page advanced `QUESTION 1 → 2 → 3` and the counter tracked it; `?` toggled the shortcuts overlay, which states that no shortcut records a decision |
+| Guard while typing | a `keydown` originating **inside** a text input did **not** navigate (stayed on question 3); the same key with focus outside advanced to 4 |
+| Console / network | no console errors; every request 200 (packet, per-question detail, draft history, system status) |
+
+### Draft audit (read-only, live corpus)
+
+`python -m scripts.audit_answer_drafts --kb kb_f278c283c748`
+
+| Check | Result |
+|---|---|
+| Drafts | **29** stored across **28** questions (`auto-eng-001` twice), append-only |
+| Verbatim guarantee | **29 / 29** spans verbatim in the live corpus, **0 problems** (6 byte-exact; 23 need the module's documented normalisation because the stored text carries layout artefacts) |
+| Coverage | measured for 29 / 29; min **0.048**, p25 0.480, median **0.640**, max 1.000 |
+| Generator status | 24 `draft_ready`, 3 `partial` (`011`, `016`, `019`), 2 `insufficient_evidence` (`024`, `028`) |
+| Disagreement with the artifact's own unreviewed quote | **20 of 28** drafts select a different sentence |
+| Labels | every suggestion carries `is_draft`, `requires_human_review` and `DRAFT — MACHINE-GENERATED SUGGESTION, NOT HUMAN GROUND TRUTH`; the annotation history for a question stays empty after draft generation |
+
+### Integrity
+
+| Check | Before → after |
+|---|---|
+| SQLite `PRAGMA integrity_check` / `foreign_key_check` | **ok** / clean |
+| `benchmark_ground_truth` / `benchmark_question_reviews` / frozen answer-benchmark versions | **0 → 0 / 0 → 0 / 0 → 0** |
+| `benchmark_draft_suggestions` | 29 → **29** (the audit generates nothing) |
+| Protected KB `kb_f278c283c748` | Qdrant collection `kb_kb_f278c283c748` `status: green`, `points_count` **812 → 812**; 812 chunk rows |
+| Frozen artifact hashes | held-out seal `faca16deab85`, candidates `e4a75253327a`, baseline `08601f58b33c`, `answer-quality-automobile-v1.json` `16db9dbd46cb` — **all unchanged** (matches the V15 record) |
+| V13/V14/V15 experiment outputs | **not rewritten** (no run was executed in this phase) |
+
+### What was NOT verified, stated plainly
+
+* **No question was reviewed.** The benchmark is still `draft` with 0 reference
+  answers, so correctness, key-point recall, citation support, unsupported-claim
+  and abstention behaviour remain **UNKNOWN**. No metric was fabricated to fill
+  the gap.
+* **The review workflow was exercised as an interface, not as a reviewer.**
+  Authoring, review and freeze were verified by the 16 hermetic regression tests
+  against scratch benchmarks and temp data; the live protected KB was only read.
+  Deliberately no annotation, review or version was written to it.
+* **The 23 "normalised-only" draft spans** are a real, disclosed difference
+  between the draft text and the stored chunk bytes; the audit reports it rather
+  than treating it as a pass or a failure.
+* The frontend was verified through a dev server with `NEXT_PUBLIC_BACKEND_URL`
+  pointed at the fresh `:8014` backend; the repo's `.env.local` still points at
+  `:8013`, which was left running untouched.
+* Both instruments remain below the 30-question inference floor: nothing in this
+  phase is a significance claim.

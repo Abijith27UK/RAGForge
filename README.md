@@ -1273,6 +1273,28 @@ configuration was tested.
 Tests: **1303 backend**, 0 failed (full suite, 478.87 s). No frontend file changed.
 Protected KB `kb_f278c283c748` **812 → 812** points, 812 → 812 chunk rows, Qdrant
 collections **14 → 14**, all four benchmark artifacts byte-identical.
+
+### Implemented (V16 answer-quality review, unlocked for a human)
+
+The review path for the 28-question answer benchmark, audited and hardened. Full
+report: [`docs/v16-answer-review-unlock.md`](./docs/v16-answer-review-unlock.md).
+
+| Item | Status |
+|---|---|
+| Review surface | [`/knowledge-bases/[id]/benchmark-review`](./frontend/src/app/knowledge-bases/%5Bid%5D/benchmark-review/page.tsx) — shows each question's intended scope, pinned evidence, corpus excerpts, draft suggestions (clearly labelled) and the human review form |
+| Queue ergonomics | "awaiting a decision only" filter, per-state filter with counts, position counter, `←`/`k` · `→`/`j` navigation, `?` help — **no shortcut records a decision** |
+| Integrity fixes | an approval no longer survives a correction to the answer it judged (a review that names no annotation is disclosed as a warning); placeholder, one-word and duplicate key points are stored but never approvable and block freezing |
+| Draft audit | `python -m scripts.audit_answer_drafts` — read-only; **29 / 29** stored draft spans verbatim in the live corpus, 13 drafts below 0.60 coverage, 2 questions with no quotable answer (`auto-eng-024`, `auto-eng-028`), 20 of 28 drafts disagreeing with the artifact's own unreviewed quote |
+| Benchmark state | still `draft`: **28 pending**, 0 reference answers, 0 reviews, 0 frozen versions — **nothing was authored or approved by this work** |
+| Scoring gate | `evaluator: reference` on an unfrozen benchmark → **HTTP 400**, nothing written |
+
+Tests: **1319 backend**, 0 failed (354.86 s), including 16 new V16 regression tests;
+frontend `tsc --noEmit` clean and `npm run build` exit 0. Protected KB
+`kb_f278c283c748` **812 → 812** points; all four benchmark artifacts and the sealed
+held-out instrument byte-identical; `PRAGMA integrity_check` ok.
+
+The remaining step is human: review the 28 questions, then freeze v1. See §4 of the
+V16 report for the exact procedure.
 ---
 
 # Running RAGForge Locally

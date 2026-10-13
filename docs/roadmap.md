@@ -597,3 +597,69 @@ sentence claiming the misses are "not merely outside the window" is **corrected*
    small instrument is not a basis for changing a default.
 6. Still open from V13: reranker-stage diagnostics and the MMR/diversity
    experiment.
+
+---
+
+## V16 — Unlocking trustworthy answer-quality evaluation (2026-10-13, delivered)
+
+V15's open item 4 ("author and review the 28 questions") moved from *blocked by the
+workflow* to *blocked by a human decision*. The review path was audited, repaired
+and hardened; **no reference answer, review or approval was created**, so the
+benchmark is still `draft` (28 pending, 0 approved, 0 frozen). Full report:
+[`docs/v16-answer-review-unlock.md`](./v16-answer-review-unlock.md).
+
+### Verified state (live API + SQLite + artifact, 2026-10-13)
+
+| Fact | Value |
+|---|---|
+| `answer-quality-automobile-v1` | fingerprint `f72c30eb5c0c363a`, lifecycle `draft`, `human_review: pending`, `answer_labels: NONE` |
+| Question states | **28 pending**, 0 in review / approved / rejected / ambiguous / insufficient evidence |
+| Ground truth | 0 authored reference answers, 0 key points, 0 `benchmark_ground_truth` rows, 0 `benchmark_question_reviews` rows, 0 frozen versions |
+| Draft suggestions | **29** rows across 28 questions (`auto-eng-001` twice), append-only |
+| Measurable metrics | coverage + retrieval metrics only; correctness, key-point recall, citation support and abstention stay **UNKNOWN** (never 0) |
+
+### Defects fixed
+
+1. **An approval could outlive the answer it judged.** A review that names its
+   annotation now invalidates when the effective annotation changes (state drops to
+   `in_review`, with the reason). Approvals that name no annotation cannot be
+   invalidated automatically — that residual hole is now **disclosed in the packet
+   warnings** rather than silent.
+2. **Placeholder / degenerate text could be frozen as ground truth.** `TODO`,
+   `TBD`, `N/A`, `...`, a one-word answer and duplicate key points (which would
+   double-count in `key_point_recall`) are stored but flagged, never approvable,
+   and blocking at freeze time.
+3. **The reviewer could not see the intended scope.** The packet and UI now carry
+   the artifact's provenance text, citation requirements, expected grounding
+   state, abstention / units requirement and numeric tolerance.
+4. **No queue or review ergonomics.** Added: "awaiting a decision only" filter,
+   per-state filter with counts, position counter, keyboard navigation and a
+   documented guarantee that no shortcut records a decision.
+
+### Draft assistance, audited against the live corpus (read-only)
+
+`backend/scripts/audit_answer_drafts.py` re-checks every stored draft against the
+current corpus. **29 / 29 draft spans are verbatim** (0 problems; 6 byte-exact,
+23 only under the drafting module's documented normalisation). Coverage is
+measured for all 29: median 0.640, min 0.048; **13 drafts are below 0.60**.
+Two questions (`auto-eng-024`, `auto-eng-028`) have **no quotable answer** in
+their pinned evidence and 3 more (`011`, `016`, `019`) are `partial`. **20 of 28
+drafts select a different sentence than the artifact's own unreviewed quote** —
+two machine products disagreeing; neither is ground truth. The audit reports these
+gaps and does not fill them.
+
+### V16 recommended order
+
+1. **Review the 28 questions** in the review surface (§4 of the V16 report), then
+   freeze v1. This is now the only blocker to answer-correctness measurement.
+2. **Re-derive answer metrics** on the frozen version — correctness, key-point
+   recall, citation support, unsupported-claim rate, abstention quality — each with
+   its own denominator, UNKNOWN where data is missing.
+3. **Measure whether draft assistance helps** — audit the 20 disagreeing drafts
+   against the human verdicts, pre-registered, before claiming any value from the
+   generator.
+4. **Decide the `auto-eng-024` / `auto-eng-028` policy** — cite more evidence or
+   classify as `insufficient_evidence`; never let them become scored questions by
+   accident.
+5. Unchanged: reranker-stage diagnostics, MMR/diversity, and the open
+   default-retriever decision (not to be taken on one small instrument).

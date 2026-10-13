@@ -131,6 +131,27 @@ class ReviewQuestionSummary(BaseModel):
     artifact_reference_answer: str = ""
     artifact_key_points: list[str] = Field(default_factory=list)
 
+    # -- intended scope, as the BENCHMARK records it --------------------------
+    # The reviewer is judging whether an answer to this question can be scored,
+    # so the question's own declared intent travels with the summary: the
+    # quoted passage the labels were selected from, what the citation
+    # requirements are, and whether abstention is the expected behaviour.
+    # Nothing here is ground truth; it is what the artifact pins, verbatim.
+    artifact_provenance: str = Field(
+        default="", description="The question's own provenance text: which chunk/section the "
+        "evidence was selected from, and by whom. Informational."
+    )
+    citation_requirements: dict[str, Any] = Field(
+        default_factory=dict, description="The benchmark's citation requirements for this question."
+    )
+    expected_grounding_state: str = Field(
+        default="", description="ANY_ACCEPTABLE by default; states which grounding outcome the "
+        "question expects."
+    )
+    abstention_required: bool = False
+    requires_units: bool = False
+    numerical_tolerance: float | None = None
+
 
 class ReviewPacket(BaseModel):
     """The whole review surface for one benchmark (V10 STEP 3/5)."""
@@ -267,6 +288,18 @@ class AnswerBenchmarkReviewService:
                     ),
                     artifact_reference_answer=q.expected_answer or "",
                     artifact_key_points=list(q.key_points),
+                    artifact_provenance=q.provenance or "",
+                    citation_requirements=(
+                        q.citation_requirements.model_dump(mode="json")
+                        if q.citation_requirements
+                        else {}
+                    ),
+                    expected_grounding_state=getattr(
+                        q.expected_grounding_state, "value", ""
+                    ),
+                    abstention_required=bool(q.abstention_required),
+                    requires_units=bool(q.requires_units),
+                    numerical_tolerance=q.numerical_tolerance,
                 )
             )
 
@@ -279,6 +312,28 @@ class AnswerBenchmarkReviewService:
         if completeness.pending == completeness.total:
             warnings.append(
                 "every question is PENDING: this benchmark has never been reviewed"
+            )
+        # An approval that names no annotation cannot be invalidated when the
+        # reference answer is later corrected — say so rather than implying the
+        # approval still covers the current text.
+        unrevisioned = [
+            q.question_id
+            for q in questions
+            if q.state == QuestionState.APPROVED.value
+            and any(
+                r.outcome == QuestionState.APPROVED.value and not (r.annotation_id or "").strip()
+                for r in reviews
+                if r.question_id == q.question_id
+            )
+        ]
+        if unrevisioned:
+            shown = ", ".join(unrevisioned[:5]) + (" …" if len(unrevisioned) > 5 else "")
+            warnings.append(
+                f"{len(unrevisioned)} approved question(s) rest on a review that "
+                f"does not name the annotation it judged ({shown}); if that "
+                "reference answer is later corrected, the approval cannot be "
+                "invalidated automatically. Record the annotation id with the "
+                "review to make the approval revision-bound."
             )
         if gate.excluded_question_ids:
             warnings.append(

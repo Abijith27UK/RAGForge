@@ -1788,6 +1788,16 @@ export interface ReviewQuestionSummary {
   evidence_chunk_ids: string[];
   artifact_reference_answer: string;
   artifact_key_points: string[];
+  /** The question's own provenance text: which chunk/section the evidence was
+   * selected from, and by whom. Informational — never ground truth. */
+  artifact_provenance: string;
+  /** The benchmark's citation requirements for this question. */
+  citation_requirements: Record<string, unknown>;
+  /** Which grounding outcome the question expects (ANY_ACCEPTABLE by default). */
+  expected_grounding_state: string;
+  abstention_required: boolean;
+  requires_units: boolean;
+  numerical_tolerance: number | null;
 }
 
 export interface ProvenanceBlock {

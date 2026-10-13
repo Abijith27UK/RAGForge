@@ -190,12 +190,70 @@ class GroundTruthAnnotation(BaseModel):
         ).hexdigest()[:16]
 
 
+#: Placeholder text that is never a reference answer or a key point. A
+#: reference answer only counts as ground truth if it actually states the fact,
+#: and these strings are what gets typed when it does not yet. Recorded as a
+#: PROBLEM, so the annotation is stored (nothing is lost) but can never be
+#: approved or frozen until a human writes the real content.
+PLACEHOLDER_VALUES: tuple[str, ...] = (
+    "todo",
+    "tbd",
+    "tba",
+    "n/a",
+    "na",
+    "none",
+    "null",
+    "xxx",
+    "xxxx",
+    "...",
+    "…",
+    "?",
+    "-",
+    "--",
+    "fixme",
+    "placeholder",
+    "fill in",
+    "fill this in",
+    "to be written",
+    "to be determined",
+    "see above",
+    "as above",
+    "same as above",
+    "lorem ipsum",
+    "copy of the question",
+)
+
+#: A reference answer shorter than this cannot state a fact. Deliberately very
+#: low: the check exists to catch ``"yes"`` / a stray word / a fat-fingered
+#: value, NOT to police legitimate terse answers ("Bosch ABS" passes). A terse
+#: answer is carried by its key points, which are the scored units.
+MIN_REFERENCE_ANSWER_CHARS = 8
+
+
+def _normalise_value(text: str) -> str:
+    """Casefolded, whitespace-collapsed, trailing-punctuation-stripped text."""
+    collapsed = " ".join((text or "").split()).casefold()
+    return collapsed.strip(" .,;:!?\u2014-*")
+
+
+def _looks_like_placeholder(text: str) -> bool:
+    """True when the whole value is placeholder text rather than content."""
+    normalised = _normalise_value(text)
+    if not normalised:
+        return True
+    return normalised in PLACEHOLDER_VALUES
+
+
 def validate_annotation(annotation: GroundTruthAnnotation) -> list[str]:
     """Structural problems with an annotation. Empty means structurally valid.
 
     Checks only what the artifact itself can establish. Corpus consistency is
     ``validate_annotation_against_corpus``; approval semantics are the gate's
     job.
+
+    The placeholder and duplicate-key-point checks exist because a reference
+    answer is ground truth the moment it is approved: ``TODO`` or three copies
+    of one sentence would be scored as if a human had stated the answer.
     """
     problems: list[str] = []
     if not annotation.expected_answer.strip() and not annotation.key_points:
@@ -203,12 +261,51 @@ def validate_annotation(annotation: GroundTruthAnnotation) -> list[str]:
             "annotation states neither a reference answer nor key points; there "
             "is nothing a reviewer could approve"
         )
+    if annotation.expected_answer.strip() and _looks_like_placeholder(
+        annotation.expected_answer
+    ):
+        problems.append(
+            "the reference answer is placeholder text, not an answer; a human "
+            "must state what the evidence supports before this can be approved"
+        )
+    elif (
+        annotation.expected_answer.strip()
+        and len(annotation.expected_answer.strip()) < MIN_REFERENCE_ANSWER_CHARS
+    ):
+        problems.append(
+            f"the reference answer is shorter than {MIN_REFERENCE_ANSWER_CHARS} "
+            "characters and cannot state a fact; write it out, or clear the "
+            "field and rely on the key points"
+        )
     for i, point in enumerate(annotation.key_points):
         if not point.strip():
             problems.append(f"key_points[{i}] is blank")
+        elif _looks_like_placeholder(point):
+            problems.append(
+                f"key_points[{i}] is placeholder text ({point.strip()[:40]!r}), "
+                "not a fact a correct answer must state"
+            )
+    seen_points: dict[str, int] = {}
+    for i, point in enumerate(annotation.key_points):
+        normalised = _normalise_value(point)
+        if not normalised:
+            continue
+        if normalised in seen_points:
+            problems.append(
+                f"key_points[{i}] duplicates key_points[{seen_points[normalised]}]; "
+                "key points are scored units, so a duplicate would be counted "
+                "twice by key_point_recall"
+            )
+        else:
+            seen_points[normalised] = i
     for i, element in enumerate(annotation.acceptable_answer_elements):
         if not element.strip():
             problems.append(f"acceptable_answer_elements[{i}] is blank")
+        elif _looks_like_placeholder(element):
+            problems.append(
+                f"acceptable_answer_elements[{i}] is placeholder text, not an "
+                "alternative a human judged acceptable"
+            )
     if not annotation.evidence:
         problems.append(
             "annotation cites no corpus evidence; a reference answer must be "
@@ -392,6 +489,14 @@ def derive_question_state(
        without a valid annotation is downgraded to IN_REVIEW, never approved.
     3. Otherwise, an annotation with no review is IN_REVIEW (a draft awaiting
        a human verdict) and nothing at all is PENDING.
+
+    A review that NAMES the annotation it judged does not survive a change to
+    that annotation: if the effective reference answer is now a different
+    annotation, the approval is downgraded to IN_REVIEW, because the human
+    approved text that is no longer the text on this question. A review that
+    names no annotation is treated as verdicts about the question (V10's
+    original behaviour) and cannot be invalidated this way — the review packet
+    warns when an approved question rests on such a review.
     """
     problems = list(annotation_problems or [])
     relevant = [
@@ -437,6 +542,14 @@ def derive_question_state(
         return QuestionState.IN_REVIEW, [
             "an approving review exists but the annotation is not valid: "
             + "; ".join(problems)
+        ]
+    reviewed_annotation = (getattr(latest, "annotation_id", "") or "").strip()
+    if reviewed_annotation and reviewed_annotation != annotation.annotation_id:
+        return QuestionState.IN_REVIEW, [
+            f"reviewer {latest.reviewer!r} approved annotation "
+            f"{reviewed_annotation}, but the effective reference answer is now "
+            f"{annotation.annotation_id}: the answer changed after the review, "
+            "so the approval no longer applies to the text on this question"
         ]
     blockers = latest.blocks_approval()
     if blockers:
