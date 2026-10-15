@@ -21,6 +21,12 @@ next-env.d.ts.timestamp
 .env
 *.env.local
 
+# Local scratch: ad-hoc status logs, run checklists and provider-probe artifact
+# directories. These are run output, not project files, and must never be
+# committed.
+backend/scripts/_*
+backend-*.log
+
 # OS / editor
 .DS_Store
 Thumbs.db

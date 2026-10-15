@@ -63,6 +63,7 @@ behaviour is not in RAGForge, it is not in the MCP surface either.
 | [`scripts/run_mcp_server.py`](../backend/scripts/run_mcp_server.py) | Launcher that works from any cwd (clients pass absolute paths, no cwd) |
 | [`scripts/mcp_smoke_client.py`](../backend/scripts/mcp_smoke_client.py) | A real client that runs the documented read flow for manual checks |
 | [`scripts/mcp_agent_workflow.py`](../backend/scripts/mcp_agent_workflow.py) | V18: the live end-to-end construction workflow against the real workspace |
+| [`scripts/check_claude_desktop_connection.py`](../backend/scripts/check_claude_desktop_connection.py) | Reads a client's own `claude_desktop_config.json`, launches the configured command verbatim and runs the acceptance sequence (§2) |
 
 **Transport: stdio only, deliberately.** RAGForge is a local, single-user
 application with no authentication, no accounts and no tenant isolation. A stdio
@@ -108,36 +109,166 @@ a **stderr** handler (`configure_mcp_logging`) and never calls
 `app.utils.logging_config.setup_logging`, which writes to stdout. Nothing else in
 the MCP path prints to stdout.
 
-### Client configuration (Windows, absolute paths)
+### Client configuration (any MCP client, Windows)
 
-Claude Desktop: `%APPDATA%\Claude\claude_desktop_config.json` (other clients use
-the same `command`/`args`/`env` shape under their own key):
+Every MCP client uses the same `command` / `args` / `env` shape. Use **absolute
+paths** and point `args` at the launcher script, which puts `backend/` on
+`sys.path` itself and therefore works from any working directory:
 
 ```json
 {
   "mcpServers": {
     "ragforge": {
-      "command": "C:\\Users\\abiji\\Documents\\ID4100\\RAGForge\\backend\\.venv\\Scripts\\python.exe",
-      "args": [
-        "C:\\Users\\abiji\\Documents\\ID4100\\RAGForge\\backend\\scripts\\run_mcp_server.py"
-      ],
-      "env": {
-        "DATA_DIR": "C:\\Users\\abiji\\Documents\\ID4100\\RAGForge\\backend\\data"
-      }
+      "command": "C:\\path\\to\\RAGForge\\backend\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\RAGForge\\backend\\scripts\\run_mcp_server.py"],
+      "env": { "DATA_DIR": "C:\\path\\to\\RAGForge\\backend\\data" }
     }
   }
 }
 ```
 
-Notes:
+* `env` is optional. `DATA_DIR` defaults to the absolute `backend/data` (the
+  settings module resolves it from its own file location, and `backend/.env` is
+  loaded the same way), so the server finds the same SQLite database whatever
+  directory the client launches it from. Set it explicitly only to point a
+  client at a different workspace.
+* A `cwd` is deliberately **not** required. Do not add one.
+* Never put provider API keys in a client configuration file: the server reads
+  the git-ignored `backend/.env` itself, and a client config may be shared,
+  synced or committed by accident.
 
-* `DATA_DIR` is optional (it defaults to `backend/data`). Set it explicitly if
-  you keep the corpus elsewhere — it is the only switch needed to point a client
-  at a different workspace.
-* Never put provider API keys in a committed config file. If a client needs one,
-  set it in that client's own config, which lives outside this repository.
-* Restart the client after editing the config; MCP servers are started at client
-  startup and are not reloaded.
+### Claude Desktop on Windows — setup and verification
+
+The steps below were executed on this machine except where a step is marked
+**manual** (the host application itself is not scriptable from here).
+
+#### Where the configuration file lives
+
+| Item | Value |
+|---|---|
+| Configuration file | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Absolute form | `C:\Users\<you>\AppData\Roaming\Claude\claude_desktop_config.json` |
+| Created by | Claude Desktop on first run — create the folder yourself if it is absent |
+| Reloaded | only at client start, so **restart Claude Desktop** after editing |
+
+`%APPDATA%` is a per-user path and lives outside this repository on purpose: it
+is user-specific and must never be committed.
+
+#### Step 1 — find the two absolute paths
+
+```bat
+cd <your RAGForge checkout>\backend
+.venv\Scripts\python.exe -c "import sys; print(sys.executable)"
+echo %CD%
+```
+
+The first command prints the `command` value; the second gives the repository
+root used to build `args` and `DATA_DIR`.
+
+#### Step 2 — merge, never overwrite
+
+The file may already configure other MCP servers. Back it up, then add (or
+replace) **only** the `ragforge` key inside `mcpServers`, leaving every other
+entry untouched:
+
+```bat
+copy "%APPDATA%\Claude\claude_desktop_config.json" "%APPDATA%\Claude\claude_desktop_config.json.bak"
+```
+
+```json
+{
+  "mcpServers": {
+    "some-other-server": { "command": "...", "args": ["..."] },
+    "ragforge": {
+      "command": "C:\\path\\to\\RAGForge\\backend\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\RAGForge\\backend\\scripts\\run_mcp_server.py"],
+      "env": { "DATA_DIR": "C:\\path\\to\\RAGForge\\backend\\data" }
+    }
+  }
+}
+```
+
+The file must be valid JSON, and on Windows the backslashes inside JSON strings
+must be **doubled** (`C:\\Users\\...`). A single `\U` makes the document invalid
+and Claude Desktop will fail to start the server without saying why.
+
+#### Step 3 — verify the connection before blaming the client
+
+RAGForge ships a checker that reads your own client configuration, launches the
+**exact** command it contains (no `cwd` is set, because the host sets none) and
+runs the acceptance sequence: handshake, tool/resource discovery, knowledge-base
+lookup, search with provenance, evidence by chunk id, a grounded answer, an
+unsupported question that must abstain, and an off-domain question:
+
+```bat
+backend\.venv\Scripts\python.exe backend\scripts\check_claude_desktop_connection.py
+
+:: or with explicit paths and questions:
+backend\.venv\Scripts\python.exe backend\scripts\check_claude_desktop_connection.py ^
+  --config "%APPDATA%\Claude\claude_desktop_config.json" --server ragforge ^
+  --kb kb_f278c283c748 --supported "What is an engine?" ^
+  --unsupported "Describe the courtship display of the Australian lyrebird." ^
+  --offdomain "How many moons does Jupiter have?" --json report.json
+```
+
+Exit code 0 means no check failed. Results are labelled `PASS`, `WARN`,
+`KNOWN-DEFECT` (a defect this project has already documented and left open —
+**not** a pass) or `FAIL`.
+
+#### Step 4 — restart and verify in the client (manual)
+
+1. Quit Claude Desktop completely (tray icon → Quit; a closed window is not a
+   quit), then start it again — MCP servers are spawned at start-up.
+2. Open the tools / connector indicator in the message box. **RAGForge**
+   (`ragforge`) must be listed with 18 tools and 4 resources.
+3. If it is not listed, read the client's own server log:
+   `%APPDATA%\Claude\logs\mcp-server-ragforge.log` (older builds: `mcp.log`). A
+   successful start writes `RAGForge MCP server starting on stdio (stdout is the
+   protocol channel; logs go to stderr)`.
+4. Ask a question that can only be answered from the corpus and confirm in the
+   transcript that Claude **called the tool** instead of answering from its own
+   knowledge.
+
+#### Step 5 — Automobile questions worth trying
+
+| Intent | Ask | What to check |
+|---|---|---|
+| Direct retrieval | `What is an engine?` | hits cite `https://en.wikipedia.org/wiki/Engine` with chunk ids and real scores |
+| Grounded answer | `What are the main types of suspension systems?` | each claim carries a citation that resolves to a real chunk |
+| Provenance | `Show me the full text of the first chunk` | `get_evidence` returns document id, chunk index and content hash |
+| Abstention | `Describe the courtship display of the Australian lyrebird.` | `abstained`, `INSUFFICIENT_EVIDENCE`, **zero citations**, no model call |
+| Lifecycle gate | `Evaluate retrieval quality on this knowledge base` | refused with the real reason (no FROZEN benchmark version exists) |
+
+#### Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| Server missing from the connector list | invalid JSON (single backslashes) or the client was not fully restarted. |
+| Server exits immediately / `ENOENT` | `command` is not a real `python.exe`. Print it with `.venv\Scripts\python.exe -c "import sys;print(sys.executable)"` and paste the exact text. |
+| `ModuleNotFoundError: app` | `args` does not point at `scripts/run_mcp_server.py`, or an added `cwd` broke it. The launcher needs no `cwd`. |
+| `ModuleNotFoundError: mcp` | the MCP SDK is optional: `cd backend && .venv\Scripts\python.exe -m pip install -r requirements-mcp.txt`. |
+| Wrong or empty knowledge base list | wrong `DATA_DIR` (the database is `backend\data\ragforge.db`) or a different checkout. |
+| Vector-store / embedding error on search | Qdrant is not running (`curl http://localhost:6333/collections`) or `QDRANT_URL` is wrong. The first run also downloads `all-MiniLM-L6-v2`. |
+| Answers come back with `is_mock: true` | no usable LLM provider is configured, so the deterministic extractive generator is used and **disclosed** in `generation.is_mock` / `generated_by` / `model`. Retrieval and citations are still real. Set `LLM_PROVIDER=openai` (+ `LLM_MODEL`, `LLM_API_KEY`, optional `LLM_BASE_URL`) in `backend/.env` for real generation. |
+| An off-domain question is answered anyway | known open defect in the evidence gate (see §7), not a configuration problem. |
+| Every call hangs | a hung provider call; `LLM_TIMEOUT_S` and `LLM_MAX_RETRIES` in `backend/.env` bound it. |
+
+#### Security and single-user limits
+
+* **stdio only.** The server is a child of the client process, so the corpus is
+  reachable only by a program you started. There is no HTTP port and no
+  authentication — do not expose an RAGForge MCP server to a shared or networked
+  environment.
+* **No per-user scoping.** Every knowledge base in the workspace is visible to
+  every client on this machine.
+* Tools never accept a filesystem path, never return one, and never return
+  settings, keys or environment values. Corpus text is returned as untrusted data
+  with a `content_warning`, and the server instructions tell the model to quote
+  it rather than obey it.
+* Write tools exist (V18) but only four, and each requires a recorded,
+  parameter-bound confirmation. There is no delete, no bulk mutation, no
+  benchmark edit and no override of a source decision.
+* Keep the client configuration file out of version control.
 
 ---
 
@@ -249,8 +380,12 @@ Resources are targeted lookups by id: there is no resource that dumps a corpus.
 
 The transcript below was produced on 2026-10-14 by
 `scripts/mcp_smoke_client.py --kb kb_f278c283c748` against the real workspace
-(real Qdrant, real `all-MiniLM-L6-v2` embeddings, development mock LLM because no
-`LLM_API_KEY` is configured). It is copied from the run, not reconstructed.
+(real Qdrant, real `all-MiniLM-L6-v2` embeddings, and the deterministic
+**fallback** generator for answer text because the configured provider was not
+usable — the answer payload says so in `generation.is_mock`). It is copied from
+the run, not reconstructed. Re-run on 2026-10-15 with
+`scripts/check_claude_desktop_connection.py` (§2), which reproduces every step
+there and additionally exercises the abstention and off-domain cases.
 
 ```
 tools: list_knowledge_bases, get_knowledge_base_status, search_knowledge_base,
@@ -390,6 +525,23 @@ raised `TypeError` instead of returning the documented `generation_failed`
 answer. Fixed in [`app/services/answering/service.py`](../backend/app/services/answering/service.py);
 the MCP test now covers that path.
 
+A second defect was found and fixed on 2026-10-15, while verifying the Claude
+Desktop setup. The "real stdio" test in the V18 suite launched its server with
+`StdioServerParameters(...)` and no `env`, on the assumption that the child would
+inherit the test's environment. It does not: the SDK's `env` field is documented
+as *"extra environment variables, merged over `get_default_environment()`"*, and
+that helper inherits a **whitelist** (`PATH`, `HOME`, …), not `os.environ`. The
+nested server therefore lost `DATA_DIR` (and the embedding/LLM overrides) and
+opened the developer's real `backend/data/ragforge.db`, writing two
+`mcp_operations` rows into the real workspace on **every** run — measured by
+counting rows before and after a single test invocation. The test now forwards
+the scratch variables explicitly and **asserts** the database path the launched
+server resolved, so the suite is hermetic as documented and cannot regress
+silently. It also runs faster, because the nested server no longer loads the real
+embedding model. (The same SDK behaviour is why a Claude Desktop `env` block must
+give `DATA_DIR` explicitly when the corpus does not live in `backend/data` — see
+§2.)
+
 ---
 
 ## 7. Limitations (stated, not hidden)
@@ -419,3 +571,39 @@ the MCP test now covers that path.
   through `get_evidence`, not expect one giant dump.
 * **Retrieval quality is whatever RAGForge's retrieval is.** The MCP layer adds
   no ranking, no reranking and no fusion.
+* **The off-domain gate defect is reachable through MCP and is still open.**
+  Reproduced on 2026-10-15 over this server: `How many moons does Jupiter have?`
+  against the Automobile corpus returned `status=grounded`,
+  `reason_code=SUFFICIENT`, 1 citation — because the evidence gate measures
+  lexical alignment over *unweighted* question terms, so generic vocabulary
+  (`many`, `2018`, `regulations`, `strength`) matches motor-industry text and
+  clears `MIN_ALIGNMENT_TO_PARTIAL = 0.15`. Questions whose terms are genuinely
+  absent do abstain (`Describe the courtship display of the Australian
+  lyrebird.` → `abstained` / `INSUFFICIENT_EVIDENCE` / 0 citations). The defect
+  and its root cause are already recorded in
+  [`docs/progress-report-2026-10-03.md`](progress-report-2026-10-03.md) and left
+  open in [`docs/roadmap.md`](roadmap.md) ("off-domain gate measurement"); the
+  MCP layer does not hide or fix it, and the checker above reports it as
+  `KNOWN-DEFECT`, never as a pass.
+* **Answer text can come from a disclosed fallback generator.** With no usable
+  LLM provider configured, `answer_from_knowledge_base` still returns retrieval,
+  citations and provenance, but the answer *text* is produced by the
+  deterministic extractive generator and is labelled
+  `generation.is_mock = true` / `generated_by = "fallback"` /
+  `model = "extractive-mock"`. In that state claims are marked
+  `support_check = "lexical_overlap"` with the explicit note that semantic
+  entailment was **not** performed. Never quote such an answer as if a real
+  model produced it.
+* **A legacy knowledge base may not validate as READY.**
+  `validate_knowledge_base` on the protected corpus `kb_f278c283c748` returns
+  `NOT_READY` while its index is intact (812 chunk rows = 812 *measured* vector
+  points, collection green, embedding identity matching) and 0 missing/orphan/
+  stale vectors. The two blocking findings come from the corpus's age, not from
+  damage: its 11 documents were serialised before the document `status` field was
+  persisted (so the audit reads them as `parsed` rather than indexed → 11
+  `partial_documents`), and its chunks carry `document_id` and `content_hash` but
+  no `source_id` (→ 812 chunk-metadata gaps recorded twice, once for the chunk
+  row and once for the vector payload = 1624 `provenance_gaps`;
+  `_REQUIRED_PROVENANCE = (source_id, document_id, content_hash)`). The tool
+  reports what it measures rather than softening the verdict, and the corpus is
+  deliberately not rebuilt to make the number prettier.

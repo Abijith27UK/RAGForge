@@ -793,6 +793,74 @@ cd backend
 
 `scripts/mcp_agent_workflow.py` runs the whole lifecycle over a real stdio MCP subprocess against the real workspace, on a **scratch** knowledge base it deletes at the end; it refuses to start unless the protected KB measures exactly 812 points and re-measures it afterwards.
 
+### Claude Desktop on Windows (setup, verification, troubleshooting)
+
+The full walkthrough is in **[§2 of docs/mcp-integration.md](./docs/mcp-integration.md#claude-desktop-on-windows--setup-and-verification)**. The short version:
+
+1. **Config file.** `%APPDATA%\Claude\claude_desktop_config.json`, i.e.
+   `C:\Users\<you>\AppData\Roaming\Claude\claude_desktop_config.json` — outside
+   this repository, because it is user-specific. Back it up before editing, and
+   if it already lists other servers, add only the `ragforge` key.
+
+2. **Entry (placeholders — use your real absolute paths).** `backend\.venv\Scripts\python.exe`
+   is the `command`; `args[0]` is the launcher script, which works from any
+   working directory, so no `cwd` is needed:
+
+   ```json
+   {
+     "mcpServers": {
+       "ragforge": {
+         "command": "C:\\path\\to\\RAGForge\\backend\\.venv\\Scripts\\python.exe",
+         "args": ["C:\\path\\to\\RAGForge\\backend\\scripts\\run_mcp_server.py"],
+         "env": { "DATA_DIR": "C:\\path\\to\\RAGForge\\backend\\data" }
+       }
+     }
+   }
+   ```
+
+   Backslashes inside JSON strings must be doubled; a single `\U` makes the file
+   invalid and Claude Desktop then starts nothing, silently. Do **not** put API
+   keys here — the server reads the git-ignored `backend/.env` itself.
+
+3. **Check the command before blaming the client.** This reads your own client
+   configuration, launches the exact command it contains and runs the acceptance
+   sequence (handshake, 18 tools + 4 resources, the Automobile KB, search with
+   provenance, a grounded answer, an abstention, an off-domain question):
+
+   ```bat
+   backend\.venv\Scripts\python.exe backend\scripts\check_claude_desktop_connection.py
+   ```
+
+   It prints `PASS` / `WARN` / `KNOWN-DEFECT` / `FAIL` per check and exits 0 when
+   nothing failed. `KNOWN-DEFECT` is **not** a pass: it marks the documented
+   off-domain evidence-gate defect below, reproduced through MCP.
+
+4. **Restart Claude Desktop** (tray → Quit; a closed window is not a quit) — MCP
+   servers are spawned at start-up and are never reloaded. Then confirm
+   **RAGForge** appears in the tools/connector list and that asking
+   `What is an engine?` actually *calls* a RAGForge tool.
+
+Questions that exercise the whole path: `What is an engine?` (ranked evidence +
+citations), `Describe the courtship display of the Australian lyrebird.`
+(abstention, 0 citations), `Evaluate retrieval quality` (refused: no FROZEN
+benchmark version exists). Troubleshooting covers a wrong `python.exe`, a missing
+`mcp` package, a wrong `DATA_DIR`, a stopped Qdrant, and an unconfigured LLM
+provider — see the table in the MCP document.
+
+Two honest caveats when reading answers in the client:
+
+* With **no usable LLM provider** configured, `answer_from_knowledge_base` still
+  returns real retrieval, citations and provenance, but the answer *text* comes
+  from the deterministic extractive generator and is labelled
+  `generation.is_mock = true` (`generated_by: "fallback"`). Set
+  `LLM_PROVIDER=openai` (+ `LLM_MODEL`, `LLM_API_KEY`, optional `LLM_BASE_URL`)
+  in `backend/.env` for real generation.
+* An **off-domain** question whose generic vocabulary collides with the corpus
+  can still be answered (`SUFFICIENT`) — the known-open evidence-gate defect
+  recorded in [`docs/progress-report-2026-10-03.md`](./docs/progress-report-2026-10-03.md)
+  and still open in [`docs/roadmap.md`](./docs/roadmap.md). It is not hidden:
+  the checker reports it as `KNOWN-DEFECT`.
+
 An external agent can therefore do:
 
 ```text

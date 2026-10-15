@@ -243,7 +243,19 @@ class TestProtocolV18:
             assert "confirmation_id" in required, name
 
     def test_real_stdio_subprocess_exposes_v18_tools(self, env):
-        """One genuine protocol-level test through a launched stdio server."""
+        """One genuine protocol-level test through a launched stdio server.
+
+        The nested server MUST be given the scratch environment explicitly.
+        `mcp`'s `StdioServerParameters.env` is only "extra variables, merged over
+        `get_default_environment()`", and that helper inherits a *whitelist*
+        (PATH, HOME, ...), not `os.environ`. A nested launch that omits `env`
+        therefore loses `DATA_DIR` and the server silently opens the developer's
+        real `backend/data/ragforge.db` — which is what this test did until
+        2026-10-15, writing two `mcp_operations` rows into the real workspace on
+        every run. Passing the scratch variables through keeps the suite
+        hermetic, and the child reports where it really wrote so this cannot
+        regress unnoticed.
+        """
         script = r"""
 import asyncio, json, os, sys
 from pathlib import Path
@@ -252,13 +264,23 @@ from mcp import Client, StdioServerParameters
 BACKEND = Path(os.getcwd())
 sys.path.insert(0, str(BACKEND))
 
+SCRATCH = {
+    name: os.environ[name]
+    for name in ("DATA_DIR", "EMBEDDING_PROVIDER", "EMBEDDING_MODEL", "LLM_PROVIDER")
+    if os.environ.get(name)
+}
+
 async def main():
     params = StdioServerParameters(
         command=sys.executable,
         args=[str(BACKEND / "scripts" / "run_mcp_server.py")],
         cwd=str(BACKEND),
+        env=SCRATCH,
     )
     async with Client(params, raise_exceptions=False) as client:
+        from app.config import Settings
+        settings = Settings()
+        scratch_db = settings.db_path
         tools = (await client.list_tools()).tools
         names = sorted(t.name for t in tools)
         result = await client.call_tool("plan_knowledge_base", {
@@ -274,6 +296,10 @@ async def main():
             "mutates": payload.get("mutates"),
             "actions": [a["action"] for a in payload.get("actions", [])],
             "plan_id": payload.get("plan_id", ""),
+            # Proof that the launched server used the SCRATCH workspace, not the
+            # developer's: it reports the database path it resolved.
+            "db_path": str(scratch_db),
+            "scratch_env_forwarded": bool(SCRATCH.get("DATA_DIR")),
         }
         print("RESULT " + json.dumps(prints))
 
@@ -298,6 +324,10 @@ asyncio.run(main())
         assert payload["mutates"] is False
         assert payload["actions"] == ["create_knowledge_base"]
         assert payload["plan_id"].startswith("plan_")
+        # Hermeticity: the launched server resolved the scratch DATA_DIR. Without
+        # this assertion the nested launch silently wrote to the real workspace.
+        assert payload["scratch_env_forwarded"] is True
+        assert Path(payload["db_path"]).resolve() == (env.tmp / "ragforge.db").resolve(), payload["db_path"]
 
 
 # ---------------------------------------------------------------------------

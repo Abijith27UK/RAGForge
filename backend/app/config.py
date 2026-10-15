@@ -2,6 +2,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -43,6 +44,13 @@ class Settings(BaseSettings):
     llm_model: str = ""
     llm_api_key: str = ""
     llm_base_url: str = ""  # optional, for OpenAI-compatible local servers
+
+    # V19: explicit call budget. The openai SDK otherwise applies its own
+    # defaults (a 600 s timeout and 2 automatic retries), which can stall one
+    # MCP tool call for half an hour when an endpoint hangs. Both values are
+    # operator-visible configuration, not hidden client defaults.
+    llm_timeout_s: float = Field(default=120.0, gt=0, le=3600)
+    llm_max_retries: int = Field(default=2, ge=0, le=10)
 
     # Development mode: if true and no LLM is configured, a clearly-labelled
     # deterministic mock analyzer is used instead of failing hard.

@@ -60,7 +60,14 @@ class OpenAICompatibleProvider(LLMProvider):
 
     name = "openai"
 
-    def __init__(self, api_key: str, model: str, base_url: str = "") -> None:
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        base_url: str = "",
+        timeout_s: float = 600.0,
+        max_retries: int = 2,
+    ) -> None:
         try:
             from openai import OpenAI  # optional dependency
         except ImportError as exc:
@@ -68,8 +75,18 @@ class OpenAICompatibleProvider(LLMProvider):
                 "The 'openai' package is not installed. "
                 "Run: pip install -r backend/requirements-openai.txt"
             ) from exc
-        self._client = OpenAI(api_key=api_key, base_url=base_url or None)
+        # Explicit budget: the SDK defaults (600 s, 2 retries) are too generous
+        # for an interactive tool call, and an unbounded call would hold an MCP
+        # operation open indefinitely. Both values come from Settings (V19).
+        self._client = OpenAI(
+            api_key=api_key,
+            base_url=base_url or None,
+            timeout=timeout_s,
+            max_retries=max_retries,
+        )
         self.model = model
+        self.timeout_s = timeout_s
+        self.max_retries = max_retries
 
     def generate_structured(self, prompt: str, schema: type[T], system: str = "") -> T:
         schema_json = json.dumps(schema.model_json_schema(), ensure_ascii=False)
@@ -222,6 +239,8 @@ def create_llm_provider(settings: Settings, domain_hint: str = "") -> LLMProvide
                 api_key=settings.llm_api_key,
                 model=settings.llm_model or "gpt-4o-mini",
                 base_url=settings.llm_base_url,
+                timeout_s=settings.llm_timeout_s,
+                max_retries=settings.llm_max_retries,
             )
         # anthropic/gemini: structured via OpenAI-compat is not guaranteed; keep for future
         raise LLMError(
