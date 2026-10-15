@@ -290,6 +290,7 @@ def build_evidence_set(
         notes=notes,
         retrieval_run_id=response.retrieval_run_id,
         strategy=response.strategy,
+        embedding_is_fallback=bool(getattr(response, "embedding_is_fallback", False)),
     )
 
 

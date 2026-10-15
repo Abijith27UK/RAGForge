@@ -161,6 +161,7 @@ class HybridRetriever(Retriever):
                 top_k=params.top_k,
                 results=[],
                 embedding_model=self._embedding_label(),
+                embedding_is_fallback=self._embedding_is_fallback(),
                 retrieval_backend=self.backend,
                 strategy=self.strategy_name,
                 params=params,
@@ -262,6 +263,7 @@ class HybridRetriever(Retriever):
                 candidates, method=self.strategy_name, min_score=0.0, top_k=params.top_k
             ),
             embedding_model=self._embedding_label(),
+            embedding_is_fallback=self._embedding_is_fallback(),
             retrieval_backend=self.backend,
             strategy=self.strategy_name,
             params=params,

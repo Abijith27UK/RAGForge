@@ -11,7 +11,8 @@ over stdio, and runs the acceptance sequence a user would exercise by hand:
               -> grounded answer (with its generation identity disclosed)
               -> an unsupported question (must abstain, not invent)
               -> an OFF-DOMAIN question whose generic terms collide with corpus
-                 vocabulary (a known open defect in the evidence gate)
+                 vocabulary (the V20 gate must refuse it; this was an open defect
+                 until V20 and is now a PASS/FAIL criterion)
               -> read one resource
 
 It never writes: no ingest, no build, no benchmark scoring, no review. The only
@@ -34,9 +35,19 @@ Statuses are reported honestly:
 * ``KNOWN-DEFECT`` — a check that reproduces a defect this project has already
   documented and left open. It is **not** a pass: it is counted, printed
   separately and cross-referenced, but it does not fail a *connection* check.
-  The off-domain evidence-gate weakness is the current case; see
-  ``docs/progress-report-2026-10-03.md`` (\u00a7"off-domain gate defect") and
-  ``docs/roadmap.md`` ("off-domain gate measurement").
+  V20 fixed the only case this script knew about (the off-domain evidence-gate
+  weakness), so that check is now PASS/FAIL; the status stays available for the
+  next documented defect.
+
+Extra environment
+-----------------
+``--env KEY=VALUE`` (repeatable) adds variables to the launched server's
+environment, MERGED OVER the client config's own ``env``. ``command`` and
+``args`` always come from the client config **verbatim**, so the transport under
+test is the configured one. The override exists so an acceptance run can pin the
+answer generator (e.g. ``--env LLM_PROVIDER=mock``) without editing
+``backend/.env`` or the client config, and every override is printed and written
+into the report so a run is never silently different from the configured one.
 
 Exit code 0 = no FAIL. 1 = at least one check FAILED (the individual results say
 which).
@@ -66,12 +77,11 @@ DEFAULT_UNSUPPORTED = "Describe the courtship display of the Australian lyrebird
 #: text, which is exactly the case the documented off-domain gate defect misses.
 DEFAULT_OFFDOMAIN = "How many moons does Jupiter have?"
 
-OFFDOMAIN_DEFECT_REF = (
-    "known open defect, reproduced through MCP: the evidence gate scores lexical "
-    "alignment over unweighted question terms, so an off-domain question whose "
-    "generic terms appear in the corpus passes MIN_ALIGNMENT_TO_PARTIAL=0.15 and "
-    "is reported SUFFICIENT (docs/progress-report-2026-10-03.md, off-domain gate "
-    "defect; docs/roadmap.md, off-domain gate measurement). Not a pass."
+OFFDOMAIN_FIX_REF = (
+    "V20: the gate now abstains when no retrieved passage is topically related to "
+    "the question (measured raw-similarity floor) or when the corpus cannot "
+    "represent the question at all; see docs/v20-offdomain-gate.md. Failing here "
+    "means the defect is BACK, not that the check is misconfigured."
 )
 
 CHECK_RESULTS: list[dict[str, Any]] = []
@@ -117,6 +127,17 @@ def load_server_entry(config_path: Path, server_name: str) -> dict[str, Any]:
     return servers[server_name]
 
 
+def parse_env_overrides(pairs: list[str] | None) -> dict[str, str]:
+    """`--env KEY=VALUE` -> dict. Rejects malformed pairs loudly."""
+    out: dict[str, str] = {}
+    for item in pairs or []:
+        key, sep, value = item.partition("=")
+        if not sep or not key.strip():
+            raise SystemExit(f"FAIL --env expects KEY=VALUE, got {item!r}")
+        out[key.strip()] = value
+    return out
+
+
 def preflight(entry: dict[str, Any]) -> tuple[bool, str]:
     """Check the configured paths exist BEFORE starting anything."""
     command = entry.get("command")
@@ -135,11 +156,16 @@ def preflight(entry: dict[str, Any]) -> tuple[bool, str]:
     return True, "command, launcher and DATA_DIR all exist"
 
 
-async def run(args: argparse.Namespace, entry: dict[str, Any]) -> int:
+async def run(
+    args: argparse.Namespace, entry: dict[str, Any], overrides: dict[str, str]
+) -> int:
     params = StdioServerParameters(
         command=entry["command"],
         args=[str(a) for a in entry.get("args") or []],
-        env={str(k): str(v) for k, v in (entry.get("env") or {}).items()},
+        env={
+            str(k): str(v) for k, v in (entry.get("env") or {}).items()
+        }
+        | {str(k): str(v) for k, v in overrides.items()},
         # Deliberately NO cwd: the host does not set one, so a launcher that
         # depends on the working directory must fail this check.
     )
@@ -410,10 +436,10 @@ async def run(args: argparse.Namespace, entry: dict[str, Any]) -> int:
         }
         record(
             "answer-offdomain-abstains",
-            "PASS" if off_abstained else "KNOWN-DEFECT",
+            "PASS" if off_abstained else "FAIL",
             f"status={obody.get('status')} reason_code={obody.get('reason_code')} "
             f"citations={obody.get('citation_count')} - "
-            + ("abstained as required" if off_abstained else OFFDOMAIN_DEFECT_REF),
+            + ("abstained as required" if off_abstained else OFFDOMAIN_FIX_REF),
         )
 
         # --- resource read ---------------------------------------------------
@@ -532,7 +558,15 @@ def main(argv: list[str] | None = None) -> int:
         help="an off-domain question with generic terms (documented gate defect)",
     )
     parser.add_argument("--json", default="", help="also write the check results to this JSON file")
+    parser.add_argument(
+        "--env",
+        action="append",
+        default=None,
+        metavar="KEY=VALUE",
+        help="extra server environment (repeatable); merged OVER the config's env",
+    )
     ns = parser.parse_args(argv)
+    overrides = parse_env_overrides(ns.env)
 
     config_path = Path(ns.config) if ns.config else default_config_path()
     print(f"config: {config_path}")
@@ -540,13 +574,22 @@ def main(argv: list[str] | None = None) -> int:
     print(f"command: {entry.get('command')}")
     print(f"args: {entry.get('args')}")
     print(f"env: {entry.get('env') or {}}")
+    if overrides:
+        print(f"env overrides for this run (merged over the above): {overrides}")
+        record(
+            "env-overrides",
+            "WARN",
+            "this run added {" + ", ".join(sorted(overrides)) + "} to the "
+            "configured server environment; command and args are still the "
+            "client config's own",
+        )
     ok, detail = preflight(entry)
     record("client-config-preflight", "PASS" if ok else "FAIL", detail)
     if not ok:
         return summarize()
 
     try:
-        asyncio.run(run(ns, entry))
+        asyncio.run(run(ns, entry, overrides))
     except BaseException as exc:  # noqa: BLE001 - the check must report, not traceback
         record("server-launch", "FAIL", _describe_failure(exc))
 
@@ -554,7 +597,15 @@ def main(argv: list[str] | None = None) -> int:
         out = Path(ns.json)
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(
-            json.dumps({"config": str(config_path), "server": ns.server, "checks": CHECK_RESULTS}, indent=2),
+            json.dumps(
+                {
+                    "config": str(config_path),
+                    "server": ns.server,
+                    "env_overrides": overrides,
+                    "checks": CHECK_RESULTS,
+                },
+                indent=2,
+            ),
             encoding="utf-8",
         )
         print(f"\nreport written: {out}")

@@ -245,6 +245,20 @@ class Retriever(ABC):
         """Report the full identity (incl. dev-fallback labelling) honestly."""
         return self._identity.describe() if self._identity else self._embedder.model
 
+    def _embedding_is_fallback(self) -> bool:
+        """True when these similarities come from a non-semantic DEV fallback.
+
+        The hashing fallback produces char-ngram overlap, not meaning: its
+        similarities are not a semantic scale, and a consumer holding a semantic
+        threshold (the V20 relevance floor) must be able to tell. Measured on the
+        hermetic MCP fixture, the hashing embedder scores a supported naval
+        question at 0.274 while scoring an off-domain question at 0.4543 — so a
+        semantic floor would BOTH refuse answerable questions and pass
+        unanswerable ones there. Recording the flag is what keeps the gate honest
+        about which scale it is looking at.
+        """
+        return bool(getattr(self._identity, "is_fallback", False))
+
     def _build_results(self, hits: list[dict[str, Any]], min_score: float) -> list[RetrievalResult]:
         """Legacy helper (store hits -> results). Kept for subclasses/tests."""
         candidates: list[Candidate] = []
@@ -412,6 +426,7 @@ class DenseRetriever(Retriever):
                 candidates, method=DENSE, min_score=min_score, top_k=top_k
             ),
             embedding_model=self._embedding_label(),
+            embedding_is_fallback=self._embedding_is_fallback(),
             retrieval_backend=self.backend,
             strategy=self.strategy_name,
         )
@@ -449,6 +464,7 @@ class DenseRetriever(Retriever):
                 candidates, method=DENSE, min_score=params.min_score, top_k=params.top_k
             ),
             embedding_model=self._embedding_label(),
+            embedding_is_fallback=self._embedding_is_fallback(),
             retrieval_backend=self.backend,
             strategy=self.strategy_name,
             params=params,

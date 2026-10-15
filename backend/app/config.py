@@ -64,6 +64,16 @@ class Settings(BaseSettings):
     # Retrieval defaults
     default_top_k: int = 5
 
+    # --- V20: grounding-gate relevance floor ---
+    # Below this top-chunk similarity nothing is treated as topically related to
+    # the question, so the answer abstains instead of grounding an off-domain
+    # question on generic word overlap. Default 0.35 was measured on the protected
+    # Automobile corpus with the default embedding model (see
+    # app/services/answering/gate.py, MIN_RELEVANCE_TO_ANSWER for the numbers).
+    # It is configuration, not a hidden constant, because a cosine scale is
+    # embedding-model dependent: recalibrate when EMBEDDING_MODEL changes.
+    answer_min_relevance: float = Field(default=0.35, ge=0.0, le=1.0)
+
     # --- V14: held-out validation artifacts ---
     # Overridable so a test (or an experiment on a copy of the corpus) can point
     # the held-out tooling at its own artifacts instead of the shipped ones. A

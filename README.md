@@ -727,7 +727,18 @@ This would move RAGForge from a **RAG construction system** toward an **automate
 
 ---
 
-# MCP Integration (implemented — V17 read surface, V18 agentic operations)
+# MCP Integration (implemented — V17 read surface, V18 agentic operations, V20 honest off-domain answers)
+
+> **V20 (2026-10-15).** The off-domain gate defect is fixed: an Automobile
+> knowledge base no longer answers "How many moons does Jupiter have?". The gate
+> now applies a *measured* relevance floor (top cosine 0.3411 off-domain vs
+> 0.4365 in-domain on the real corpus, threshold 0.35) plus a scale-free corpus
+> vocabulary-fit rule, and records every check it could not perform instead of
+> guessing. Measured result: **10/10 supported in-domain questions still answer,
+> 6/6 off-domain questions abstain with zero citations**. Full record, including
+> the limits: **[docs/v20-offdomain-gate.md](./docs/v20-offdomain-gate.md)**.
+> `LLM_PROVIDER=gemini` is also implemented now (Google's OpenAI-compatible
+> endpoint) — one real API call is still pending a rotated key.
 
 RAGForge exposes its knowledge bases through the **Model Context Protocol (MCP)**, so AI agents such as Claude and other MCP-compatible clients can interact with them directly — and, since V18, **build** them. Setup, client configuration and the full behaviour contract live in **[docs/mcp-integration.md](./docs/mcp-integration.md)**; the operation lifecycle, confirmation gates and demonstrated runs live in **[docs/v18-agentic-operations.md](./docs/v18-agentic-operations.md)**.
 
@@ -1624,6 +1635,9 @@ npm run dev
 * **Parsers**: PDF, PPTX, DOCX, HTML, Markdown, TXT (+ explicit legacy `.ppt` rejection)
 * **Document library** with statuses, inspection, rebuild, replace and delete
 * **Incremental ingestion** with stale-vector safety
+* **Grounded answers that abstain off-topic (V20)**: a measured relevance floor
+  plus a corpus vocabulary-fit rule, with every signal recorded — see the
+  [V20 record](./docs/v20-offdomain-gate.md)
 * Duplicate detection and content hashing
 * Section-aware + fixed-size chunking (registry)
 

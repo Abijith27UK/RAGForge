@@ -15,6 +15,13 @@ to any MCP-compatible AI client (Claude Desktop, Cursor, VS Code MCP clients, th
   [`docs/v18-agentic-operations.md`](v18-agentic-operations.md) for the operation
   lifecycle, the confirmation gates and the demonstrated runs.
 
+**V20 — the answer surface behaves honestly off-topic.** The off-domain gate
+defect (an Automobile KB answering "How many moons does Jupiter have?") is fixed:
+the gate now applies a measured relevance floor and a corpus vocabulary-fit rule,
+and the same call over this server returns `abstained` / `LOW_EVIDENCE_RELEVANCE`
+with zero citations. See [`docs/v20-offdomain-gate.md`](v20-offdomain-gate.md) for
+the measured before/after record and the residual limits.
+
 **What it is not.** It is not a second retrieval system, a second answer
 pipeline, a second orchestrator or an agent framework. There is no MCP code path
 that ranks, scores, generates, parses or validates anything itself:
@@ -213,7 +220,68 @@ backend\.venv\Scripts\python.exe backend\scripts\check_claude_desktop_connection
 
 Exit code 0 means no check failed. Results are labelled `PASS`, `WARN`,
 `KNOWN-DEFECT` (a defect this project has already documented and left open —
-**not** a pass) or `FAIL`.
+**not** a pass) or `FAIL`. The off-domain check used to be the `KNOWN-DEFECT`
+case; since V20 it is a plain PASS/FAIL criterion, so a reappearance of that
+defect now fails the run.
+
+`--env KEY=VALUE` (repeatable) adds variables to the launched server's
+environment, **merged over** the config's own `env`. `command` and `args` always
+come from the client configuration verbatim, so the transport under test is the
+configured one. Its purpose is to pin the answer generator for an acceptance run
+without editing `backend/.env` or the client config:
+
+```bat
+backend\.venv\Scripts\python.exe backend\scripts\check_claude_desktop_connection.py ^
+  --kb kb_f278c283c748 --env LLM_PROVIDER=mock --json reports\mcp-check.json
+```
+
+Every override is printed and written into the report, so a run is never silently
+different from the configured one.
+
+**Measured on 2026-10-15** (V20, `--env LLM_PROVIDER=mock`): **25 checks — 23
+PASS, 0 FAIL, 2 warnings, 0 known defects.** The two warnings are the pinned
+`LLM_PROVIDER` override and the disclosed mock generation identity
+(`is_mock=true`, `model="mock/mock-1"`) — retrieval, scores, citations and the
+abstention are real. The protected KB reported 812 chunk rows = 812 measured
+vector points, `match=true`.
+
+#### Integration checklist (repeatable)
+
+Run this after any change to the launcher, the server, the gate or the provider
+configuration. Each line is a check the script above performs, so a green script
+run and a completed checklist say the same thing.
+
+| # | Check | Expected |
+|---|---|---|
+| 1 | config preflight | `command`, launcher and `DATA_DIR` all exist |
+| 2 | MCP handshake | `serverInfo.name='ragforge'`, protocol negotiated |
+| 3 | tool discovery | 18 tools, the 6 read tools present |
+| 4 | annotations | `search_knowledge_base` read-only, non-destructive |
+| 5 | resources | 1 resource + 3 templates |
+| 6 | knowledge-base list | the Automobile KB listed with real counts (11 docs / 812 chunks) |
+| 7 | live index probe | chunk rows = measured vector points, `match=true` |
+| 8 | search | ranked chunks with chunk id, document id, URL, content hash |
+| 9 | no path leak | no filesystem path in any payload |
+| 10 | evidence by id | resolves to a document id and chunk index |
+| 11 | grounded answer | `grounded`, citations all resolve to real chunks |
+| 12 | generation identity | `is_mock` reported honestly (true with the mock) |
+| 13 | unsupported question | `abstained`, 0 citations, 0 claims |
+| 14 | off-domain question | `abstained`, `LOW_EVIDENCE_RELEVANCE`, 0 citations |
+| 15 | lifecycle gate | `evaluate_retrieval` refuses without a FROZEN benchmark |
+| 16 | manual, in the client | RAGForge listed; Claude *calls* the tool rather than answering from memory |
+
+Check 16 is the only one that cannot be automated from this repository, and it is
+the only one that proves *host* integration.
+
+#### Verification status of the host test
+
+**UNVERIFIED — Claude Desktop is not installed on this machine.** Verified
+2026-10-15 by: `reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall
+/s /f Claude` → 0 matches; no `%LOCALAPPDATA%\AnthropicClaude`,
+`%LOCALAPPDATA%\Programs\claude-desktop` or `%PROGRAMFILES%\Claude`; `claude` not
+on `PATH`; no Start-menu entry. What **is** verified is the configured command
+speaking MCP correctly and returning real RAGForge evidence (the script above).
+These are different claims and must not be substituted for each other.
 
 #### Step 4 — restart and verify in the client (manual)
 
@@ -237,6 +305,8 @@ Exit code 0 means no check failed. Results are labelled `PASS`, `WARN`,
 | Grounded answer | `What are the main types of suspension systems?` | each claim carries a citation that resolves to a real chunk |
 | Provenance | `Show me the full text of the first chunk` | `get_evidence` returns document id, chunk index and content hash |
 | Abstention | `Describe the courtship display of the Australian lyrebird.` | `abstained`, `INSUFFICIENT_EVIDENCE`, **zero citations**, no model call |
+| Off-domain refusal (V20) | `How many moons does Jupiter have?` | `abstained`, `LOW_EVIDENCE_RELEVANCE`, zero citations — it must **not** be answered from engine text |
+| Provable topic mismatch (V20) | `What is the capital of Peru?` | `abstained`; the terms occur in none of the 812 chunks |
 | Lifecycle gate | `Evaluate retrieval quality on this knowledge base` | refused with the real reason (no FROZEN benchmark version exists) |
 
 #### Troubleshooting
@@ -250,7 +320,9 @@ Exit code 0 means no check failed. Results are labelled `PASS`, `WARN`,
 | Wrong or empty knowledge base list | wrong `DATA_DIR` (the database is `backend\data\ragforge.db`) or a different checkout. |
 | Vector-store / embedding error on search | Qdrant is not running (`curl http://localhost:6333/collections`) or `QDRANT_URL` is wrong. The first run also downloads `all-MiniLM-L6-v2`. |
 | Answers come back with `is_mock: true` | no usable LLM provider is configured, so the deterministic extractive generator is used and **disclosed** in `generation.is_mock` / `generated_by` / `model`. Retrieval and citations are still real. Set `LLM_PROVIDER=openai` (+ `LLM_MODEL`, `LLM_API_KEY`, optional `LLM_BASE_URL`) in `backend/.env` for real generation. |
-| An off-domain question is answered anyway | known open defect in the evidence gate (see §7), not a configuration problem. |
+| An off-domain question is answered anyway | this was a real gate defect, fixed in V20. If it reappears, check `evidence_relevance_floor` in the answer signals: it is NOT APPLICABLE for `bm25`/`hybrid` runs (pool-normalized score scale) and for the development hashing embedder, so those runs have one fewer guard. See [`docs/v20-offdomain-gate.md`](v20-offdomain-gate.md). |
+| An in-domain question abstains after changing `EMBEDDING_MODEL` | `ANSWER_MIN_RELEVANCE` (default `0.35`) is calibrated for `all-MiniLM-L6-v2`. Recalibrate per model with `backend\scripts\v20_calibrate_relevance.py --kb <kb_id>` and set the measured value in `backend/.env`. |
+| `LLM_PROVIDER=gemini` used to fail with "declared but not yet implemented" | fixed in V20: `gemini` is routed through the existing OpenAI-compatible provider to Google's documented endpoint `https://generativelanguage.googleapis.com/v1beta/openai/`. Check the model ids your key can actually see with `GET https://generativelanguage.googleapis.com/v1beta/openai/models`. |
 | Every call hangs | a hung provider call; `LLM_TIMEOUT_S` and `LLM_MAX_RETRIES` in `backend/.env` bound it. |
 
 #### Security and single-user limits
@@ -571,20 +643,20 @@ give `DATA_DIR` explicitly when the corpus does not live in `backend/data` — s
   through `get_evidence`, not expect one giant dump.
 * **Retrieval quality is whatever RAGForge's retrieval is.** The MCP layer adds
   no ranking, no reranking and no fusion.
-* **The off-domain gate defect is reachable through MCP and is still open.**
-  Reproduced on 2026-10-15 over this server: `How many moons does Jupiter have?`
-  against the Automobile corpus returned `status=grounded`,
-  `reason_code=SUFFICIENT`, 1 citation — because the evidence gate measures
-  lexical alignment over *unweighted* question terms, so generic vocabulary
-  (`many`, `2018`, `regulations`, `strength`) matches motor-industry text and
-  clears `MIN_ALIGNMENT_TO_PARTIAL = 0.15`. Questions whose terms are genuinely
-  absent do abstain (`Describe the courtship display of the Australian
-  lyrebird.` → `abstained` / `INSUFFICIENT_EVIDENCE` / 0 citations). The defect
-  and its root cause are already recorded in
-  [`docs/progress-report-2026-10-03.md`](progress-report-2026-10-03.md) and left
-  open in [`docs/roadmap.md`](roadmap.md) ("off-domain gate measurement"); the
-  MCP layer does not hide or fix it, and the checker above reports it as
-  `KNOWN-DEFECT`, never as a pass.
+* **The off-domain gate defect was reachable through MCP and is now FIXED (V20).**
+  It was reproduced over this server on 2026-10-15: `How many moons does Jupiter
+  have?` against the Automobile corpus returned `status=grounded`,
+  `reason_code=SUFFICIENT`, 1 citation, because the gate measured lexical
+  alignment over *unweighted* question terms so generic vocabulary (`many`,
+  `2018`, `regulations`) cleared `MIN_ALIGNMENT_TO_PARTIAL = 0.15`, and the
+  SUFFICIENT rule consulted alignment only for the *confidence* label. V20 adds
+  two measured rules — a raw-similarity relevance floor and a corpus
+  vocabulary-fit check — and the same call through this server now returns
+  `status=abstained` / `reason_code=LOW_EVIDENCE_RELEVANCE` / 0 citations. Full
+  record: [`docs/v20-offdomain-gate.md`](v20-offdomain-gate.md). Two residual
+  gaps are documented there and are NOT hidden: the floor is calibrated per
+  embedding model, and `bm25`/`hybrid` runs have no relevance floor because their
+  scores are pool-normalized.
 * **Answer text can come from a disclosed fallback generator.** With no usable
   LLM provider configured, `answer_from_knowledge_base` still returns retrieval,
   citations and provenance, but the answer *text* is produced by the

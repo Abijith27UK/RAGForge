@@ -44,6 +44,7 @@ from app.services.answering.generator import (
     create_answer_generator,
 )
 from app.services.answering.query_processor import QueryProcessor, create_query_processor
+from app.services.answering.term_stats import create_term_stats_provider
 from app.services.answering.trace import AnswerTraceRecorder
 from app.services.answering.validation import validate_answer
 from app.services.retrieval.service import (
@@ -82,7 +83,14 @@ class AnsweringService:
         self._settings = settings or get_settings()
         self._retrieval = retrieval or RetrievalService(repo, self._settings)
         self._processor = processor or create_query_processor()
-        self._gate = gate or create_evidence_gate()
+        # The default gate gets corpus term statistics from the repository's
+        # persisted BM25 index, so it can tell a discriminating question term
+        # from a corpus-ubiquitous one. Read-only: no index is built or written
+        # here. An explicitly injected gate is left exactly as given.
+        self._gate = gate or create_evidence_gate(
+            create_term_stats_provider(repo),
+            self._settings.answer_min_relevance,
+        )
         self._selector = selector or create_evidence_selector()
         self._generator = generator  # resolved lazily so config errors stay local
 
@@ -190,9 +198,9 @@ class AnsweringService:
         # -- Stage 4: gate ----------------------------------------------------
         with recorder.measure("evidence_gate", detail=f"gate={self._gate.name}"):
             assessment = (
-                self._gate.assess_with_trace(plan, evidence, query_trace)
+                self._gate.assess_with_trace(plan, evidence, query_trace, kb_id=kb_id)
                 if isinstance(self._gate, GroundingGate)
-                else self._gate.assess(plan, evidence)
+                else self._gate.assess(plan, evidence, kb_id=kb_id)
             )
         recorder.trace.assessment = assessment
         recorder.note(

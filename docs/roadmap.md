@@ -816,3 +816,45 @@ construction *control*, not better ranking.
 4. **Only if a real need appears:** cancellation/background progress (needs a job
    runner), a secured HTTP transport, or bulk operations. Exposing unrestricted
    deletion through MCP remains explicitly out of scope.
+
+## V20 — Off-domain abstention, host-integration evidence, provider gate (2026-10-15, delivered)
+
+V20 fixes the highest-consequence known defect in the answering path and removes
+the configuration blocker that stopped V19's second-domain run. Full record:
+[`v20-offdomain-gate.md`](./v20-offdomain-gate.md).
+
+| Item | Status |
+|---|---|
+| Off-domain gate defect reproduced on the real corpus (Jupiter-moons answered, 1 citation) | **done** |
+| Root cause isolated: unweighted lexical alignment + `MIN_ALIGNMENT_TO_PARTIAL = 0.15` + a SUFFICIENT rule that consulted alignment only for its confidence label | **done** |
+| Relevance floor (raw-similarity, measured separation 0.3411 vs 0.4365) applied when the score scale is comparable | **done** — `LOW_EVIDENCE_RELEVANCE` |
+| Corpus vocabulary-fit rule (scale-free, uses the persisted BM25 statistics) | **done** — `TOPIC_OUTSIDE_CORPUS` |
+| Read-only in-memory term statistics when no index is persisted (fresh KBs) | **done** — ~82 ms on 812 chunks, cached per process, never writes |
+| Regression suite (gate + service + default wiring + public MCP tool) | **done** — 43 + 9 tests |
+| Real-corpus measurement | **done** — 10/10 in-domain answered, 6/6 off-domain abstained with 0 citations |
+| Session-wide guard so the suite can never write to the developer's real database again | **done** — fails the run with the changed table counts |
+| `LLM_PROVIDER=gemini` routed through the existing OpenAI-compatible provider | **done** (endpoint/model verified against Google's current docs) |
+| One real API call to prove authentication, endpoint, model and schema handling | **NOT RUN — BLOCKED: the key in `backend/.env` was exposed in a transcript on 2026-10-15 and must be rotated first. `scripts/v20_verify_provider.py --live` is the single command that completes it.** |
+| V19 second-domain workflow with a real model | **BLOCKED** on the same rotation; unchanged from V19 |
+| Actual Claude Desktop host test | **BLOCKED / UNVERIFIED — Claude Desktop is not installed on this machine (checked 2026-10-15)** |
+
+**Supersedes** old item 4 in the V9/V10 recommended orders ("off-domain gate
+measurement"). That item is now answered for the reported cases, but as a
+*measurement*, not as a generalization: 16 questions were measured, the threshold
+is calibrated for one embedding model, `bm25`/`hybrid` runs carry no relevance
+floor, and ​`Configurations promoted from a small exploratory set` remains
+unvalidated. The held-out benchmark lifecycle still owns generalization.
+
+### V20 recommended order
+
+1. **Rotate the exposed key**, set the replacement in `backend/.env`, then run
+   `scripts/v20_verify_provider.py --live` once. This is a one-command unlock for
+   two workstreams (real-model answers, second-domain validation).
+2. **Author more off-domain questions** (≥ 20, including adjacent-domain ones such
+   as fluid mechanics for the Automobile corpus) and measure the two new rules on
+   them, so the calibration stops resting on 16 questions.
+3. **Recalibrate `ANSWER_MIN_RELEVANCE` per embedding model** before shipping any
+   model change, and record the measurement in the doc.
+4. **Install Claude Desktop and complete check 16** of the integration checklist —
+   the only step that proves host integration rather than configuration.
+5. **Then** return to V19's second-domain validation on a real provider.

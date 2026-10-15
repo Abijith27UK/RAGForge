@@ -216,6 +216,11 @@ class EvidenceSet(BaseModel):
     notes: list[str] = Field(default_factory=list)
     retrieval_run_id: str | None = None
     strategy: str = ""
+    #: Carried from the retrieval response so the gate can tell whether these
+    #: scores sit on a SEMANTIC scale. A development hashing fallback scores
+    #: character overlap, not meaning, so a semantic relevance floor must not be
+    #: applied to it (V20).
+    embedding_is_fallback: bool = False
 
 
 # ---------------------------------------------------------------------------

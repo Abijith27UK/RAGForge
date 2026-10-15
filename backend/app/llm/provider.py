@@ -54,9 +54,25 @@ def _extract_json(text: str) -> str:
     return text[start : end + 1]
 
 
+#: Base URL of Google's OpenAI-COMPATIBLE surface for Gemini. Documented at
+#: https://ai.google.dev/gemini-api/docs/openai — the trailing slash is part of it
+#: (the OpenAI SDK joins paths onto the base). V20 routes `LLM_PROVIDER=gemini`
+#: through THIS provider rather than adding a second client: Google deliberately
+#: speaks the same wire format, so the existing abstraction already covers it.
+GEMINI_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
+#: Model used when `LLM_MODEL` is empty for the gemini provider. Valid as of
+#: 2026-10-15 but access-restricted (Google limits 2.5-series access to accounts
+#: that have already used them), so `LLM_MODEL` should be set explicitly from the
+#: ids the account can actually see:
+#:     GET https://generativelanguage.googleapis.com/v1beta/openai/models
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+
+
 class OpenAICompatibleProvider(LLMProvider):
     """Provider for OpenAI-compatible chat APIs (OpenAI, vLLM, LM Studio, Ollama's
-    OpenAI endpoint, etc.). Uses the `openai` package when available."""
+    OpenAI endpoint, Google's Gemini OpenAI-compatible surface). Uses the `openai`
+    package when available."""
 
     name = "openai"
 
@@ -67,6 +83,7 @@ class OpenAICompatibleProvider(LLMProvider):
         base_url: str = "",
         timeout_s: float = 600.0,
         max_retries: int = 2,
+        name: str = "openai",
     ) -> None:
         try:
             from openai import OpenAI  # optional dependency
@@ -87,6 +104,9 @@ class OpenAICompatibleProvider(LLMProvider):
         self.model = model
         self.timeout_s = timeout_s
         self.max_retries = max_retries
+        # The identity that ends up in traces/answers. Reported honestly rather
+        # than always claiming "openai" just because the wire format matches.
+        self.name = name
 
     def generate_structured(self, prompt: str, schema: type[T], system: str = "") -> T:
         schema_json = json.dumps(schema.model_json_schema(), ensure_ascii=False)
@@ -220,7 +240,7 @@ def create_llm_provider(settings: Settings, domain_hint: str = "") -> LLMProvide
     provider = (settings.llm_provider or "").strip().lower()
     if provider == "mock":
         return MockLLMProvider(domain_hint)
-    if provider in ("openai", "anthropic", "gemini", ""):
+    if provider in ("openai", "gemini", "anthropic", ""):
         if provider == "":
             if settings.allow_mock_llm:
                 logger.warning(
@@ -229,10 +249,10 @@ def create_llm_provider(settings: Settings, domain_hint: str = "") -> LLMProvide
                 )
                 return MockLLMProvider(domain_hint)
             raise LLMError(
-                "No LLM provider configured. Set LLM_PROVIDER (openai|anthropic|gemini|mock), "
+                "No LLM provider configured. Set LLM_PROVIDER (openai|gemini|mock), "
                 "LLM_MODEL and LLM_API_KEY in backend/.env"
             )
-        if not settings.llm_api_key and provider != "mock":
+        if not settings.llm_api_key:
             raise LLMError(f"LLM_API_KEY is required for provider '{provider}'")
         if provider == "openai":
             return OpenAICompatibleProvider(
@@ -242,9 +262,32 @@ def create_llm_provider(settings: Settings, domain_hint: str = "") -> LLMProvide
                 timeout_s=settings.llm_timeout_s,
                 max_retries=settings.llm_max_retries,
             )
-        # anthropic/gemini: structured via OpenAI-compat is not guaranteed; keep for future
+        if provider == "gemini":
+            # Google's OpenAI-compatible surface speaks the SAME wire format, so
+            # the existing provider is reused unchanged. `LLM_BASE_URL` still
+            # wins when set, which keeps any proxy/gateway arrangement working.
+            base_url = settings.llm_base_url or GEMINI_OPENAI_BASE_URL
+            model = settings.llm_model or DEFAULT_GEMINI_MODEL
+            logger.info(
+                "LLM provider: gemini via the OpenAI-compatible surface "
+                "(model=%s, base_url=%s); real calls will be made.",
+                model,
+                base_url,
+            )
+            return OpenAICompatibleProvider(
+                api_key=settings.llm_api_key,
+                model=model,
+                base_url=base_url,
+                timeout_s=settings.llm_timeout_s,
+                max_retries=settings.llm_max_retries,
+                name="gemini",
+            )
+        # anthropic has no equivalent OpenAI-compatible surface, so it stays
+        # explicitly unimplemented instead of being silently mis-routed.
         raise LLMError(
-            f"Provider '{provider}' is declared but not yet implemented. "
-            "Use 'openai' (or any OpenAI-compatible endpoint via LLM_BASE_URL) or 'mock'."
+            "Provider 'anthropic' is declared but not implemented: Anthropic does "
+            "not expose an OpenAI-compatible chat surface, so it needs its own "
+            "client. Use 'openai', 'gemini' (via Google's OpenAI-compatible "
+            "endpoint) or 'mock'."
         )
     raise LLMError(f"Unknown LLM_PROVIDER '{provider}'")

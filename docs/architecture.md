@@ -821,3 +821,30 @@ parsed documents, chunk rows, vector points matching those rows, a consistent
 embedding identity and a clean integrity audit. Any measurement that could not be
 taken is reported `UNKNOWN` and can never satisfy a check, so an unreachable
 vector store yields `verdict=UNKNOWN` rather than a pass.
+
+## V20 — Off-domain abstention in the grounding gate (2026-10-15)
+
+**Decision.** Two independent, measured checks were added to `HeuristicEvidenceGate`,
+and the gate gained read access to corpus term statistics. Thresholds stay named
+constants; the one absolute-similarity threshold is also configuration
+(`ANSWER_MIN_RELEVANCE`), because it is calibrated per embedding model.
+
+| Component | Change | Why |
+|---|---|---|
+| `services/answering/term_stats.py` | **new** — `CorpusTermStats` + `LexicalIndexStatsProvider` | the gate had no way to tell a corpus-ubiquitous word from a discriminating one. Sources: the persisted BM25 index (`lexical_indexes`), else a read-only in-memory build from the chunk table (~82 ms for 812 chunks, cached per process, never writes) |
+| `services/answering/gate.py` | `evidence_relevance_floor` + `corpus_vocabulary_fit` signals; decision rules `LOW_EVIDENCE_RELEVANCE` (`MIN_RELEVANCE_TO_ANSWER = TOP_SCORE_MODERATE = 0.35`) and `TOPIC_OUTSIDE_CORPUS` (`MIN_ABSENT_TERM_SHARE = 0.5`, `MIN_DISTINCTIVE_IDF = 3.0`) | the pre-V20 SUFFICIENT rule consulted retrieval alignment only for its *confidence label*, so an off-domain question reached `decision=ANSWER` |
+| `services/answering/gate.py` | `assess`/`assess_with_trace` take an optional `kb_id` | the vocabulary check is corpus-specific; without it the check is recorded NOT PERFORMED, not guessed |
+| `services/retrieval/{retriever,bm25,hybrid}.py`, `schemas/models.py` | `embedding_is_fallback` flows from the embedding identity into `RetrievalResponse` | the hashing dev fallback scores character overlap, not meaning (measured: supported 0.274 vs off-domain 0.4543), so a semantic floor must not be applied to it |
+| `schemas/answer.py`, `services/answering/evidence.py` | `EvidenceSet` carries `strategy` + `embedding_is_fallback` | the gate can tell *which scale* the recorded scores are on, and says so when a threshold does not transfer |
+| `llm/provider.py` | `LLM_PROVIDER=gemini` routed through the **existing** `OpenAICompatibleProvider` with Google's documented base URL | Google's OpenAI-compatible surface speaks the same wire format; a second client abstraction would have been duplication. `is_mock` stays `False`, the identity reports `gemini`, and the factory now refuses `anthropic` with an accurate reason |
+| `tests/conftest.py` | session-wide `_real_workspace_db_guard` | a nested MCP subprocess once wrote `mcp_operations` rows into the developer's real database. The guard compares row counts in the watched tables before/after the whole suite and fails with the diff |
+
+**Rule order (single place, documented):** no evidence → no content terms →
+alignment floor → relevance floor → corpus vocabulary fit → aspect coverage →
+sufficient. The rejection of an IDF-only rule is recorded in the source next to
+`MIN_DISTINCTIVE_IDF` and in [v20-offdomain-gate.md](v20-offdomain-gate.md) §3.
+
+**Not done, deliberately:** no new external classifier or paid dependency (the fix
+uses the project's own BM25 statistics); no global threshold bump; no change to the
+pre-existing alignment rule's `supporting_evidence_ids` behaviour; no promotion of
+any retrieval configuration from this measurement.

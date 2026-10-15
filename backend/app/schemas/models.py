@@ -587,6 +587,11 @@ class RetrievalResponse(BaseModel):
     top_k: int
     results: list[RetrievalResult] = Field(default_factory=list)
     embedding_model: str = ""
+    #: True when the embeddings behind these scores are a development fallback
+    #: (hashing), whose similarities are NOT a semantic scale. Recorded so a
+    #: consumer that needs a semantic threshold can tell the difference instead of
+    #: assuming one; the answering gate (V20) does exactly that.
+    embedding_is_fallback: bool = False
     retrieval_backend: str = "qdrant-dense"
     error: str | None = None
     # --- V6: strategy + configuration provenance ---
