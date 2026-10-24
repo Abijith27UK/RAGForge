@@ -17,6 +17,15 @@ naming the RFC document, an anchor phrase that must appear in the grounding
 chunk, expected terminology and a provenance note. This is the same
 pre-declaration discipline as scripts/run_retrieval_experiment.py.
 
+V21 note (2026-10-19): the first `draft` pass against the built corpus showed
+25/26 anchors were NOT unique — RFC plain text is ~72-column wrapped, so many
+obvious phrases either crossed a line break (NOT FOUND) or repeated across the
+document (AMBIGUOUS). The anchors and their expected_keywords were then
+adjusted to uniquely identify the section-level chunk that carries the answer
+evidence. Question text was NOT changed, and no adjustment was made by
+observing retrieval results: this is grounding calibration, disclosed here,
+not tuning.
+
 Usage (from backend/):
     py -m scripts.v19_benchmark_tool draft    --kb <kb_id>     # inspect grounding candidates
     py -m scripts.v19_benchmark_tool finalize --kb <kb_id>     # write the draft artifact
@@ -67,8 +76,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "ipv4",
         "question": "What does an IPv4 router do to the Time to Live field of a datagram it forwards?",
         "document_url": RFC + "rfc791.txt",
-        "anchor": "Time to Live",
-        "expected_keywords": ["time to live", "lifetime", "router"],
+        "anchor": "decremented",
+        "expected_keywords": ["time to live", "decremented", "seconds"],
         "provenance": "RFC 791, Time to Live field semantics (datagram processing at gateways)",
     },
     {
@@ -76,7 +85,7 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "ipv4",
         "question": "Which unit carries a datagram from one internet module to another in the IPv4 header?",
         "document_url": RFC + "rfc791.txt",
-        "anchor": "Internet Header Length",
+        "anchor": "The internet header field Internet Header Length is the length",
         "expected_keywords": ["internet header length", "header"],
         "provenance": "RFC 791, header format overview (IHL and version fields)",
     },
@@ -86,8 +95,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "icmp",
         "question": "Which ICMP message does a gateway send when a datagram's lifetime expires?",
         "document_url": RFC + "rfc792.txt",
-        "anchor": "Time Exceeded",
-        "expected_keywords": ["time exceeded", "lifetime", "gateway"],
+        "anchor": "is zero it must discard the datagram. The gateway may also notify",
+        "expected_keywords": ["time exceeded", "discard", "gateway"],
         "provenance": "RFC 792, Time Exceeded message definition",
     },
     {
@@ -95,7 +104,7 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "icmp",
         "question": "How does a host test whether a destination is reachable using ICMP?",
         "document_url": RFC + "rfc792.txt",
-        "anchor": "Echo",
+        "anchor": "Echo or Echo Reply Message",
         "expected_keywords": ["echo", "destination", "reply"],
         "provenance": "RFC 792, Echo Request/Reply message pair",
     },
@@ -105,8 +114,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "addressing",
         "question": "Which IPv4 address blocks are reserved for private internets?",
         "document_url": RFC + "rfc1918.txt",
-        "anchor": "10.",
-        "expected_keywords": ["private", "address", "organization"],
+        "anchor": "172.16.",
+        "expected_keywords": ["private", "address", "prefix"],
         "provenance": "RFC 1918, Section 3 address block recommendations",
     },
     {
@@ -114,8 +123,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "addressing",
         "question": "Why do the private address ranges of RFC 1918 require special routing considerations?",
         "document_url": RFC + "rfc1918.txt",
-        "anchor": "unique",
-        "expected_keywords": ["private", "routed", "internet"],
+        "anchor": "non-connected",
+        "expected_keywords": ["private", "enterprises", "internet"],
         "provenance": "RFC 1918, Section 2 rationale (global uniqueness vs private use)",
     },
     {
@@ -133,7 +142,7 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "link-layer",
         "question": "What problem does ARP solve on a local network?",
         "document_url": RFC + "rfc826.txt",
-        "anchor": "network address",
+        "anchor": "Converting Network Protocol Addresses",
         "expected_keywords": ["address", "resolution", "ethernet"],
         "provenance": "RFC 826, introduction (mapping protocol addresses to hardware addresses)",
     },
@@ -143,7 +152,7 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "ipv6",
         "question": "What replaces the IPv4 Time to Live field in the IPv6 base header?",
         "document_url": RFC + "rfc8200.txt",
-        "anchor": "Hop Limit",
+        "anchor": "renamed \"Hop Limit\" in IPv6",
         "expected_keywords": ["hop limit", "header", "version"],
         "provenance": "RFC 8200, Section 3 base header description",
     },
@@ -153,8 +162,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "transport",
         "question": "Which three messages establish a TCP connection (the three-way handshake)?",
         "document_url": RFC + "rfc9293.txt",
-        "anchor": "three-way",
-        "expected_keywords": ["handshake", "synchronizing", "acknowledgment"],
+        "anchor": "The \"three-way handshake\" is the procedure used to establish a",
+        "expected_keywords": ["three-way", "handshake", "connection"],
         "provenance": "RFC 9293, Section 3.4 connection establishment (3W handshake)",
     },
     {
@@ -162,8 +171,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "transport",
         "question": "How does TCP terminate a connection cleanly?",
         "document_url": RFC + "rfc9293.txt",
-        "anchor": "FIN",
-        "expected_keywords": ["close", "fin", "connection"],
+        "anchor": "gracefully",
+        "expected_keywords": ["close", "connection", "buffers"],
         "provenance": "RFC 9293, Section 3.5 connection termination",
     },
     {
@@ -171,8 +180,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "transport",
         "question": "What does the TCP retransmission mechanism protect against?",
         "document_url": RFC + "rfc9293.txt",
-        "anchor": "retransmission",
-        "expected_keywords": ["retransmission", "acknowledgment", "damage"],
+        "anchor": "detecting packet losses",
+        "expected_keywords": ["retransmission", "loss", "checksums"],
         "provenance": "RFC 9293, reliability overview (acknowledgment and retransmission)",
     },
     # -- dns ------------------------------------------------------------------
@@ -181,8 +190,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "dns",
         "question": "What is the role of a recursive name server in DNS resolution?",
         "document_url": RFC + "rfc1034.txt",
-        "anchor": "recursive",
-        "expected_keywords": ["resolver", "recursive", "answer"],
+        "anchor": "is operating in recursive mode or not:",
+        "expected_keywords": ["recursive", "queries", "answer"],
         "provenance": "RFC 1034, Section 2.3 resolvers vs servers",
     },
     {
@@ -190,8 +199,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "dns",
         "question": "What is a zone of authority in the DNS naming model?",
         "document_url": RFC + "rfc1034.txt",
-        "anchor": "zone",
-        "expected_keywords": ["zone", "authority", "domain"],
+        "anchor": "divided up into sections",
+        "expected_keywords": ["zones", "database", "name servers"],
         "provenance": "RFC 1034, Section 4.3 zones",
     },
     {
@@ -199,8 +208,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "dns",
         "question": "What resource record types does a DNS query message carry?",
         "document_url": RFC + "rfc1035.txt",
-        "anchor": "QTYPE",
-        "expected_keywords": ["question", "qtype", "qclass"],
+        "anchor": "| QTYPE |",
+        "expected_keywords": ["qtype", "qclass", "qname"],
         "provenance": "RFC 1035, Section 4.1.2 query message format",
     },
     {
@@ -208,8 +217,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "dns",
         "question": "How is a DNS name encoded in a message (labels and compression)?",
         "document_url": RFC + "rfc1035.txt",
-        "anchor": "domain name",
-        "expected_keywords": ["label", "compression", "message"],
+        "anchor": "In order to reduce the size of messages, the domain system utilizes a",
+        "expected_keywords": ["compression", "labels", "domain"],
         "provenance": "RFC 1035, Section 3.1 domain name representation and compression",
     },
     # -- dhcp -----------------------------------------------------------------
@@ -218,8 +227,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "dhcp",
         "question": "Which message sequence does a DHCP client use to obtain an IP address?",
         "document_url": RFC + "rfc2131.txt",
-        "anchor": "DHCPDISCOVER",
-        "expected_keywords": ["discover", "offer", "request", "acknowledgment"],
+        "anchor": "client DHCPDISCOVER client DHCPREQUEST client DHCPREQUEST",
+        "expected_keywords": ["dhcpdiscover", "dhcprequest", "client"],
         "provenance": "RFC 2131, Section 3.1 client-server interaction (DORA)",
     },
     {
@@ -227,8 +236,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "dhcp",
         "question": "What does a DHCP server guarantee when it sends an ACK to a client request?",
         "document_url": RFC + "rfc2131.txt",
-        "anchor": "DHCPACK",
-        "expected_keywords": ["acknowledgment", "parameters", "configuration"],
+        "anchor": "respond with a DHCPACK",
+        "expected_keywords": ["configuration", "parameters", "dhcpack"],
         "provenance": "RFC 2131, Section 3.1 DHCPACK semantics",
     },
     # -- routing --------------------------------------------------------------
@@ -237,8 +246,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "routing",
         "question": "What are the states of the BGP finite state machine?",
         "document_url": RFC + "rfc4271.txt",
-        "anchor": "Idle",
-        "expected_keywords": ["idle", "connect", "established", "state"],
+        "anchor": "refuses all incoming BGP",
+        "expected_keywords": ["idle", "connect", "state"],
         "provenance": "RFC 4271, Section 8.1 BGP FSM overview",
     },
     {
@@ -246,8 +255,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "routing",
         "question": "What is the role of an OPEN message when a BGP session starts?",
         "document_url": RFC + "rfc4271.txt",
-        "anchor": "OPEN message",
-        "expected_keywords": ["open", "session", "autonomous"],
+        "anchor": "In addition to the fixed-size BGP header, the OPEN message contains",
+        "expected_keywords": ["open", "autonomous", "hold time"],
         "provenance": "RFC 4271, Section 4.2 OPEN message",
     },
     {
@@ -255,8 +264,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "routing",
         "question": "How does OSPF describe a network's topology?",
         "document_url": RFC + "rfc2328.txt",
-        "anchor": "link-state advertisement",
-        "expected_keywords": ["link-state", "router", "network"],
+        "anchor": "Each LSA describes a piece of the OSPF routing domain. Every router",
+        "expected_keywords": ["lsa", "router", "link-state"],
         "provenance": "RFC 2328, Section 2.1 link-state advertisements",
     },
     # -- security -------------------------------------------------------------
@@ -265,7 +274,7 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "security",
         "question": "Which messages are exchanged in the TLS 1.3 handshake?",
         "document_url": RFC + "rfc8446.txt",
-        "anchor": "ClientHello",
+        "anchor": "remaining bytes in message",
         "expected_keywords": ["clienthello", "serverhello", "handshake"],
         "provenance": "RFC 8446, Section 4 handshake overview",
     },
@@ -274,8 +283,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "security",
         "question": "How does TLS 1.3 protect record integrity after the handshake?",
         "document_url": RFC + "rfc8446.txt",
-        "anchor": "record protection",
-        "expected_keywords": ["record", "protection", "authentication"],
+        "anchor": "record protection functions",
+        "expected_keywords": ["record", "protection", "plaintext"],
         "provenance": "RFC 8446, Section 5.2 record protection",
     },
     # -- http -----------------------------------------------------------------
@@ -284,7 +293,7 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "http",
         "question": "What does the HTTP 405 status code indicate?",
         "document_url": RFC + "rfc9110.txt",
-        "anchor": "405",
+        "anchor": "Method Not Allowed) status",
         "expected_keywords": ["method", "allowed", "resource"],
         "provenance": "RFC 9110, Section 15.5.6 405 Method Not Allowed",
     },
@@ -293,8 +302,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "http",
         "question": "What is the semantic difference between HTTP GET and HEAD?",
         "document_url": RFC + "rfc9110.txt",
-        "anchor": "HEAD",
-        "expected_keywords": ["head", "get", "header"],
+        "anchor": "identical to GET",
+        "expected_keywords": ["head", "get", "content"],
         "provenance": "RFC 9110, Section 9.3.2/9.3.3 GET and HEAD methods",
     },
     {
@@ -302,8 +311,8 @@ QUESTIONS: list[dict[str, Any]] = [
         "subdomain": "http",
         "question": "What does the HTTP 204 status code mean?",
         "document_url": RFC + "rfc9110.txt",
-        "anchor": "204",
-        "expected_keywords": ["content", "request", "success"],
+        "anchor": "successfully fulfilled",
+        "expected_keywords": ["content", "request", "204"],
         "provenance": "RFC 9110, Section 15.3.5 204 No Content",
     },
     # -- unsupported by construction (no expected ids; abstention tests) ------
@@ -544,8 +553,17 @@ def cmd_draft(args: argparse.Namespace) -> int:
 def cmd_finalize(args: argparse.Namespace) -> int:
     kb_id, kb_name = _resolve_kb(args)
     chunks = _load_corpus(kb_id)
-    grounding = {item["id"]: find_grounding(item["anchor"], item["document_url"], chunks) for item in QUESTIONS}
-    ungrounded = [qid for qid, matches in grounding.items() if not matches]
+    grounding = {
+        item["id"]: find_grounding(item.get("anchor", ""), item.get("document_url", ""), chunks)
+        for item in QUESTIONS
+    }
+    # Unsupported questions carry no anchor by design; only supported ones
+    # must be grounded before the artifact can be written.
+    ungrounded = [
+        item["id"]
+        for item in QUESTIONS
+        if not item.get("unsupported") and not grounding.get(item["id"])
+    ]
     if ungrounded:
         print(f"refusing to write: no grounding chunk for {ungrounded}")
         print("run the `draft` subcommand and adjust those anchors/documents")

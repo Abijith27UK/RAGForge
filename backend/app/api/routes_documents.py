@@ -17,6 +17,8 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from dataclasses import asdict
+
 from app.api.deps import get_repo
 from app.config import get_settings
 from app.repositories.sqlite_repo import Repository
@@ -353,6 +355,22 @@ def _index_documents(
     kb.version += 1
     kb.last_build_at = datetime.now(timezone.utc)
     kb.updated_at = kb.last_build_at
+    # V22 fixes two defects found by the scratch acceptance run:
+    #
+    # 1. STATUS: this route set `building` on the way in and never set `ready`
+    #    on the way out, so a knowledge base whose documents all indexed
+    #    successfully stayed "building" forever (observed: scratch KB remained
+    #    `building` at version 3 with 15 documents and 2 191 chunks indexed and
+    #    answering questions). A KB that is answering queries must not report
+    #    that it is still being built.
+    # 2. IDENTITY: the embedding identity is recorded only by the FULL build
+    #    route, so a knowledge base built entirely through incremental upload
+    #    had `embedding_identity = null` and could never be checked for a model
+    #    mismatch — the guard that raises when EMBEDDING_MODEL changes.
+    identity = getattr(embedder, "identity", None)
+    if callable(identity):
+        kb.embedding_identity = asdict(identity())
+    kb.status = KBStatus.READY
     repo.update_kb(kb)
     return outcome.as_dict()
 

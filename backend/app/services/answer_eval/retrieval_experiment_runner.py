@@ -186,9 +186,19 @@ class RetrievalExperimentRunner:
                 "an experiment needs a stated hypothesis: without one, a result "
                 "cannot be attributed to anything"
             )
-        if instrument not in ("development", "held-out"):
+        if instrument not in ("development", "held-out", "exploratory"):
             raise ExperimentValidationError(
-                f"unknown instrument {instrument!r}; expected 'development' or 'held-out'"
+                f"unknown instrument {instrument!r}; expected 'development', "
+                "'held-out' or 'exploratory'"
+            )
+        if instrument == "exploratory" and claim_strength == "confirmatory":
+            # V22: a machine-drafted, unreviewed benchmark is a usable probe and
+            # an unusable instrument of record. Refusing the label here is what
+            # keeps an exploratory number from being read as a validation.
+            raise ExperimentValidationError(
+                "refusing to record a confirmatory claim from an 'exploratory' "
+                "instrument: exploratory labels are machine-drafted and not "
+                "human-approved, so they can guide a decision but cannot confirm one"
             )
         if instrument == "held-out":
             # A held-out run that cannot name the tier it ran under could be
@@ -647,6 +657,12 @@ class RetrievalExperimentRunner:
             "the benchmark's own authorship records human review as "
             f"{authorship!r}"
         )
+        if experiment.instrument == "exploratory":
+            out.append(
+                "this ran on an 'exploratory' instrument: its labels were drafted by an "
+                "agent from the corpus and have NOT been human-approved, so the numbers "
+                "are a probe for finding defects, not a benchmark of record"
+            )
         if len(matched_ids) < len(bench.questions):
             out.append(
                 f"a SUBSET of the benchmark was used ({len(matched_ids)} of "

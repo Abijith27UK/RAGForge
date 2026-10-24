@@ -28,12 +28,26 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Record<string, KBRow>>({});
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
+  // Refetch on mount and whenever the user retries: a single failed attempt
+  // must not leave a permanent "unreachable" banner after the backend recovers.
   useEffect(() => {
+    let cancelled = false;
+    setError(null);
     Promise.all([api.listKBs(), api.systemStatus().catch(() => null)])
-      .then(([kbList, sys]) => { setKbs(kbList); setStatus(sys); })
-      .catch((e) => { setError(String(e.message ?? e)); setKbs([]); });
-  }, []);
+      .then(([kbList, sys]) => {
+        if (cancelled) return;
+        setKbs(kbList);
+        setStatus(sys);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setError(String(e.message ?? e));
+        setKbs([]);
+      });
+    return () => { cancelled = true; };
+  }, [reloadKey]);
 
   // Per-KB real counts + latest evaluation, fetched lazily from the real API.
   useEffect(() => {
@@ -100,8 +114,14 @@ export default function Dashboard() {
       </div>
 
       {error && (
-        <div className="mb-6 rounded border border-bad/40 bg-bad/10 px-3 py-2 text-xs text-bad">
-          Backend unreachable: {error}. Is the API running on port 8000?
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded border border-bad/40 bg-bad/10 px-3 py-2 text-xs text-bad">
+          <span>Backend unreachable: {error}. Is the API running on port 8000?</span>
+          <button
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="rounded border border-bad/50 px-2 py-0.5 text-2xs font-medium uppercase tracking-wider transition-colors hover:bg-bad/20"
+          >
+            Retry
+          </button>
         </div>
       )}
 

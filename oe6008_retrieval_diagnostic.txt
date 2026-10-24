@@ -1,0 +1,1227 @@
+﻿OE6008 RETRIEVAL DIAGNOSTIC
+Date: 2026-10-20 22:21:08
+Knowledge base: kb_b554bfde9d7f
+Endpoint: http://127.0.0.1:8000/api/knowledge-bases/kb_b554bfde9d7f/retrieve
+Queries: 10
+Requested top_k: 5
+Strategy: omitted; backend default applies
+No indexing, evaluation, or configuration changes are requested.
+================================================================================
+
+================================================================================
+QUESTION 1
+QUERY: According to the notes, what are India's energy and oil demand projections, and what strategies are proposed to reduce oil import dependence?
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.7656
+METHOD: dense
+CHUNK_ID: chk_63ee9e4af045
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 13
+SECTION: 235 MTPA refining capacity
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"235 MTPA refining capacity","section_path":"235 MTPA refining capacity","page":13,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"6d80f1750f0a1cc11a31e392552ecd4ed605897964255bac5fc541c8e2329252","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.7656) -> reported 0.7656
+TEXT_EXCERPT: India : Oil and Gas National Targets
+â¢ More than 84% of oil and 44% of natural gas
+requirement is fulfilled through import.
+â¢ The Prime Minister vision states that India needs to
+bring down its oil import dependence by 10 per cent
+of its requirement by 2022.
+â¢ Target to be achieved with increase in domestic
+production, investments in upstream sector &
+increase in dependency towards renewable energy
+â¢ India also aims to raise the share of gas in the
+energy basket to 15% from the current s
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.7656
+METHOD: dense
+CHUNK_ID: chk_ecf1b2adb04c
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 13
+SECTION: 235 MTPA refining capacity
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"235 MTPA refining capacity","section_path":"235 MTPA refining capacity","page":13,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"6d80f1750f0a1cc11a31e392552ecd4ed605897964255bac5fc541c8e2329252","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.7656) -> reported 0.7656
+TEXT_EXCERPT: India : Oil and Gas National Targets
+â¢ More than 84% of oil and 44% of natural gas
+requirement is fulfilled through import.
+â¢ The Prime Minister vision states that India needs to
+bring down its oil import dependence by 10 per cent
+of its requirement by 2022.
+â¢ Target to be achieved with increase in domestic
+production, investments in upstream sector &
+increase in dependency towards renewable energy
+â¢ India also aims to raise the share of gas in the
+energy basket to 15% from the current s
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.7634
+METHOD: dense
+CHUNK_ID: chk_1ee0d9d4057a
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 11
+SECTION: 235 MTPA refining capacity
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"235 MTPA refining capacity","section_path":"235 MTPA refining capacity","page":11,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"2a1e8db1857cfa4898c1dce3e99a64ec4a1680a8c2168e2c52c55af4c6e29d45","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.7634) -> reported 0.7634
+TEXT_EXCERPT: India : Oil and Gas Production and Imports profile
+Fossil fuels play a major role in meeting the energy demand of the nation and are expected to continue doing so in the foreseeable future. Oil
+& gas resources form a major part of Indiaâs primary energy mix. In 2016, oil and gas accounted for over 35.6 per cent of India's total primary
+energy consumption, next only to coal, which accounts for ~57 per cent.
+Source : Indian Petroleum and Natural Gas Statistics 2015-16, MoPNG & PPAC
+33.7 37.7 38.
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.7634
+METHOD: dense
+CHUNK_ID: chk_03dbc7ebf75b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 11
+SECTION: 235 MTPA refining capacity
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"235 MTPA refining capacity","section_path":"235 MTPA refining capacity","page":11,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"2a1e8db1857cfa4898c1dce3e99a64ec4a1680a8c2168e2c52c55af4c6e29d45","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.7634) -> reported 0.7634
+TEXT_EXCERPT: India : Oil and Gas Production and Imports profile
+Fossil fuels play a major role in meeting the energy demand of the nation and are expected to continue doing so in the foreseeable future. Oil
+& gas resources form a major part of Indiaâs primary energy mix. In 2016, oil and gas accounted for over 35.6 per cent of India's total primary
+energy consumption, next only to coal, which accounts for ~57 per cent.
+Source : Indian Petroleum and Natural Gas Statistics 2015-16, MoPNG & PPAC
+33.7 37.7 38.
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.7554
+METHOD: dense
+CHUNK_ID: chk_37913c263157
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 1
+SECTION: Introduction
+PROVENANCE_JSON: {"document_id":"doc_b7250db0e043","document_title":"(anonymous)","document_version":1,"source_id":"src_3d33a23240d3","source_url":"upload://OE6008_Exam_Quick_Revision.pdf","source_title":"OE6008_Exam_Quick_Revision.pdf","source_type":"pdf","section":"Introduction","page":1,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"a6734af72459260c47a75db69a34c08e2541379cfe5e579830d098a5bff520ac","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.7554) -> reported 0.7554
+TEXT_EXCERPT: OE6008  Quick revision from uploaded lecture notes
+Page 1
+OE6008 â EXAM QUICK REVISION
+3-page high-yield summary of the uploaded notes  Use figures/years as given in the lecture slides (many are historical snapshots).
+1. Global & Indian OilâGas Scenario
+Global energy: Notes forecast total primary energy demand rising from 13,276 MTOE (2016) to 17,157 MTOE (2035). Oilâs share may fall, but
+absolute demand rises (93 to 106 mb/d by 2035). Demand growth drivers: transport and petrochemicals.
+
+================================================================================
+QUESTION 2
+QUERY: What are the differences between LNG, CNG, PNG and LPG? Include the LNG temperature, approximate density and volume reduction during liquefaction.
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.6396
+METHOD: dense
+CHUNK_ID: chk_481bfbcd0a6f
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 37
+SECTION: Treatment Of Natural Gas
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Treatment Of Natural Gas","section_path":"Treatment Of Natural Gas","page":37,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"fb0ef7dc0d58d22a8611362ffd5dc31123c82cfe88c24ebce718ccb0f3362fe1","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.6396) -> reported 0.6396
+TEXT_EXCERPT: ï¶ LNG (Liquefied Natural Gas): Natural gas cooled to
+â160 deg C and is in liquid state
+ï¶ CNG (Compressed Natural Gas):Natural gas
+compressed to high pressure (200 barg) and is in
+gaseous state. Barg pressure is the pressure, in units of bars, above or below atmospheric
+pressure. The "g" at the end of the word indicates that the measurement is not absolute pressure,
+sometimes indicated by bara.
+ï¶ PNG (Piped Natural Gas):Natural gas compressed
+to low pressure (3 barg) and is in gaseous sta
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.6396
+METHOD: dense
+CHUNK_ID: chk_141777d98a1b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 37
+SECTION: Treatment Of Natural Gas
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Treatment Of Natural Gas","section_path":"Treatment Of Natural Gas","page":37,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"fb0ef7dc0d58d22a8611362ffd5dc31123c82cfe88c24ebce718ccb0f3362fe1","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.6396) -> reported 0.6396
+TEXT_EXCERPT: ï¶ LNG (Liquefied Natural Gas): Natural gas cooled to
+â160 deg C and is in liquid state
+ï¶ CNG (Compressed Natural Gas):Natural gas
+compressed to high pressure (200 barg) and is in
+gaseous state. Barg pressure is the pressure, in units of bars, above or below atmospheric
+pressure. The "g" at the end of the word indicates that the measurement is not absolute pressure,
+sometimes indicated by bara.
+ï¶ PNG (Piped Natural Gas):Natural gas compressed
+to low pressure (3 barg) and is in gaseous sta
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.631
+METHOD: dense
+CHUNK_ID: chk_da5c334cabd2
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+PROVENANCE_JSON: {"document_id":"doc_b7250db0e043","document_title":"(anonymous)","document_version":1,"source_id":"src_3d33a23240d3","source_url":"upload://OE6008_Exam_Quick_Revision.pdf","source_title":"OE6008_Exam_Quick_Revision.pdf","source_type":"pdf","section":"Introduction","page":2,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"9c75a3f6ce57b0d1b0c06330056ce91ef4fa08382341ccf20ef02946b5711c6c","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.6310) -> reported 0.6310
+TEXT_EXCERPT: OE6008  Quick revision from uploaded lecture notes
+Page 2
+NATURAL GAS & LNG â TREATMENT AND LIQUEFACTION
+2. Definitions, properties and value chain
+LNG: natural gas cooled to about â162Â°C (cryogenic liquid); mainly methane, with ethane, propane, butane, traces of heavier hydrocarbons, nitrogen
+and trace impurities. Colourless. LNG occupies about 1/600 of the volume of natural gas; it is regasified at the receiving terminal. Density ~450 kg/mÂ³;
+flammability limits 5â15%; auto-ignition te
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.6213
+METHOD: dense
+CHUNK_ID: chk_2627c0649534
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+PROVENANCE_JSON: {"document_id":"doc_5d9c4c1baa56","document_title":"OE 6008 Short Notes","document_version":1,"source_id":"src_48acdbb41283","source_url":"upload://OE6008_Short_Notes.pdf","source_title":"OE6008_Short_Notes.pdf","source_type":"pdf","section":"92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM","section_path":"92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM","page":2,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"4b79c34386f0a42b24c0e0707c9465ce3693f0ccbec7611d56bcdd3967e470cb","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.6213) -> reported 0.6213
+TEXT_EXCERPT: OE 6008 â Short revision notes (condensed from lecture slides)
+Page 2
+Term
+Definition
+PNG
+Piped natural gas at low pressure (~3 barg), gaseous
+LPG
+Mainly propane + butane, liquid (refrigerated or pressurised)
+ LNG composition: methane (main), ethane, propane, butane, traces of pentane+, nitrogen, ppm-level sulphur/mercury.
+ Flammability limits 5%â15%; auto-ignition temperature 540 Â°C. Cryogenic = boiling point â¤ ~120 K.
+ Why LNG? To transport gas over long distances (what is produced a
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.56
+METHOD: dense
+CHUNK_ID: chk_85879865d6dc
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 39
+SECTION: Treatment Of Natural Gas
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Treatment Of Natural Gas","section_path":"Treatment Of Natural Gas","page":39,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"78c1e2f7b003cb348f9dac459e16f8681f7ecb94ad17a1d9f0b561fbb64c35ac","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.5600) -> reported 0.5600
+TEXT_EXCERPT: â¢ LNG volume is 1/600 of NG
+â¢ LNG is regasified at receiving terminal
+â¢ Quick conversions
+â¢ 1 MMT LNG = 1.23 MMT Oil Eq.
+= 4 MMSCM of NG
+â¢ 1 MMTPA of LNG can sustain power plant of 1000-
+1200 Mw
+What is LNG?
+5Lecture notes for OE 6008
+
+================================================================================
+QUESTION 3
+QUERY: Why must natural gas be treated before liquefaction? List the major impurities, their stated limits and the removal methods given in the notes.
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.6394
+METHOD: dense
+CHUNK_ID: chk_a2a5610a9b83
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 44
+SECTION: Treatment Of Natural Gas
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Treatment Of Natural Gas","section_path":"Treatment Of Natural Gas","page":44,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"f2108bf6f3dc6507da169296ea39d80470233ca371968b5b032b4a6605a25f0e","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.6394) -> reported 0.6394
+TEXT_EXCERPT: Requirement for Natural Gas Treatment
+for producing LNG
+ï¶ Technical Requirement :-
+To remove any compound that will freeze during the
+liquefaction process such as CO2 H2O, H2S, and heavy
+Hydrocarbons, if not removed, frozen crystals could plug
+filters, heat exchanger, nozzles and other equipment
+components
+To remove component such as mercury which could be
+extremely corrosive under certain condition to aluminum
+which is a metal widely used for construction of cryogenic
+exchangers
+10Lecture not
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.6394
+METHOD: dense
+CHUNK_ID: chk_22cb3fe14f00
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 44
+SECTION: Treatment Of Natural Gas
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Treatment Of Natural Gas","section_path":"Treatment Of Natural Gas","page":44,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"f2108bf6f3dc6507da169296ea39d80470233ca371968b5b032b4a6605a25f0e","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.6394) -> reported 0.6394
+TEXT_EXCERPT: Requirement for Natural Gas Treatment
+for producing LNG
+ï¶ Technical Requirement :-
+To remove any compound that will freeze during the
+liquefaction process such as CO2 H2O, H2S, and heavy
+Hydrocarbons, if not removed, frozen crystals could plug
+filters, heat exchanger, nozzles and other equipment
+components
+To remove component such as mercury which could be
+extremely corrosive under certain condition to aluminum
+which is a metal widely used for construction of cryogenic
+exchangers
+10Lecture not
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.6276
+METHOD: dense
+CHUNK_ID: chk_2627c0649534
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+PROVENANCE_JSON: {"document_id":"doc_5d9c4c1baa56","document_title":"OE 6008 Short Notes","document_version":1,"source_id":"src_48acdbb41283","source_url":"upload://OE6008_Short_Notes.pdf","source_title":"OE6008_Short_Notes.pdf","source_type":"pdf","section":"92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM","section_path":"92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM","page":2,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"4b79c34386f0a42b24c0e0707c9465ce3693f0ccbec7611d56bcdd3967e470cb","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.6276) -> reported 0.6276
+TEXT_EXCERPT: OE 6008 â Short revision notes (condensed from lecture slides)
+Page 2
+Term
+Definition
+PNG
+Piped natural gas at low pressure (~3 barg), gaseous
+LPG
+Mainly propane + butane, liquid (refrigerated or pressurised)
+ LNG composition: methane (main), ethane, propane, butane, traces of pentane+, nitrogen, ppm-level sulphur/mercury.
+ Flammability limits 5%â15%; auto-ignition temperature 540 Â°C. Cryogenic = boiling point â¤ ~120 K.
+ Why LNG? To transport gas over long distances (what is produced a
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.6154
+METHOD: dense
+CHUNK_ID: chk_0c630a865cc3
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+PROVENANCE_JSON: {"document_id":"doc_b7250db0e043","document_title":"(anonymous)","document_version":1,"source_id":"src_3d33a23240d3","source_url":"upload://OE6008_Exam_Quick_Revision.pdf","source_title":"OE6008_Exam_Quick_Revision.pdf","source_type":"pdf","section":"Lng Regasification, Market \u0026 Ship-Design Terms","section_path":"Lng Regasification, Market \u0026 Ship-Design Terms","page":3,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"69c17386803c9ce347091be13d603f4a182e1a21fc44e53362576a8a5cc72298","chunk_index":3,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.6154) -> reported 0.6154
+TEXT_EXCERPT: n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse me
+
+n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse metacentric radius; period of roll and stability parameters are also flagged.
+Likely short-answer / diagram prompts
+1) Why is natural gas treated before liquefaction? Give impurityâremoval-method pa
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.6007
+METHOD: dense
+CHUNK_ID: chk_59c11254885e
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+PROVENANCE_JSON: {"document_id":"doc_b7250db0e043","document_title":"(anonymous)","document_version":1,"source_id":"src_3d33a23240d3","source_url":"upload://OE6008_Exam_Quick_Revision.pdf","source_title":"OE6008_Exam_Quick_Revision.pdf","source_type":"pdf","section":"Introduction","page":2,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"42fbf4ddf3b32fcb0194e8bda3e8d0bf0f86c62b609a2688ee4fd1d42a9dc1f2","chunk_index":1,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.6007) -> reported 0.6007
+TEXT_EXCERPT: â LNG carrier transport â unloading/storage â regasification â gas consumers. Peak-shaving
+plants: small, intermittent; base-load plants: large, cont
+
+ â LNG carrier transport â unloading/storage â regasification â gas consumers. Peak-shaving
+plants: small, intermittent; base-load plants: large, continuous.
+3. Why natural gas must be treated
+Core reasons: prevent freezing/plugging during cryogenic cooling; prevent corrosion (especially mercury attacking aluminium cryogenic exchan
+
+================================================================================
+QUESTION 4
+QUERY: Explain the amine gas-sweetening process, including absorption and regeneration conditions, and the problems associated with amine systems.
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.577
+METHOD: dense
+CHUNK_ID: chk_edbcefb7b7b5
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 55
+SECTION: Block Diagram Of Gas Processing Complex
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Block Diagram Of Gas Processing Complex","section_path":"Block Diagram Of Gas Processing Complex","page":55,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"85f3ae362bb62bc2f7aa7e970de27aea07d804e67830e539ec2100edd4fd051c","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.5770) -> reported 0.5770
+TEXT_EXCERPT: â¢ H2S & CO2 are corrosive in presence of water
+â¢ Sweetening is required for making gas saleable.
+â¢ H2S (due to toxicity) and CO2 (due to lack of heating
+value) are to be removed by processes usually by
+amine solvents are known as Gas sweetening.
+â¢ Sour Gas (Natural gas containing more than 4PPM
+H2S) is to be treated in GSU for removal of H2S.
+During removal of H2S, some CO2 also gets removed.
+Sweet Gas: Gas containing less than 4PPM H2S
+Gas Sweetening
+21Lecture notes for OE 6008
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.577
+METHOD: dense
+CHUNK_ID: chk_e8ec142c5e75
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 55
+SECTION: Block Diagram Of Gas Processing Complex
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Block Diagram Of Gas Processing Complex","section_path":"Block Diagram Of Gas Processing Complex","page":55,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"85f3ae362bb62bc2f7aa7e970de27aea07d804e67830e539ec2100edd4fd051c","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.5770) -> reported 0.5770
+TEXT_EXCERPT: â¢ H2S & CO2 are corrosive in presence of water
+â¢ Sweetening is required for making gas saleable.
+â¢ H2S (due to toxicity) and CO2 (due to lack of heating
+value) are to be removed by processes usually by
+amine solvents are known as Gas sweetening.
+â¢ Sour Gas (Natural gas containing more than 4PPM
+H2S) is to be treated in GSU for removal of H2S.
+During removal of H2S, some CO2 also gets removed.
+Sweet Gas: Gas containing less than 4PPM H2S
+Gas Sweetening
+21Lecture notes for OE 6008
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.5657
+METHOD: dense
+CHUNK_ID: chk_3834e7ab260e
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 56
+SECTION: Block Diagram Of Gas Processing Complex
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Block Diagram Of Gas Processing Complex","section_path":"Block Diagram Of Gas Processing Complex","page":56,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"627c6c0d51f2986e819a7be78da5abd6182c952845c92fe7ebf0b0f357429048","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.5657) -> reported 0.5657
+TEXT_EXCERPT: MDEA (Mono di-ethanol amine) Advantage
+â¢ MDEA process has an advantage of
+selective absorption of H2S from the
+natural gas, leaving large amount of CO2 in
+the gas
+â¢ DEA(Di ethanol amine) & MEA(Mono
+ethanol amine) also used for sweetening,
+however MDEA is preferred due to above
+mentioned advantage.
+22Lecture notes for OE 6008
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.5657
+METHOD: dense
+CHUNK_ID: chk_cec8e5d4e4c2
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 56
+SECTION: Block Diagram Of Gas Processing Complex
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Block Diagram Of Gas Processing Complex","section_path":"Block Diagram Of Gas Processing Complex","page":56,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"627c6c0d51f2986e819a7be78da5abd6182c952845c92fe7ebf0b0f357429048","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.5657) -> reported 0.5657
+TEXT_EXCERPT: MDEA (Mono di-ethanol amine) Advantage
+â¢ MDEA process has an advantage of
+selective absorption of H2S from the
+natural gas, leaving large amount of CO2 in
+the gas
+â¢ DEA(Di ethanol amine) & MEA(Mono
+ethanol amine) also used for sweetening,
+however MDEA is preferred due to above
+mentioned advantage.
+22Lecture notes for OE 6008
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.5417
+METHOD: dense
+CHUNK_ID: chk_0bd116ddd47e
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 61
+SECTION: Block Diagram Of Gas Processing Complex
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Block Diagram Of Gas Processing Complex","section_path":"Block Diagram Of Gas Processing Complex","page":61,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"4a4c7aa1acfc21a5b05d315ce82fb51a507fced802e7d3f97556e705bd960747","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.5417) -> reported 0.5417
+TEXT_EXCERPT: Parameters
+â¢ H2S content in sweetened gas or sweet gas
+â¢ MDEA circulation rate
+â¢ H2S content in lean amine(regnd MDEA)
+â¢ Inlet gas & MDEA temperature
+â¢ Pressure drop in absorber column
+â¢ Pressure drop in regenerator column
+â¢ Level in MDEA Tank
+27Lecture notes for OE 6008
+
+================================================================================
+QUESTION 5
+QUERY: Explain LNG liquefaction and flashing. What happens to the liquid and vapour phases, and why does nitrogen concentrate in flash gas?
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.7287
+METHOD: dense
+CHUNK_ID: chk_fcdb8025c12f
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 75
+SECTION: Liquefaction Plants
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Liquefaction Plants","section_path":"Liquefaction Plants","page":75,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"a891f8e3cd4e6a9e5491be029f35c47923085e2ee3b29f24f397ea207acab609","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.7287) -> reported 0.7287
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Because nitrogen has lower boiling temperature than
+methane, it will have a significantly higher concentration
+in the vapor, which reduces the nitrogen concentration in
+the LNG
+The flash gas is about the only place to remove nitrogen
+and reduce its concentration in the LGN product
+LNG Flashing is done by :
+ï¶ Control (JT) Valves
+ï¶Turbo Expanders
+41Lecture notes for OE 6008
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.7287
+METHOD: dense
+CHUNK_ID: chk_1b405fd11a75
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 75
+SECTION: Liquefaction Plants
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Liquefaction Plants","section_path":"Liquefaction Plants","page":75,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"a891f8e3cd4e6a9e5491be029f35c47923085e2ee3b29f24f397ea207acab609","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.7287) -> reported 0.7287
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Because nitrogen has lower boiling temperature than
+methane, it will have a significantly higher concentration
+in the vapor, which reduces the nitrogen concentration in
+the LNG
+The flash gas is about the only place to remove nitrogen
+and reduce its concentration in the LGN product
+LNG Flashing is done by :
+ï¶ Control (JT) Valves
+ï¶Turbo Expanders
+41Lecture notes for OE 6008
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.7049
+METHOD: dense
+CHUNK_ID: chk_ed3e65adca7b
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 74
+SECTION: Liquefaction Plants
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Liquefaction Plants","section_path":"Liquefaction Plants","page":74,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"ac15342248a38c5675fba7c6065d6b2fd1bd85744b6df6543c50c67388021662","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.7049) -> reported 0.7049
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Reducing the pressure across a valve and not adding or
+taking heat form the process stream creates a lower
+boiling point and results in a portion of the stream being
+vaporized
+Temperature is reduces, and the resulting stream contains
+liquid and vapor at the new conditions
+The liquid is the product LNG and the remaining vapor is
+called the flash gas
+The flash gas is either disposed of onsite or sent off with
+the heavies made earlier in the process.
+40Lecture note
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.7049
+METHOD: dense
+CHUNK_ID: chk_8fedf5c833f4
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 74
+SECTION: Liquefaction Plants
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Liquefaction Plants","section_path":"Liquefaction Plants","page":74,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"ac15342248a38c5675fba7c6065d6b2fd1bd85744b6df6543c50c67388021662","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.7049) -> reported 0.7049
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Reducing the pressure across a valve and not adding or
+taking heat form the process stream creates a lower
+boiling point and results in a portion of the stream being
+vaporized
+Temperature is reduces, and the resulting stream contains
+liquid and vapor at the new conditions
+The liquid is the product LNG and the remaining vapor is
+called the flash gas
+The flash gas is either disposed of onsite or sent off with
+the heavies made earlier in the process.
+40Lecture note
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.6388
+METHOD: dense
+CHUNK_ID: chk_70f5e8f45b71
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 66
+SECTION: Liquefaction Plants
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Liquefaction Plants","section_path":"Liquefaction Plants","page":66,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"a3824cc19dbc2445612232db5fb3045fe09262426e7f2f5fe874cd0be78918dd","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.6388) -> reported 0.6388
+TEXT_EXCERPT: What makes LNG Technology Special
+ï¶ LNG is a cryogenic liquid
+ï¶ The liquefaction process is thermodynamic rather than
+chemical
+ï¶ The material used in construction of equipment in
+contact with the low temperatures and associated
+systems are specialized
+ï¶ Cryogenic materials must be able to remain ductile at
+very low temperatures
+ï¶ Data on the cryogenic capabilities of material cannot be
+extrapolated. Actual testing for suitability must take
+place.
+32Lecture notes for OE 6008
+
+================================================================================
+QUESTION 6
+QUERY: Compare the Cascade, SMR, C3MR/APCI, DMR and nitrogen-expansion liquefaction processes as described in the notes.
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.6712
+METHOD: dense
+CHUNK_ID: chk_9daabdc08f4a
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 82
+SECTION: Liquefaction Plants
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Liquefaction Plants","section_path":"Liquefaction Plants","page":82,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"bb76eeb9c539257a845682ec201e434b963c5169ba1a17a840eba40245089fcc","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.6712) -> reported 0.6712
+TEXT_EXCERPT: ïCascade Process
+ïMulti component Refrigeration
+ï¶ Single Mixed Refrigerant (SMR) Process
+ï¶C3MR(Propane-Mixed Refrigerant)Process
+ï¶DMR (Dual Mixed Refrigerant)Process
+ï¶APX Process
+ïNitrogen Expansion Cycle
+Various LNG Liquefaction Processes
+48Lecture notes for OE 6008
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.6712
+METHOD: dense
+CHUNK_ID: chk_2f4b57da21bd
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 82
+SECTION: Liquefaction Plants
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Liquefaction Plants","section_path":"Liquefaction Plants","page":82,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"bb76eeb9c539257a845682ec201e434b963c5169ba1a17a840eba40245089fcc","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.6712) -> reported 0.6712
+TEXT_EXCERPT: ïCascade Process
+ïMulti component Refrigeration
+ï¶ Single Mixed Refrigerant (SMR) Process
+ï¶C3MR(Propane-Mixed Refrigerant)Process
+ï¶DMR (Dual Mixed Refrigerant)Process
+ï¶APX Process
+ïNitrogen Expansion Cycle
+Various LNG Liquefaction Processes
+48Lecture notes for OE 6008
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.6005
+METHOD: dense
+CHUNK_ID: chk_b04e2775b7b0
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+PROVENANCE_JSON: {"document_id":"doc_5d9c4c1baa56","document_title":"OE 6008 Short Notes","document_version":1,"source_id":"src_48acdbb41283","source_url":"upload://OE6008_Short_Notes.pdf","source_title":"OE6008_Short_Notes.pdf","source_type":"pdf","section":"92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM","section_path":"92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM","page":2,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"0bc41a68904a9d1bd7a713b1fcc810c38a84c888e837a18513158539309da2f8","chunk_index":3,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.6005) -> reported 0.6005
+TEXT_EXCERPT: on section (compressors, turbo-expanders, drivers, separators), storage and transfer
+(single/double/full-containment tanks, pumps), LNG flash, boil-of
+
+on section (compressors, turbo-expanders, drivers, separators), storage and transfer
+(single/double/full-containment tanks, pumps), LNG flash, boil-off gas recovery (blowers, heat exchangers, compressors).
+ Heat exchangers: shell-and-tube (inter/after-coolers); refrigeration duty â kettle type, brazed aluminium plate-fin, spiral
+wound.
+Liquefa
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.5469
+METHOD: dense
+CHUNK_ID: chk_3fa2b95aa682
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+PROVENANCE_JSON: {"document_id":"doc_b7250db0e043","document_title":"(anonymous)","document_version":1,"source_id":"src_3d33a23240d3","source_url":"upload://OE6008_Exam_Quick_Revision.pdf","source_title":"OE6008_Exam_Quick_Revision.pdf","source_type":"pdf","section":"Introduction","page":2,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"2f3d4bf135d8f695cff559df93c32a0e511aa8cc57ad4ce0284df45e54431826","chunk_index":3,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.5469) -> reported 0.5469
+TEXT_EXCERPT: ipment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compressors
+
+pment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compressors
+for boil-off gas.
+Flashing / JT effect: pressure is reduced across a valve without heat addition/removal; some liquid flashes to vapour and temperature falls. Liquid is
+LNG; vapour is flash gas.
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.5195
+METHOD: dense
+CHUNK_ID: chk_222d04bb10fa
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 89
+SECTION: Subcooling
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Subcooling","section_path":"Subcooling","page":89,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"33d6e09f89d35ca53643dff30b405cd7c10985c429a0c0bd14e78d6a0b446060","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.5195) -> reported 0.5195
+TEXT_EXCERPT: Evolution of LNG liquefaction Capacity
+55Lecture notes for OE 6008
+
+================================================================================
+QUESTION 7
+QUERY: Compare ORV, SCV, IFV/STV, IFV-Rankine and AAV regasification systems. Why were air heaters and STVs selected for the Dahej case described?
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.5767
+METHOD: dense
+CHUNK_ID: chk_41dd34316c96
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 3
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+PROVENANCE_JSON: {"document_id":"doc_5d9c4c1baa56","document_title":"OE 6008 Short Notes","document_version":1,"source_id":"src_48acdbb41283","source_url":"upload://OE6008_Short_Notes.pdf","source_title":"OE6008_Short_Notes.pdf","source_type":"pdf","section":"92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM","section_path":"92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM","page":3,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"0db5fcfee54e8ef46e6c718072fb5018b2b1b44bdcb1bdc67b734d17bccf7872","chunk_index":1,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.5767) -> reported 0.5767
+TEXT_EXCERPT: diate
+Fluid (STV)
+Closed loop of glycol-water (or propane)
+to carry heat from air/seawater;
+shell-and-tube
+Lowest opex, simple; best in
+warm climates;
+
+diate
+Fluid (STV)
+Closed loop of glycol-water (or propane)
+to carry heat from air/seawater;
+shell-and-tube
+Lowest opex, simple; best in
+warm climates; condensate
+is pure water
+Large space; cold-air recirculation,
+fog, condensate removal
+IFV with Rankine
+cycle
+Uses LNG cold energy for power
+generation
+No GHG, power output
+High capex, complex, poor
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.5449
+METHOD: dense
+CHUNK_ID: chk_8dfa7d2a5674
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 121
+SECTION: Thank You
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Thank You","section_path":"Thank You","page":121,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"a15485fbdb90b4b2d80ac20243cec482102c3e7954c7b9de9ea0b23574f54ca3","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.5449) -> reported 0.5449
+TEXT_EXCERPT: Case Study
+-
+Dahej
+3
+1
+â¢ Open Rack Vaporizers (ORVs) Not Feasible
+â High Turbidity
+â High Concentration of Copper ions
+â¢ Submerged Combustion Vapourizers (SCVs) not
+accepted for Normal operation due to operating
+expenses & Environmental considerations
+â¢ Non-availability of power plant or other heat
+source in the vicinity for integrated vaporizers
+â¢ Weather conditions (warm & Humid) offered the
+opportunity for harnessing the Ambient Heat
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.5449
+METHOD: dense
+CHUNK_ID: chk_25f7f1deb5ee
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 121
+SECTION: Thank You
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Thank You","section_path":"Thank You","page":121,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"a15485fbdb90b4b2d80ac20243cec482102c3e7954c7b9de9ea0b23574f54ca3","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.5449) -> reported 0.5449
+TEXT_EXCERPT: Case Study
+-
+Dahej
+3
+1
+â¢ Open Rack Vaporizers (ORVs) Not Feasible
+â High Turbidity
+â High Concentration of Copper ions
+â¢ Submerged Combustion Vapourizers (SCVs) not
+accepted for Normal operation due to operating
+expenses & Environmental considerations
+â¢ Non-availability of power plant or other heat
+source in the vicinity for integrated vaporizers
+â¢ Weather conditions (warm & Humid) offered the
+opportunity for harnessing the Ambient Heat
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.5057
+METHOD: dense
+CHUNK_ID: chk_98525c5fd45d
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+PROVENANCE_JSON: {"document_id":"doc_b7250db0e043","document_title":"(anonymous)","document_version":1,"source_id":"src_3d33a23240d3","source_url":"upload://OE6008_Exam_Quick_Revision.pdf","source_title":"OE6008_Exam_Quick_Revision.pdf","source_type":"pdf","section":"Lng Regasification, Market \u0026 Ship-Design Terms","section_path":"Lng Regasification, Market \u0026 Ship-Design Terms","page":3,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"d27cf6c201d3268876c8270f8eab64bf3b39a0945d82a6bf5d757043eac34aa3","chunk_index":1,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.5057) -> reported 0.5057
+TEXT_EXCERPT: lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SCV in t
+
+lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SCV in the notes. Rankine-cycle designs can use LNG cold energy for power generation, but have much higher capital cost.
+Ambient Air Vaporizer (AAV): uses ambient air as the heat source; simple/low dire
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.5041
+METHOD: dense
+CHUNK_ID: chk_3a2d007d441b
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 96
+SECTION: Thank You
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Thank You","section_path":"Thank You","page":96,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"9ee4092323c159272127fb915c4391a2240cceedd3836f49d8eabc00ae949e2c","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.5041) -> reported 0.5041
+TEXT_EXCERPT: Vaporizer Selection History
+6
+ï Traditionally base load regasification terminals have used
+following types of vaporizers
+ï 70% uses the Open rack Vaporizer (ORV),
+ï 25% uses the Submerged Combustion
+Vaporizer (SCV)
+ï 5% uses the Intermediate Fluid vaporizer
+(IFV)
+
+================================================================================
+QUESTION 8
+QUERY: Describe the LNG supply chain and summarise the global LNG market and contract trends in the historical lecture snapshot.
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.5807
+METHOD: dense
+CHUNK_ID: chk_30215e670367
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 137
+SECTION: Lng Emerging Trends
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Lng Emerging Trends","section_path":"Lng Emerging Trends","page":137,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"2c14b936f19cd5761fa1643286547db550100857839d5be73c9c4eed042fd313","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.5807) -> reported 0.5807
+TEXT_EXCERPT: ï LNG markets to remain oversupplied for next 5-7 years
+ï Supply increases created a more bearish price
+environment, with Asia spot LNG hovering to lows of
+around $5mmbtu (except during winter) during 2017.
+ï Projected crude price to stay around $50- 60 bbl over next
+few years
+ï FSRUâs and new markets in Asia to drive the demand
+ï Spot LNG trade to increase as LNG becomes more Liquid
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.5807
+METHOD: dense
+CHUNK_ID: chk_cb2c50849a95
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 137
+SECTION: Lng Emerging Trends
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Lng Emerging Trends","section_path":"Lng Emerging Trends","page":137,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"2c14b936f19cd5761fa1643286547db550100857839d5be73c9c4eed042fd313","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.5807) -> reported 0.5807
+TEXT_EXCERPT: ï LNG markets to remain oversupplied for next 5-7 years
+ï Supply increases created a more bearish price
+environment, with Asia spot LNG hovering to lows of
+around $5mmbtu (except during winter) during 2017.
+ï Projected crude price to stay around $50- 60 bbl over next
+few years
+ï FSRUâs and new markets in Asia to drive the demand
+ï Spot LNG trade to increase as LNG becomes more Liquid
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.575
+METHOD: dense
+CHUNK_ID: chk_f47f18c1fbc4
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 130
+SECTION: Overview
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Overview","section_path":"Overview","page":130,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"453d5d37493abaeddaab93dfca580985b91194b0a81d28830fc2018b8e41fac5","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.5750) -> reported 0.5750
+TEXT_EXCERPT: ïWorld LNG Scenario & LNG Chain
+ïDomestic Supply â Demand Scenario
+ïDomestic Re-gasification Capacity Built â up
+ïGas Pipeline Grid
+2
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.575
+METHOD: dense
+CHUNK_ID: chk_a379e442c42b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 130
+SECTION: Overview
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Overview","section_path":"Overview","page":130,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"453d5d37493abaeddaab93dfca580985b91194b0a81d28830fc2018b8e41fac5","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.5750) -> reported 0.5750
+TEXT_EXCERPT: ïWorld LNG Scenario & LNG Chain
+ïDomestic Supply â Demand Scenario
+ïDomestic Re-gasification Capacity Built â up
+ïGas Pipeline Grid
+2
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.5713
+METHOD: dense
+CHUNK_ID: chk_1c6e29e77d5a
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 148
+SECTION: Lng Sourcing For India
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Lng Sourcing For India","section_path":"Lng Sourcing For India","page":148,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"0ec1da54cc7fe4e097c3a33aa16c30bc03036d2819045647008e7a9faa4986f2","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.5713) -> reported 0.5713
+TEXT_EXCERPT: ï Development of terminals merchant terminals providing capacity
+ï Increase in Spot/ Short Term Trade
+ï New opportunities available in form bunkering, gassing-up,
+supply of LNG on small scale to neighboring countries and costal
+movement through barges
+Year
+Total
+Import Spot/ Short Term % (Spot to Total)
+2010 8.9 1.6 17.9
+2011 12.3 4.1 33.7
+2012 13.4 5.7 43.0
+2013 13.0 5.5 42.4
+2015 14.5 6.7 46.3
+2015 14.6 9.7 66.4
+2016 19.0 9.9 52.1
+
+================================================================================
+QUESTION 9
+QUERY: What LNG infrastructure figures are provided for India, including pipeline capacity, existing terminals and the opportunities identified in the notes?
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.6544
+METHOD: dense
+CHUNK_ID: chk_8c27f8b6c5bb
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 144
+SECTION: Costs Across Lng Value Chain
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Costs Across Lng Value Chain","section_path":"Costs Across Lng Value Chain","page":144,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"b1688dfc942d0020db3d9a2458b655d69d79fa77477dc27b4a1780e8f425b677","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.6544) -> reported 0.6544
+TEXT_EXCERPT: INDIA â A MAJOR GAS/LNG CONSUMER
+ï 16th largest gas consumer â 50 bcm (~132 mmscmd)
+ï 4th largest LNG importer â 22.5 bcm (~59mmscmd)
+ï Economy growing at CAGR of about 6-7% with similar growth in Energy Consumption
+ï Government aims to increase share of Natural Gas in Indian Energy basket from 7% to
+20% by 2025
+ï Despite increase in domestic gas production- dependency on imported gas to increase
+substantially
+ï Pipeline network- developing into a national grid- needs to grow f
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.6544
+METHOD: dense
+CHUNK_ID: chk_1e07a9434d09
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 144
+SECTION: Costs Across Lng Value Chain
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Costs Across Lng Value Chain","section_path":"Costs Across Lng Value Chain","page":144,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"b1688dfc942d0020db3d9a2458b655d69d79fa77477dc27b4a1780e8f425b677","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.6544) -> reported 0.6544
+TEXT_EXCERPT: INDIA â A MAJOR GAS/LNG CONSUMER
+ï 16th largest gas consumer â 50 bcm (~132 mmscmd)
+ï 4th largest LNG importer â 22.5 bcm (~59mmscmd)
+ï Economy growing at CAGR of about 6-7% with similar growth in Energy Consumption
+ï Government aims to increase share of Natural Gas in Indian Energy basket from 7% to
+20% by 2025
+ï Despite increase in domestic gas production- dependency on imported gas to increase
+substantially
+ï Pipeline network- developing into a national grid- needs to grow f
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.6404
+METHOD: dense
+CHUNK_ID: chk_e91e564b122b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 18
+SECTION: 235 MTPA refining capacity
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"235 MTPA refining capacity","section_path":"235 MTPA refining capacity","page":18,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"49b8d04bbb0f2fb62c47545295ad00993d31455633dd86fd012b245ae6a63c05","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.6404) -> reported 0.6404
+TEXT_EXCERPT: Natural Gas Pipelines Network in India
+â¢ Existing pipeline connectivity of over
+16000 km with a capacity of around 430
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.6404
+METHOD: dense
+CHUNK_ID: chk_29447cbe08d0
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 18
+SECTION: 235 MTPA refining capacity
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"235 MTPA refining capacity","section_path":"235 MTPA refining capacity","page":18,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"49b8d04bbb0f2fb62c47545295ad00993d31455633dd86fd012b245ae6a63c05","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.6404) -> reported 0.6404
+TEXT_EXCERPT: Natural Gas Pipelines Network in India
+â¢ Existing pipeline connectivity of over
+16000 km with a capacity of around 430
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.6332
+METHOD: dense
+CHUNK_ID: chk_af99cf5d51bd
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 149
+SECTION: Lng Sourcing For India
+PROVENANCE_JSON: {"document_id":"doc_a762e90876ac","document_title":"OE6008_Q1 portions.pdf","document_version":1,"source_id":"src_13e1ee100403","source_url":"upload://OE6008_Q1 portions.pdf","source_title":"OE6008_Q1 portions.pdf","source_type":"pdf","section":"Lng Sourcing For India","section_path":"Lng Sourcing For India","page":149,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"647900385dd73f394a145c82d8f1a3a0bbee585125755316b5a76030d367a4da","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.6332) -> reported 0.6332
+TEXT_EXCERPT: Dahej
+Kochi
+Gangavaram
+INDIAâS GAS INFRASTRUCTURE
+Hazira
+Dabhol
+Mundra
+Kakinada
+Ennore
+Dhamra
+Digha
+Kolkatta
+Krishnapattam
+Jaigarh
+Jafarbad
+Chhara
+Pipelines Length
+(Kms)
+Designed
+Capacity
+(MMSCMD)
+Existing 16150 384
+Under
+Implementat
+ion
+13821 551
+Total 29971
+
+================================================================================
+QUESTION 10
+QUERY: Define CB, CM and CWL for LNG ship design. Explain KB, KM, GMT and the roll-period formula, including the effect of very high GM.
+TOP_K: 5
+HTTP: SUCCESS
+RESULT_COUNT: 5
+RESPONSE_STRATEGY: dense
+RETRIEVAL_BACKEND: qdrant-dense
+EMBEDDING_MODEL: sentence-transformers/sentence-transformers/all-MiniLM-L6-v2 (384d)
+EMBEDDING_IS_FALLBACK: False
+RESPONSE_ERROR: 
+CORPUS_FINGERPRINT: N/A
+
+--- RESULT ---
+RANK: 1
+SCORE: 0.5378
+METHOD: dense
+CHUNK_ID: chk_f17f22a8d371
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 4
+SECTION: Gail, Ntpc
+PROVENANCE_JSON: {"document_id":"doc_5d9c4c1baa56","document_title":"OE 6008 Short Notes","document_version":1,"source_id":"src_48acdbb41283","source_url":"upload://OE6008_Short_Notes.pdf","source_title":"OE6008_Short_Notes.pdf","source_type":"pdf","section":"Gail, Ntpc","section_path":"Gail, Ntpc","page":4,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"8868a16151097ab726fd6b579fd04f9863ceafa0a14b671b8b5d5efb01bc9f96","chunk_index":1,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 1 (cosine 0.5378) -> reported 0.5378
+TEXT_EXCERPT: st CB (Schneekluth: lcb = â0.135 + 0.194Â·CB for
+tankers/bulkers).
+ BMT (transverse metacentric radius) = IT/â, with IT = ktÂ·BÂ³Â·L (waterplane transver
+
+st CB (Schneekluth: lcb = â0.135 + 0.194Â·CB for
+tankers/bulkers).
+ BMT (transverse metacentric radius) = IT/â, with IT = ktÂ·BÂ³Â·L (waterplane transverse inertia). BML = IL/â, with IL = klÂ·BÂ·LÂ³. k
+values are tabulated against CWL.
+ KM = KB + BM (metacentric height above keel). GMT = KM â KG (stability measure).
+ Period of 
+
+--- RESULT ---
+RANK: 2
+SCORE: 0.5134
+METHOD: dense
+CHUNK_ID: chk_0a39d98991d4
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+PROVENANCE_JSON: {"document_id":"doc_b7250db0e043","document_title":"(anonymous)","document_version":1,"source_id":"src_3d33a23240d3","source_url":"upload://OE6008_Exam_Quick_Revision.pdf","source_title":"OE6008_Exam_Quick_Revision.pdf","source_type":"pdf","section":"Lng Regasification, Market \u0026 Ship-Design Terms","section_path":"Lng Regasification, Market \u0026 Ship-Design Terms","page":3,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"c8d866483e50d2b4308433ca122554c3b660278b2231204f15a60c0f714489a4","chunk_index":2,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 2 (cosine 0.5134) -> reported 0.5134
+TEXT_EXCERPT: emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas pip
+
+emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas pipelines, city-gas distribution, CNG/PNG networks and storage. Notes emphasise long-term LNG contracting for
+energy security, robust infrastructure development, new markets (small-scale LNG, LCNG, coa
+
+--- RESULT ---
+RANK: 3
+SCORE: 0.4923
+METHOD: dense
+CHUNK_ID: chk_ec1af31f7d79
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 156
+SECTION: Thank You
+PROVENANCE_JSON: {"document_id":"doc_9c7e207da4d2","document_title":"OE6008_Q1 portions_merged.pdf","document_version":1,"source_id":"src_2b3491447b9a","source_url":"upload://OE6008_Q1 portions_merged.pdf","source_title":"OE6008_Q1 portions_merged.pdf","source_type":"pdf","section":"Thank You","section_path":"Thank You","page":156,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"e27e67f60a200bea602e9fd0bdac87061148ca6c7b96df85fee7f0bca20bd0cb","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 3 (cosine 0.4923) -> reported 0.4923
+TEXT_EXCERPT: Lecture Notes - OE 6008
+Basic LNG Ship Design Process
+
+Prof. R. Sharma
+E-mail: rajivatri@iitm.ac.in
+
+--- RESULT ---
+RANK: 4
+SCORE: 0.4923
+METHOD: dense
+CHUNK_ID: chk_647049f2dd99
+DOCUMENT_ID: doc_652dcd8322f5
+SOURCE_TITLE: OE6008_Q1.1 portions.pdf
+PAGE: 1
+SECTION: Introduction
+PROVENANCE_JSON: {"document_id":"doc_652dcd8322f5","document_title":"OE6008_Q1.1 portions.pdf","document_version":1,"source_id":"src_37b0546c44fd","source_url":"upload://OE6008_Q1.1 portions.pdf","source_title":"OE6008_Q1.1 portions.pdf","source_type":"pdf","section":"Introduction","page":1,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"e27e67f60a200bea602e9fd0bdac87061148ca6c7b96df85fee7f0bca20bd0cb","chunk_index":0,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 4 (cosine 0.4923) -> reported 0.4923
+TEXT_EXCERPT: Lecture Notes - OE 6008
+Basic LNG Ship Design Process
+
+Prof. R. Sharma
+E-mail: rajivatri@iitm.ac.in
+
+--- RESULT ---
+RANK: 5
+SCORE: 0.4627
+METHOD: dense
+CHUNK_ID: chk_f381fee78ddf
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 2
+SECTION: Introduction
+PROVENANCE_JSON: {"document_id":"doc_09123602d55a","document_title":"(anonymous)","document_version":1,"source_id":"src_7c8913fa41fd","source_url":"upload://OE6008_Final_10min_Handwritten_Notes.pdf","source_title":"OE6008_Final_10min_Handwritten_Notes.pdf","source_type":"pdf","section":"Introduction","page":2,"domain":"NA","trust_score":1.0,"user_provided":true,"content_hash":"8576d81e88f820d66e57e8e2df69870d3e0117aa9dcb376b2a49e29e9b934ce5","chunk_index":4,"chunking_strategy":"section-aware","chunking_config":{"target_size":1200,"overlap":150,"config_version":"v1"},"kb_version":2}
+WHY: dense rank 5 (cosine 0.4627) -> reported 0.4627
+TEXT_EXCERPT: atsoulis, Kerlen,
+Parson, Munro-Smith, etc.).
+CB block coefficient = â/(LBT); CM midship coefficient = AM/(BT); CWL waterplane coefficient = AWL/(LB).
+
+atsoulis, Kerlen,
+Parson, Munro-Smith, etc.).
+CB block coefficient = â/(LBT); CM midship coefficient = AM/(BT); CWL waterplane coefficient = AWL/(LB). KB = keel to centre of buoyancy (~0.53T for full forms);
+LCB = longitudinal centre of buoyancy (% Lpp; tanker/bulker relation in notes: lcb = â0.135 + 0.194 CB).
+BMT = IT/â, IT = ktBÂ³L; BM
+
+================================================================================
+SUMMARY
+TOTAL_QUESTIONS: 10
+SUCCESSFUL_REQUESTS: 10
+FAILED_REQUESTS: 0
+NOTE: Successful HTTP responses do not by themselves prove retrieval quality.
+NOTE: Review source excerpts and provenance to judge relevance.
+================================================================================

@@ -264,8 +264,12 @@ function SidebarContent({
         )}
         <Icon className={cn("h-4 w-4 shrink-0", active ? "text-accent-soft" : "text-ink-faint group-hover:text-ink-muted")} />
         {!collapsed && <span className="min-w-0 flex-1 truncate">{label}</span>}
+        {/* Hover hint is an absolute overlay: reserving inline space for it
+            squeezed nav labels to zero width on narrow rows. */}
         {!collapsed && hint && (
-          <span className="shrink-0 text-2xs text-ink-ghost opacity-0 transition-opacity group-hover:opacity-100">{hint}</span>
+          <span className="pointer-events-none absolute right-2 top-1/2 hidden max-w-[65%] -translate-y-1/2 truncate whitespace-nowrap rounded bg-surface-3/95 px-1.5 py-0.5 text-2xs text-ink-ghost shadow-raise group-hover:block">
+            {hint}
+          </span>
         )}
         {collapsed && (
           <span className="pointer-events-none absolute left-full z-50 ml-2 hidden whitespace-nowrap rounded border border-line-strong bg-surface-3 px-2 py-1 text-2xs text-ink shadow-raise group-hover:block">

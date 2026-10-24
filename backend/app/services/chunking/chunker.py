@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 from app.schemas.models import Chunk, Document, Source
 from app.utils.ids import new_id
-from app.utils.text import sha256_text
+from app.utils.text import sha256_text, strip_running_headers
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +118,63 @@ def split_into_sections(text: str) -> list[Section]:
     return sections
 
 
+#: How far a window boundary may travel to land on whitespace before it is
+#: accepted as-is. Generous enough for long unbroken identifiers, small enough
+#: that a window never grows far past its declared target.
+_SNAP_SLACK = 120
+
+
+def _snap_end(text: str, end: int, limit: int) -> int:
+    """Move a window END so it does not cut through a word.
+
+    Tries forward to the next whitespace (bounded by ``limit``), then backwards
+    to the previous whitespace, then gives up and returns ``end`` unchanged.
+    """
+    if end >= len(text) or text[end].isspace() or text[end - 1].isspace():
+        return end
+    forward = end
+    stop = min(len(text), limit + _SNAP_SLACK)
+    while forward < stop and not text[forward].isspace():
+        forward += 1
+    if forward < len(text) and text[forward].isspace():
+        return forward
+    back = end
+    while back > 0 and not text[back - 1].isspace():
+        back -= 1
+    return back if back > 0 else end
+
+
+def _snap_start(text: str, start: int) -> int:
+    """Move a window START to the first character after whitespace.
+
+    V22 defect this fixes: overlapping windows were built with a raw
+    ``buf[-overlap:]`` slice, so chunks began mid-word. Real examples found in the
+    indexed Network Engineering corpus: ``'iled discussion of inverse queries'``
+    (from "detailed"), ``'tandards Track [Page 201]'`` (from "Standards"),
+    ``'g section. Note that Application Data'`` (from "following"). A chunk that
+    starts inside a word loses the head of its first sentence, which is exactly
+    the span a reader (and an embedding) needs to identify the topic.
+    """
+    if start <= 0:
+        return 0
+    limit = min(len(text), start + _SNAP_SLACK)
+    pos = start
+    while pos < limit and not text[pos].isspace():
+        pos += 1
+    if pos >= len(text):
+        return len(text)
+    while pos < len(text) and text[pos].isspace():
+        pos += 1
+    return pos
+
+
 def _split_long_text(text: str, target: int, overlap: int) -> list[str]:
     """Split a long section into overlapping windows, preferring paragraph
-    boundaries; hard-splitting paragraphs that alone exceed the target."""
+    boundaries; hard-splitting paragraphs that alone exceed the target.
+
+    Windows never begin or end inside a word (`_snap_start` / `_snap_end`), so
+    the overlap carries whole words and phrases instead of word fragments.
+    """
     if len(text) <= target:
         return [text]
 
@@ -131,17 +185,32 @@ def _split_long_text(text: str, target: int, overlap: int) -> list[str]:
             paragraphs.append(para)
             continue
         step = max(1, target - overlap)
-        for start in range(0, len(para), step):
-            piece = para[start : start + target]
+        start = 0
+        while start < len(para):
+            start = _snap_start(para, start)
+            if start >= len(para):
+                break
+            end = _snap_end(para, min(len(para), start + target), target)
+            piece = para[start:end]
             if piece.strip():
                 paragraphs.append(piece)
+            if end >= len(para):
+                break
+            # Next window starts `overlap` characters back, snapped forward to a
+            # word boundary, and MUST advance or an unbroken string would loop.
+            next_start = _snap_start(para, max(start + 1, end - overlap))
+            start = next_start if next_start > start else _snap_start(para, end)
 
     parts: list[str] = []
     buf = ""
     for para in paragraphs:
         if len(buf) + len(para) + 2 > target and buf:
             parts.append(buf.strip())
-            tail = buf[-overlap:] if overlap > 0 else ""
+            tail = ""
+            if overlap > 0:
+                # Snap the overlap so the next chunk does not start mid-word.
+                snapped = _snap_start(buf, max(0, len(buf) - overlap))
+                tail = buf[snapped:]
             buf = (tail + "\n\n" + para).strip()
         else:
             buf = (buf + "\n\n" + para).strip()
@@ -185,20 +254,31 @@ class SectionAwareChunker(Chunker):
         kb_version: int | None = None,
     ) -> list[Chunk]:
         chunks: list[Chunk] = []
+        # Strip paginated running headers/footers BEFORE sectioning: they are the
+        # main source of fake section titles and of boilerplate inside evidence
+        # chunks. The document's own parsed text is left untouched on disk, so
+        # what a user inspects stays verbatim.
+        text = strip_running_headers(text)
+        # Monotonic across sections (see the loop below).
+        chunk_index = 0
         sections = split_into_sections(text)
         if not sections:
             sections = [Section(title=document.title or "Document", level=0, path="",
                                 page=None, slide=None, slide_title=None, text=text)]
 
+        # V22: chunk_index is monotonic across the WHOLE document. It used to
+        # restart at 0 for every section, so (document_id, chunk_index) was not
+        # unique: the indexed Network Engineering corpus had documents with 124
+        # chunks but only 11 distinct indices. Anything that orders, cites or
+        # expands chunks by index was therefore ambiguous.
         for section in sections:
-            idx = 0
             for piece in _split_long_text(section.text.strip(), target_size, overlap):
                 if len(piece.strip()) < MIN_CHUNK_CHARS:
                     continue
                 chunks.append(self._make_chunk(
                     document=document,
                     source=source,
-                    chunk_index=idx,
+                    chunk_index=chunk_index,
                     text=piece.strip(),
                     section_title=section.title,
                     section_path=section.path,
@@ -209,7 +289,7 @@ class SectionAwareChunker(Chunker):
                     chunking_config=chunking_config,
                     kb_version=kb_version,
                 ))
-                idx += 1
+                chunk_index += 1
         return chunks
 
     def _make_chunk(

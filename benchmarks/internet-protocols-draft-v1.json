@@ -1,0 +1,529 @@
+{
+  "benchmark": "internet-protocols-draft-v1",
+  "version": 1,
+  "created_at": "2026-10-19T16:41:27.028980+00:00",
+  "kb_id": "kb_84ebff3c5baa",
+  "kb_name": "Internet Protocols KB (V19)",
+  "authorship": {
+    "tier": "draft",
+    "human_review": "pending",
+    "drafted_by": "RAGForge V19 agent workflow: machine-drafted from the built corpus and grounded by exact-phrase verification. NOT human-reviewed.",
+    "drafted_at": "2026-10-19T16:41:27.028980+00:00",
+    "review_required_before": "any confirmatory claim, benchmark freeze, official experiment, or use as a held-out instrument",
+    "labels_are_machine_generated": true
+  },
+  "relevance_model": "binary",
+  "questions": [
+    {
+      "id": "proto-001",
+      "subdomain": "ipv4",
+      "question": "What does an IPv4 router do to the Time to Live field of a datagram it forwards?",
+      "expected_chunk_ids": [
+        "chk_f487582328d3"
+      ],
+      "expected_document_ids": [
+        "doc_4af4199e11a6"
+      ],
+      "expected_keywords": [
+        "time to live",
+        "decremented",
+        "seconds"
+      ],
+      "provenance": "RFC 791, Time to Live field semantics (datagram processing at gateways)"
+    },
+    {
+      "id": "proto-002",
+      "subdomain": "ipv4",
+      "question": "Which unit carries a datagram from one internet module to another in the IPv4 header?",
+      "expected_chunk_ids": [
+        "chk_0b8936a86550"
+      ],
+      "expected_document_ids": [
+        "doc_4af4199e11a6"
+      ],
+      "expected_keywords": [
+        "internet header length",
+        "header"
+      ],
+      "provenance": "RFC 791, header format overview (IHL and version fields)"
+    },
+    {
+      "id": "proto-003",
+      "subdomain": "icmp",
+      "question": "Which ICMP message does a gateway send when a datagram's lifetime expires?",
+      "expected_chunk_ids": [
+        "chk_048cfe5c7113"
+      ],
+      "expected_document_ids": [
+        "doc_05db98995ccb"
+      ],
+      "expected_keywords": [
+        "time exceeded",
+        "discard",
+        "gateway"
+      ],
+      "provenance": "RFC 792, Time Exceeded message definition"
+    },
+    {
+      "id": "proto-004",
+      "subdomain": "icmp",
+      "question": "How does a host test whether a destination is reachable using ICMP?",
+      "expected_chunk_ids": [
+        "chk_82b6b44578cf"
+      ],
+      "expected_document_ids": [
+        "doc_05db98995ccb"
+      ],
+      "expected_keywords": [
+        "echo",
+        "destination",
+        "reply"
+      ],
+      "provenance": "RFC 792, Echo Request/Reply message pair"
+    },
+    {
+      "id": "proto-005",
+      "subdomain": "addressing",
+      "question": "Which IPv4 address blocks are reserved for private internets?",
+      "expected_chunk_ids": [
+        "chk_9256292f0591"
+      ],
+      "expected_document_ids": [
+        "doc_be54a8223f91"
+      ],
+      "expected_keywords": [
+        "private",
+        "address",
+        "prefix"
+      ],
+      "provenance": "RFC 1918, Section 3 address block recommendations"
+    },
+    {
+      "id": "proto-006",
+      "subdomain": "addressing",
+      "question": "Why do the private address ranges of RFC 1918 require special routing considerations?",
+      "expected_chunk_ids": [
+        "chk_1d43411e4aa0"
+      ],
+      "expected_document_ids": [
+        "doc_be54a8223f91"
+      ],
+      "expected_keywords": [
+        "private",
+        "enterprises",
+        "internet"
+      ],
+      "provenance": "RFC 1918, Section 2 rationale (global uniqueness vs private use)"
+    },
+    {
+      "id": "proto-007",
+      "subdomain": "addressing",
+      "question": "Which IPv4 address blocks are reserved for use in documentation?",
+      "expected_chunk_ids": [
+        "chk_bdd12df143b4"
+      ],
+      "expected_document_ids": [
+        "doc_c6650f51649f"
+      ],
+      "expected_keywords": [
+        "documentation",
+        "examples",
+        "address"
+      ],
+      "provenance": "RFC 5737, Section 3 (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24)"
+    },
+    {
+      "id": "proto-008",
+      "subdomain": "link-layer",
+      "question": "What problem does ARP solve on a local network?",
+      "expected_chunk_ids": [
+        "chk_8ca98c95775b"
+      ],
+      "expected_document_ids": [
+        "doc_38de8aba2c39"
+      ],
+      "expected_keywords": [
+        "address",
+        "resolution",
+        "ethernet"
+      ],
+      "provenance": "RFC 826, introduction (mapping protocol addresses to hardware addresses)"
+    },
+    {
+      "id": "proto-009",
+      "subdomain": "ipv6",
+      "question": "What replaces the IPv4 Time to Live field in the IPv6 base header?",
+      "expected_chunk_ids": [
+        "chk_5819d9faf135"
+      ],
+      "expected_document_ids": [
+        "doc_bb6f8cac52e5"
+      ],
+      "expected_keywords": [
+        "hop limit",
+        "header",
+        "version"
+      ],
+      "provenance": "RFC 8200, Section 3 base header description"
+    },
+    {
+      "id": "proto-010",
+      "subdomain": "transport",
+      "question": "Which three messages establish a TCP connection (the three-way handshake)?",
+      "expected_chunk_ids": [
+        "chk_fd0312b2d091"
+      ],
+      "expected_document_ids": [
+        "doc_8aef60d82933"
+      ],
+      "expected_keywords": [
+        "three-way",
+        "handshake",
+        "connection"
+      ],
+      "provenance": "RFC 9293, Section 3.4 connection establishment (3W handshake)"
+    },
+    {
+      "id": "proto-011",
+      "subdomain": "transport",
+      "question": "How does TCP terminate a connection cleanly?",
+      "expected_chunk_ids": [
+        "chk_7d81cb4ee65d"
+      ],
+      "expected_document_ids": [
+        "doc_8aef60d82933"
+      ],
+      "expected_keywords": [
+        "close",
+        "connection",
+        "buffers"
+      ],
+      "provenance": "RFC 9293, Section 3.5 connection termination"
+    },
+    {
+      "id": "proto-012",
+      "subdomain": "transport",
+      "question": "What does the TCP retransmission mechanism protect against?",
+      "expected_chunk_ids": [
+        "chk_c0debbcf2b94"
+      ],
+      "expected_document_ids": [
+        "doc_8aef60d82933"
+      ],
+      "expected_keywords": [
+        "retransmission",
+        "loss",
+        "checksums"
+      ],
+      "provenance": "RFC 9293, reliability overview (acknowledgment and retransmission)"
+    },
+    {
+      "id": "proto-013",
+      "subdomain": "dns",
+      "question": "What is the role of a recursive name server in DNS resolution?",
+      "expected_chunk_ids": [
+        "chk_61fe21b4cc72"
+      ],
+      "expected_document_ids": [
+        "doc_68f723b0e2ec"
+      ],
+      "expected_keywords": [
+        "recursive",
+        "queries",
+        "answer"
+      ],
+      "provenance": "RFC 1034, Section 2.3 resolvers vs servers"
+    },
+    {
+      "id": "proto-014",
+      "subdomain": "dns",
+      "question": "What is a zone of authority in the DNS naming model?",
+      "expected_chunk_ids": [
+        "chk_17f8ae5a02a4"
+      ],
+      "expected_document_ids": [
+        "doc_68f723b0e2ec"
+      ],
+      "expected_keywords": [
+        "zones",
+        "database",
+        "name servers"
+      ],
+      "provenance": "RFC 1034, Section 4.3 zones"
+    },
+    {
+      "id": "proto-015",
+      "subdomain": "dns",
+      "question": "What resource record types does a DNS query message carry?",
+      "expected_chunk_ids": [
+        "chk_d62670e18899"
+      ],
+      "expected_document_ids": [
+        "doc_4fae8ec9c368"
+      ],
+      "expected_keywords": [
+        "qtype",
+        "qclass",
+        "qname"
+      ],
+      "provenance": "RFC 1035, Section 4.1.2 query message format"
+    },
+    {
+      "id": "proto-016",
+      "subdomain": "dns",
+      "question": "How is a DNS name encoded in a message (labels and compression)?",
+      "expected_chunk_ids": [
+        "chk_f34ef41a6df9"
+      ],
+      "expected_document_ids": [
+        "doc_4fae8ec9c368"
+      ],
+      "expected_keywords": [
+        "compression",
+        "labels",
+        "domain"
+      ],
+      "provenance": "RFC 1035, Section 3.1 domain name representation and compression"
+    },
+    {
+      "id": "proto-017",
+      "subdomain": "dhcp",
+      "question": "Which message sequence does a DHCP client use to obtain an IP address?",
+      "expected_chunk_ids": [
+        "chk_0e31171a6adc"
+      ],
+      "expected_document_ids": [
+        "doc_e2ba7892314e"
+      ],
+      "expected_keywords": [
+        "dhcpdiscover",
+        "dhcprequest",
+        "client"
+      ],
+      "provenance": "RFC 2131, Section 3.1 client-server interaction (DORA)"
+    },
+    {
+      "id": "proto-018",
+      "subdomain": "dhcp",
+      "question": "What does a DHCP server guarantee when it sends an ACK to a client request?",
+      "expected_chunk_ids": [
+        "chk_3c8509ae079e"
+      ],
+      "expected_document_ids": [
+        "doc_e2ba7892314e"
+      ],
+      "expected_keywords": [
+        "configuration",
+        "parameters",
+        "dhcpack"
+      ],
+      "provenance": "RFC 2131, Section 3.1 DHCPACK semantics"
+    },
+    {
+      "id": "proto-019",
+      "subdomain": "routing",
+      "question": "What are the states of the BGP finite state machine?",
+      "expected_chunk_ids": [
+        "chk_03659961a82c"
+      ],
+      "expected_document_ids": [
+        "doc_e96b1164a51b"
+      ],
+      "expected_keywords": [
+        "idle",
+        "connect",
+        "state"
+      ],
+      "provenance": "RFC 4271, Section 8.1 BGP FSM overview"
+    },
+    {
+      "id": "proto-020",
+      "subdomain": "routing",
+      "question": "What is the role of an OPEN message when a BGP session starts?",
+      "expected_chunk_ids": [
+        "chk_38acf8dea080"
+      ],
+      "expected_document_ids": [
+        "doc_e96b1164a51b"
+      ],
+      "expected_keywords": [
+        "open",
+        "autonomous",
+        "hold time"
+      ],
+      "provenance": "RFC 4271, Section 4.2 OPEN message"
+    },
+    {
+      "id": "proto-021",
+      "subdomain": "routing",
+      "question": "How does OSPF describe a network's topology?",
+      "expected_chunk_ids": [
+        "chk_666af3255235"
+      ],
+      "expected_document_ids": [
+        "doc_f6f3b0e979a3"
+      ],
+      "expected_keywords": [
+        "lsa",
+        "router",
+        "link-state"
+      ],
+      "provenance": "RFC 2328, Section 2.1 link-state advertisements"
+    },
+    {
+      "id": "proto-022",
+      "subdomain": "security",
+      "question": "Which messages are exchanged in the TLS 1.3 handshake?",
+      "expected_chunk_ids": [
+        "chk_748f60c5593e"
+      ],
+      "expected_document_ids": [
+        "doc_832ddb1d3a1b"
+      ],
+      "expected_keywords": [
+        "clienthello",
+        "serverhello",
+        "handshake"
+      ],
+      "provenance": "RFC 8446, Section 4 handshake overview"
+    },
+    {
+      "id": "proto-023",
+      "subdomain": "security",
+      "question": "How does TLS 1.3 protect record integrity after the handshake?",
+      "expected_chunk_ids": [
+        "chk_778f791a2463"
+      ],
+      "expected_document_ids": [
+        "doc_832ddb1d3a1b"
+      ],
+      "expected_keywords": [
+        "record",
+        "protection",
+        "plaintext"
+      ],
+      "provenance": "RFC 8446, Section 5.2 record protection"
+    },
+    {
+      "id": "proto-024",
+      "subdomain": "http",
+      "question": "What does the HTTP 405 status code indicate?",
+      "expected_chunk_ids": [
+        "chk_18ee20baa7dd"
+      ],
+      "expected_document_ids": [
+        "doc_f4cd7757f136"
+      ],
+      "expected_keywords": [
+        "method",
+        "allowed",
+        "resource"
+      ],
+      "provenance": "RFC 9110, Section 15.5.6 405 Method Not Allowed"
+    },
+    {
+      "id": "proto-025",
+      "subdomain": "http",
+      "question": "What is the semantic difference between HTTP GET and HEAD?",
+      "expected_chunk_ids": [
+        "chk_e9c4be0ba87a"
+      ],
+      "expected_document_ids": [
+        "doc_f4cd7757f136"
+      ],
+      "expected_keywords": [
+        "head",
+        "get",
+        "content"
+      ],
+      "provenance": "RFC 9110, Section 9.3.2/9.3.3 GET and HEAD methods"
+    },
+    {
+      "id": "proto-026",
+      "subdomain": "http",
+      "question": "What does the HTTP 204 status code mean?",
+      "expected_chunk_ids": [
+        "chk_0c0fb59460d2"
+      ],
+      "expected_document_ids": [
+        "doc_f4cd7757f136"
+      ],
+      "expected_keywords": [
+        "content",
+        "request",
+        "204"
+      ],
+      "provenance": "RFC 9110, Section 15.3.5 204 No Content"
+    },
+    {
+      "id": "proto-x01",
+      "subdomain": "out-of-scope",
+      "question": "Which RFC specifies the MQTT protocol?",
+      "expected_chunk_ids": [],
+      "expected_document_ids": [],
+      "expected_keywords": [],
+      "unsupported": true,
+      "provenance": "unsupported: MQTT is an OASIS specification and is not part of this corpus"
+    },
+    {
+      "id": "proto-x02",
+      "subdomain": "out-of-scope",
+      "question": "How do I configure a Cisco IOS interface with an access control list?",
+      "expected_chunk_ids": [],
+      "expected_document_ids": [],
+      "expected_keywords": [],
+      "unsupported": true,
+      "provenance": "unsupported: vendor configuration is out of scope; no CLI content is ingested"
+    },
+    {
+      "id": "proto-x03",
+      "subdomain": "out-of-scope",
+      "question": "What is CAN bus bit timing and how is it configured?",
+      "expected_chunk_ids": [],
+      "expected_document_ids": [],
+      "expected_keywords": [],
+      "unsupported": true,
+      "provenance": "unsupported: CAN bus belongs to the automobile domain, not this corpus"
+    },
+    {
+      "id": "proto-x04",
+      "subdomain": "out-of-scope",
+      "question": "Which RFC defines HTTP/2?",
+      "expected_chunk_ids": [],
+      "expected_document_ids": [],
+      "expected_keywords": [],
+      "unsupported": true,
+      "provenance": "unsupported: RFC 7540/9113 (HTTP/2) is deliberately not ingested"
+    },
+    {
+      "id": "proto-x05",
+      "subdomain": "out-of-scope",
+      "question": "What is the default OSPF hello interval on a Cisco router?",
+      "expected_chunk_ids": [],
+      "expected_document_ids": [],
+      "expected_keywords": [],
+      "unsupported": true,
+      "provenance": "unsupported: vendor default, not specified by RFC 2328 in this corpus"
+    },
+    {
+      "id": "proto-x06",
+      "subdomain": "out-of-scope",
+      "question": "Which RFC defines OAuth 2.0?",
+      "expected_chunk_ids": [],
+      "expected_document_ids": [],
+      "expected_keywords": [],
+      "unsupported": true,
+      "provenance": "unsupported: RFC 6749 (OAuth 2.0) is not ingested"
+    },
+    {
+      "id": "proto-x07",
+      "subdomain": "out-of-scope",
+      "question": "How do BGP routers authenticate with MD5 passwords in practice?",
+      "expected_chunk_ids": [],
+      "expected_document_ids": [],
+      "expected_keywords": [],
+      "unsupported": true,
+      "provenance": "unsupported: operational password configuration is out of scope"
+    }
+  ]
+}

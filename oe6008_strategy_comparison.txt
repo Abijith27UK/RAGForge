@@ -1,0 +1,3035 @@
+﻿============================================================
+OE6008 STRATEGY COMPARISON REPORT
+KB: kb_b554bfde9d7f
+Endpoint: http://127.0.0.1:8000/api/knowledge-bases/kb_b554bfde9d7f/retrieve
+Configuration: top_k=5, strategies: dense / bm25 / hybrid
+============================================================
+
+Notes:
+- Three strategies tested per query: dense (dense vectors), bm25 (lexical), hybrid (fusion)
+- strategy passed in request; KB persists its own configuration; no config override sent
+- Scores are strategy-specific: dense uses cosine similarity, bm25 uses BM25 score, hybrid uses weighted fusion
+- This endpoint is READ-ONLY: no database writes, no evaluation runs, no config persistence
+============================================================
+
+
+QUERY: According to the notes, what are India's energy and oil demand projections, and what strategies are proposed to reduce oil import dependence?
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_63ee9e4af045
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 13
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.7656
+METHOD: dense
+TEXT_EXCERPT: India : Oil and Gas National Targets
+â¢ More than 84% of oil and 44% of natural gas
+requirement is fulfilled through import.
+â¢ The Prime Minister vision states that India needs to
+bring down its oil import dependence by 10 per cent
+of its requirement by 2022.
+â¢ Target to be achieved with increa
+WHY: dense rank 1 (cosine 0.7656) -> reported 0.7656
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_ecf1b2adb04c
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 13
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.7656
+METHOD: dense
+TEXT_EXCERPT: India : Oil and Gas National Targets
+â¢ More than 84% of oil and 44% of natural gas
+requirement is fulfilled through import.
+â¢ The Prime Minister vision states that India needs to
+bring down its oil import dependence by 10 per cent
+of its requirement by 2022.
+â¢ Target to be achieved with increa
+WHY: dense rank 2 (cosine 0.7656) -> reported 0.7656
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_1ee0d9d4057a
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 11
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.7634
+METHOD: dense
+TEXT_EXCERPT: India : Oil and Gas Production and Imports profile
+Fossil fuels play a major role in meeting the energy demand of the nation and are expected to continue doing so in the foreseeable future. Oil
+& gas resources form a major part of Indiaâs primary energy mix. In 2016, oil and gas accounted for over
+WHY: dense rank 3 (cosine 0.7634) -> reported 0.7634
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_03dbc7ebf75b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 11
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.7634
+METHOD: dense
+TEXT_EXCERPT: India : Oil and Gas Production and Imports profile
+Fossil fuels play a major role in meeting the energy demand of the nation and are expected to continue doing so in the foreseeable future. Oil
+& gas resources form a major part of Indiaâs primary energy mix. In 2016, oil and gas accounted for over
+WHY: dense rank 4 (cosine 0.7634) -> reported 0.7634
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_37913c263157
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 1
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.7554
+METHOD: dense
+TEXT_EXCERPT: OE6008  Quick revision from uploaded lecture notes
+Page 1
+OE6008 â EXAM QUICK REVISION
+3-page high-yield summary of the uploaded notes  Use figures/years as given in the lecture slides (many are historical snapshots).
+1. Global & Indian OilâGas Scenario
+Global energy: Notes forecast total prim
+WHY: dense rank 5 (cosine 0.7554) -> reported 0.7554
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_37913c263157
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 1
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: OE6008  Quick revision from uploaded lecture notes
+Page 1
+OE6008 â EXAM QUICK REVISION
+3-page high-yield summary of the uploaded notes  Use figures/years as given in the lecture slides (many are historical snapshots).
+1. Global & Indian OilâGas Scenario
+Global energy: Notes forecast total prim
+WHY: lexical rank 1 (BM25 26.8682) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_63ee9e4af045
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 13
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.4847
+METHOD: bm25
+TEXT_EXCERPT: India : Oil and Gas National Targets
+â¢ More than 84% of oil and 44% of natural gas
+requirement is fulfilled through import.
+â¢ The Prime Minister vision states that India needs to
+bring down its oil import dependence by 10 per cent
+of its requirement by 2022.
+â¢ Target to be achieved with increa
+WHY: lexical rank 2 (BM25 18.6541) -> reported 0.4847
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_ecf1b2adb04c
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 13
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.4847
+METHOD: bm25
+TEXT_EXCERPT: India : Oil and Gas National Targets
+â¢ More than 84% of oil and 44% of natural gas
+requirement is fulfilled through import.
+â¢ The Prime Minister vision states that India needs to
+bring down its oil import dependence by 10 per cent
+of its requirement by 2022.
+â¢ Target to be achieved with increa
+WHY: lexical rank 3 (BM25 18.6541) -> reported 0.4847
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_008426aa2f59
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 12
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.4492
+METHOD: bm25
+TEXT_EXCERPT: Indiaâs Oil and Gas Strategy Recommendations during CERA Week
+During the recently concluded, CERA Week (India Energy Forum), The Minister of
+Petroleum and Natural Gas, HE Dharmendra Pradhan, outlined four strategies that
+India has adopted to achieve its goal of reducing oil and gas imports by 10% 
+WHY: lexical rank 4 (BM25 18.0882) -> reported 0.4492
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_60bfc5a6a4e8
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 12
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.4492
+METHOD: bm25
+TEXT_EXCERPT: Indiaâs Oil and Gas Strategy Recommendations during CERA Week
+During the recently concluded, CERA Week (India Energy Forum), The Minister of
+Petroleum and Natural Gas, HE Dharmendra Pradhan, outlined four strategies that
+India has adopted to achieve its goal of reducing oil and gas imports by 10% 
+WHY: lexical rank 5 (BM25 18.0882) -> reported 0.4492
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_37913c263157
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 1
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.9394
+METHOD: hybrid
+TEXT_EXCERPT: OE6008  Quick revision from uploaded lecture notes
+Page 1
+OE6008 â EXAM QUICK REVISION
+3-page high-yield summary of the uploaded notes  Use figures/years as given in the lecture slides (many are historical snapshots).
+1. Global & Indian OilâGas Scenario
+Global energy: Notes forecast total prim
+WHY: dense rank 5 (cosine 0.7554) + lexical rank 1 (BM25 26.8682) -> fused 0.9394
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_63ee9e4af045
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 13
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.8197
+METHOD: hybrid
+TEXT_EXCERPT: India : Oil and Gas National Targets
+â¢ More than 84% of oil and 44% of natural gas
+requirement is fulfilled through import.
+â¢ The Prime Minister vision states that India needs to
+bring down its oil import dependence by 10 per cent
+of its requirement by 2022.
+â¢ Target to be achieved with increa
+WHY: dense rank 1 (cosine 0.7656) + lexical rank 2 (BM25 18.6541) -> fused 0.8197
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_ecf1b2adb04c
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 13
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.8197
+METHOD: hybrid
+TEXT_EXCERPT: India : Oil and Gas National Targets
+â¢ More than 84% of oil and 44% of natural gas
+requirement is fulfilled through import.
+â¢ The Prime Minister vision states that India needs to
+bring down its oil import dependence by 10 per cent
+of its requirement by 2022.
+â¢ Target to be achieved with increa
+WHY: dense rank 2 (cosine 0.7656) + lexical rank 3 (BM25 18.6541) -> fused 0.8197
+STAGES: dense, lexical, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_03dbc7ebf75b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 11
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.7798
+METHOD: hybrid
+TEXT_EXCERPT: India : Oil and Gas Production and Imports profile
+Fossil fuels play a major role in meeting the energy demand of the nation and are expected to continue doing so in the foreseeable future. Oil
+& gas resources form a major part of Indiaâs primary energy mix. In 2016, oil and gas accounted for over
+WHY: dense rank 3 (cosine 0.7634) + lexical rank 6 (BM25 17.4298) -> fused 0.7798
+STAGES: dense, lexical, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_1ee0d9d4057a
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 11
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.7798
+METHOD: hybrid
+TEXT_EXCERPT: India : Oil and Gas Production and Imports profile
+Fossil fuels play a major role in meeting the energy demand of the nation and are expected to continue doing so in the foreseeable future. Oil
+& gas resources form a major part of Indiaâs primary energy mix. In 2016, oil and gas accounted for over
+WHY: dense rank 4 (cosine 0.7634) + lexical rank 7 (BM25 17.4298) -> fused 0.7798
+STAGES: dense, lexical, fusion
+
+--- END STRATEGY: hybrid ---
+
+
+QUERY: What are the differences between LNG, CNG, PNG and LPG? Include the LNG temperature, approximate density and volume reduction during liquefaction.
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_481bfbcd0a6f
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 37
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6396
+METHOD: dense
+TEXT_EXCERPT: ï¶ LNG (Liquefied Natural Gas): Natural gas cooled to
+â160 deg C and is in liquid state
+ï¶ CNG (Compressed Natural Gas):Natural gas
+compressed to high pressure (200 barg) and is in
+gaseous state. Barg pressure is the pressure, in units of bars, above or below atmospheric
+pressure. The "g" at the
+WHY: dense rank 1 (cosine 0.6396) -> reported 0.6396
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_141777d98a1b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 37
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6396
+METHOD: dense
+TEXT_EXCERPT: ï¶ LNG (Liquefied Natural Gas): Natural gas cooled to
+â160 deg C and is in liquid state
+ï¶ CNG (Compressed Natural Gas):Natural gas
+compressed to high pressure (200 barg) and is in
+gaseous state. Barg pressure is the pressure, in units of bars, above or below atmospheric
+pressure. The "g" at the
+WHY: dense rank 2 (cosine 0.6396) -> reported 0.6396
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_da5c334cabd2
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.631
+METHOD: dense
+TEXT_EXCERPT: OE6008  Quick revision from uploaded lecture notes
+Page 2
+NATURAL GAS & LNG â TREATMENT AND LIQUEFACTION
+2. Definitions, properties and value chain
+LNG: natural gas cooled to about â162Â°C (cryogenic liquid); mainly methane, with ethane, propane, butane, traces of heavier hydrocarbons, nitrogen
+WHY: dense rank 3 (cosine 0.6310) -> reported 0.6310
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_2627c0649534
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.6213
+METHOD: dense
+TEXT_EXCERPT: OE 6008 â Short revision notes (condensed from lecture slides)
+Page 2
+Term
+Definition
+PNG
+Piped natural gas at low pressure (~3 barg), gaseous
+LPG
+Mainly propane + butane, liquid (refrigerated or pressurised)
+ LNG composition: methane (main), ethane, propane, butane, traces of pentane+, nitrogen,
+WHY: dense rank 4 (cosine 0.6213) -> reported 0.6213
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_85879865d6dc
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 39
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.56
+METHOD: dense
+TEXT_EXCERPT: â¢ LNG volume is 1/600 of NG
+â¢ LNG is regasified at receiving terminal
+â¢ Quick conversions
+â¢ 1 MMT LNG = 1.23 MMT Oil Eq.
+= 4 MMSCM of NG
+â¢ 1 MMTPA of LNG can sustain power plant of 1000-
+1200 Mw
+What is LNG?
+5Lecture notes for OE 6008
+WHY: dense rank 5 (cosine 0.5600) -> reported 0.5600
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_da5c334cabd2
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: OE6008  Quick revision from uploaded lecture notes
+Page 2
+NATURAL GAS & LNG â TREATMENT AND LIQUEFACTION
+2. Definitions, properties and value chain
+LNG: natural gas cooled to about â162Â°C (cryogenic liquid); mainly methane, with ethane, propane, butane, traces of heavier hydrocarbons, nitrogen
+WHY: lexical rank 1 (BM25 18.9510) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_279d8ff476a7
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 1
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 0.5046
+METHOD: bm25
+TEXT_EXCERPT: recovery; remaining 7.1 bn boe could rise 30â60%; +1% recovery factor â 5 monthsâ demand.
+2) GAS / LNG BASICS + TREATMENT
+LNG = natural gas cooled to
+
+ recovery; remaining 7.1 bn boe could rise 30â60%; +1% recovery factor â 5 monthsâ demand.
+2) GAS / LNG BASICS + TREATMENT
+LNG = natural 
+WHY: lexical rank 2 (BM25 14.2359) -> reported 0.5046
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_b8ce9b59c3d5
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 68
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.4894
+METHOD: bm25
+TEXT_EXCERPT: Components of LNG Liquefaction Plant
+ï¶ An incoming natural gas metering and receiving station, a slug
+catcher
+ï¶ Condensate stabilization and storage
+ï¶ Gas treatment units in which any acid gases, water heavier
+hydrocarbon, mercury are extracted
+ï¶ Liquefaction units which produces LNG and wit
+WHY: lexical rank 3 (BM25 14.0916) -> reported 0.4894
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_f85ebd7cb560
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 68
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.4894
+METHOD: bm25
+TEXT_EXCERPT: Components of LNG Liquefaction Plant
+ï¶ An incoming natural gas metering and receiving station, a slug
+catcher
+ï¶ Condensate stabilization and storage
+ï¶ Gas treatment units in which any acid gases, water heavier
+hydrocarbon, mercury are extracted
+ï¶ Liquefaction units which produces LNG and wit
+WHY: lexical rank 4 (BM25 14.0916) -> reported 0.4894
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_311ef4296f06
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 40
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.4278
+METHOD: bm25
+TEXT_EXCERPT: 6
+â¢ The density of LNG is around 450 kg/m3.
+â¢ The boiling point of LNG is around â160ï°C.
+â¢ The LNG flammability limits is
+â Lower Flammability limit â 5%
+â Upper flammability limit â 15%
+â¢ The Auto ignition temperature of LNG is 540 ï°C
+What is LNG?
+Lecture notes for OE 6008
+WHY: lexical rank 5 (BM25 13.5058) -> reported 0.4278
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_da5c334cabd2
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.964
+METHOD: hybrid
+TEXT_EXCERPT: OE6008  Quick revision from uploaded lecture notes
+Page 2
+NATURAL GAS & LNG â TREATMENT AND LIQUEFACTION
+2. Definitions, properties and value chain
+LNG: natural gas cooled to about â162Â°C (cryogenic liquid); mainly methane, with ethane, propane, butane, traces of heavier hydrocarbons, nitrogen
+WHY: dense rank 3 (cosine 0.6310) + lexical rank 1 (BM25 18.9510) -> fused 0.9640
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_141777d98a1b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 37
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.7319
+METHOD: hybrid
+TEXT_EXCERPT: ï¶ LNG (Liquefied Natural Gas): Natural gas cooled to
+â160 deg C and is in liquid state
+ï¶ CNG (Compressed Natural Gas):Natural gas
+compressed to high pressure (200 barg) and is in
+gaseous state. Barg pressure is the pressure, in units of bars, above or below atmospheric
+pressure. The "g" at the
+WHY: dense rank 1 (cosine 0.6396) + lexical rank 10 (BM25 11.6605) -> fused 0.7319
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_481bfbcd0a6f
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 37
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.7319
+METHOD: hybrid
+TEXT_EXCERPT: ï¶ LNG (Liquefied Natural Gas): Natural gas cooled to
+â160 deg C and is in liquid state
+ï¶ CNG (Compressed Natural Gas):Natural gas
+compressed to high pressure (200 barg) and is in
+gaseous state. Barg pressure is the pressure, in units of bars, above or below atmospheric
+pressure. The "g" at the
+WHY: dense rank 2 (cosine 0.6396) + lexical rank 11 (BM25 11.6605) -> fused 0.7319
+STAGES: dense, lexical, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_2627c0649534
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.6603
+METHOD: hybrid
+TEXT_EXCERPT: OE 6008 â Short revision notes (condensed from lecture slides)
+Page 2
+Term
+Definition
+PNG
+Piped natural gas at low pressure (~3 barg), gaseous
+LPG
+Mainly propane + butane, liquid (refrigerated or pressurised)
+ LNG composition: methane (main), ethane, propane, butane, traces of pentane+, nitrogen,
+WHY: dense rank 4 (cosine 0.6213) + lexical rank 8 (BM25 11.7983) -> fused 0.6603
+STAGES: dense, lexical, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_b8ce9b59c3d5
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 68
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.4042
+METHOD: hybrid
+TEXT_EXCERPT: Components of LNG Liquefaction Plant
+ï¶ An incoming natural gas metering and receiving station, a slug
+catcher
+ï¶ Condensate stabilization and storage
+ï¶ Gas treatment units in which any acid gases, water heavier
+hydrocarbon, mercury are extracted
+ï¶ Liquefaction units which produces LNG and wit
+WHY: dense rank 11 (cosine 0.5400) + lexical rank 3 (BM25 14.0916) -> fused 0.4042
+STAGES: dense, lexical, fusion
+
+--- END STRATEGY: hybrid ---
+
+
+QUERY: Why must natural gas be treated before liquefaction? List the major impurities, their stated limits and the removal methods given in the notes.
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_a2a5610a9b83
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 44
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6394
+METHOD: dense
+TEXT_EXCERPT: Requirement for Natural Gas Treatment
+for producing LNG
+ï¶ Technical Requirement :-
+To remove any compound that will freeze during the
+liquefaction process such as CO2 H2O, H2S, and heavy
+Hydrocarbons, if not removed, frozen crystals could plug
+filters, heat exchanger, nozzles and other equipment
+c
+WHY: dense rank 1 (cosine 0.6394) -> reported 0.6394
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_22cb3fe14f00
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 44
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6394
+METHOD: dense
+TEXT_EXCERPT: Requirement for Natural Gas Treatment
+for producing LNG
+ï¶ Technical Requirement :-
+To remove any compound that will freeze during the
+liquefaction process such as CO2 H2O, H2S, and heavy
+Hydrocarbons, if not removed, frozen crystals could plug
+filters, heat exchanger, nozzles and other equipment
+c
+WHY: dense rank 2 (cosine 0.6394) -> reported 0.6394
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_2627c0649534
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.6276
+METHOD: dense
+TEXT_EXCERPT: OE 6008 â Short revision notes (condensed from lecture slides)
+Page 2
+Term
+Definition
+PNG
+Piped natural gas at low pressure (~3 barg), gaseous
+LPG
+Mainly propane + butane, liquid (refrigerated or pressurised)
+ LNG composition: methane (main), ethane, propane, butane, traces of pentane+, nitrogen,
+WHY: dense rank 3 (cosine 0.6276) -> reported 0.6276
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_0c630a865cc3
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.6154
+METHOD: dense
+TEXT_EXCERPT: n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse me
+
+n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse 
+WHY: dense rank 4 (cosine 0.6154) -> reported 0.6154
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_59c11254885e
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.6007
+METHOD: dense
+TEXT_EXCERPT: â LNG carrier transport â unloading/storage â regasification â gas consumers. Peak-shaving
+plants: small, intermittent; base-load plants: large, cont
+
+ â LNG carrier transport â unloading/storage â regasification â gas consumers. Peak-shaving
+plants: small, intermittent; base-load pl
+WHY: dense rank 5 (cosine 0.6007) -> reported 0.6007
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_59c11254885e
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: â LNG carrier transport â unloading/storage â regasification â gas consumers. Peak-shaving
+plants: small, intermittent; base-load plants: large, cont
+
+ â LNG carrier transport â unloading/storage â regasification â gas consumers. Peak-shaving
+plants: small, intermittent; base-load pl
+WHY: lexical rank 1 (BM25 17.1180) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_0c630a865cc3
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.8663
+METHOD: bm25
+TEXT_EXCERPT: n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse me
+
+n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse 
+WHY: lexical rank 2 (BM25 16.0832) -> reported 0.8663
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_e8ec142c5e75
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 55
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6913
+METHOD: bm25
+TEXT_EXCERPT: â¢ H2S & CO2 are corrosive in presence of water
+â¢ Sweetening is required for making gas saleable.
+â¢ H2S (due to toxicity) and CO2 (due to lack of heating
+value) are to be removed by processes usually by
+amine solvents are known as Gas sweetening.
+â¢ Sour Gas (Natural gas containing more than 4
+WHY: lexical rank 3 (BM25 14.7281) -> reported 0.6913
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_edbcefb7b7b5
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 55
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6913
+METHOD: bm25
+TEXT_EXCERPT: â¢ H2S & CO2 are corrosive in presence of water
+â¢ Sweetening is required for making gas saleable.
+â¢ H2S (due to toxicity) and CO2 (due to lack of heating
+value) are to be removed by processes usually by
+amine solvents are known as Gas sweetening.
+â¢ Sour Gas (Natural gas containing more than 4
+WHY: lexical rank 4 (BM25 14.7281) -> reported 0.6913
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_2627c0649534
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.6878
+METHOD: bm25
+TEXT_EXCERPT: OE 6008 â Short revision notes (condensed from lecture slides)
+Page 2
+Term
+Definition
+PNG
+Piped natural gas at low pressure (~3 barg), gaseous
+LPG
+Mainly propane + butane, liquid (refrigerated or pressurised)
+ LNG composition: methane (main), ethane, propane, butane, traces of pentane+, nitrogen,
+WHY: lexical rank 5 (BM25 14.7006) -> reported 0.6878
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_0c630a865cc3
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.8379
+METHOD: hybrid
+TEXT_EXCERPT: n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse me
+
+n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse 
+WHY: dense rank 4 (cosine 0.6154) + lexical rank 2 (BM25 16.0832) -> fused 0.8379
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_2627c0649534
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.834
+METHOD: hybrid
+TEXT_EXCERPT: OE 6008 â Short revision notes (condensed from lecture slides)
+Page 2
+Term
+Definition
+PNG
+Piped natural gas at low pressure (~3 barg), gaseous
+LPG
+Mainly propane + butane, liquid (refrigerated or pressurised)
+ LNG composition: methane (main), ethane, propane, butane, traces of pentane+, nitrogen,
+WHY: dense rank 3 (cosine 0.6276) + lexical rank 5 (BM25 14.7006) -> fused 0.8340
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_59c11254885e
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.8138
+METHOD: hybrid
+TEXT_EXCERPT: â LNG carrier transport â unloading/storage â regasification â gas consumers. Peak-shaving
+plants: small, intermittent; base-load plants: large, cont
+
+ â LNG carrier transport â unloading/storage â regasification â gas consumers. Peak-shaving
+plants: small, intermittent; base-load pl
+WHY: dense rank 5 (cosine 0.6007) + lexical rank 1 (BM25 17.1180) -> fused 0.8138
+STAGES: dense, lexical, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_22cb3fe14f00
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 44
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.65
+METHOD: hybrid
+TEXT_EXCERPT: Requirement for Natural Gas Treatment
+for producing LNG
+ï¶ Technical Requirement :-
+To remove any compound that will freeze during the
+liquefaction process such as CO2 H2O, H2S, and heavy
+Hydrocarbons, if not removed, frozen crystals could plug
+filters, heat exchanger, nozzles and other equipment
+c
+WHY: dense rank 1 (cosine 0.6394) -> fused 0.6500
+STAGES: dense, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_a2a5610a9b83
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 44
+SECTION: Treatment Of Natural Gas
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.65
+METHOD: hybrid
+TEXT_EXCERPT: Requirement for Natural Gas Treatment
+for producing LNG
+ï¶ Technical Requirement :-
+To remove any compound that will freeze during the
+liquefaction process such as CO2 H2O, H2S, and heavy
+Hydrocarbons, if not removed, frozen crystals could plug
+filters, heat exchanger, nozzles and other equipment
+c
+WHY: dense rank 2 (cosine 0.6394) -> fused 0.6500
+STAGES: dense, fusion
+
+--- END STRATEGY: hybrid ---
+
+
+QUERY: Explain the amine gas-sweetening process, including absorption and regeneration conditions, and the problems associated with amine systems.
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_edbcefb7b7b5
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 55
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.577
+METHOD: dense
+TEXT_EXCERPT: â¢ H2S & CO2 are corrosive in presence of water
+â¢ Sweetening is required for making gas saleable.
+â¢ H2S (due to toxicity) and CO2 (due to lack of heating
+value) are to be removed by processes usually by
+amine solvents are known as Gas sweetening.
+â¢ Sour Gas (Natural gas containing more than 4
+WHY: dense rank 1 (cosine 0.5770) -> reported 0.5770
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_e8ec142c5e75
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 55
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.577
+METHOD: dense
+TEXT_EXCERPT: â¢ H2S & CO2 are corrosive in presence of water
+â¢ Sweetening is required for making gas saleable.
+â¢ H2S (due to toxicity) and CO2 (due to lack of heating
+value) are to be removed by processes usually by
+amine solvents are known as Gas sweetening.
+â¢ Sour Gas (Natural gas containing more than 4
+WHY: dense rank 2 (cosine 0.5770) -> reported 0.5770
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_3834e7ab260e
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 56
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.5657
+METHOD: dense
+TEXT_EXCERPT: MDEA (Mono di-ethanol amine) Advantage
+â¢ MDEA process has an advantage of
+selective absorption of H2S from the
+natural gas, leaving large amount of CO2 in
+the gas
+â¢ DEA(Di ethanol amine) & MEA(Mono
+ethanol amine) also used for sweetening,
+however MDEA is preferred due to above
+mentioned advantag
+WHY: dense rank 3 (cosine 0.5657) -> reported 0.5657
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_cec8e5d4e4c2
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 56
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.5657
+METHOD: dense
+TEXT_EXCERPT: MDEA (Mono di-ethanol amine) Advantage
+â¢ MDEA process has an advantage of
+selective absorption of H2S from the
+natural gas, leaving large amount of CO2 in
+the gas
+â¢ DEA(Di ethanol amine) & MEA(Mono
+ethanol amine) also used for sweetening,
+however MDEA is preferred due to above
+mentioned advantag
+WHY: dense rank 4 (cosine 0.5657) -> reported 0.5657
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_0bd116ddd47e
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 61
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.5417
+METHOD: dense
+TEXT_EXCERPT: Parameters
+â¢ H2S content in sweetened gas or sweet gas
+â¢ MDEA circulation rate
+â¢ H2S content in lean amine(regnd MDEA)
+â¢ Inlet gas & MDEA temperature
+â¢ Pressure drop in absorber column
+â¢ Pressure drop in regenerator column
+â¢ Level in MDEA Tank
+27Lecture notes for OE 6008
+WHY: dense rank 5 (cosine 0.5417) -> reported 0.5417
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_4ea588de5c28
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 59
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: Process Chemistry
+â¢ H2S reacts instantaneously with MDEA
+H2S + R3N ---> R3NH+ + HS-
+â¢ During the absorption equilibrium is
+shifted towards right and during
+regeneration to left.
+â¢ Absorption takes place at High Pressure
+& Low Temperature while Regeneration
+takes place at low pressure & High
+Te
+WHY: lexical rank 1 (BM25 16.4234) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_9acd36017882
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 59
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: Process Chemistry
+â¢ H2S reacts instantaneously with MDEA
+H2S + R3N ---> R3NH+ + HS-
+â¢ During the absorption equilibrium is
+shifted towards right and during
+regeneration to left.
+â¢ Absorption takes place at High Pressure
+& Low Temperature while Regeneration
+takes place at low pressure & High
+Te
+WHY: lexical rank 2 (BM25 16.4234) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_3b041df0a465
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.9587
+METHOD: bm25
+TEXT_EXCERPT: er value-added products â helium, C2+ (ethane, propane,
+butane).
+ Helium uses: GC carrier gas, rocket fuel, cooling MRI superconducting magnets, leak
+
+r value-added products â helium, C2+ (ethane, propane,
+butane).
+ Helium uses: GC carrier gas, rocket fuel, cooling MRI superconducting magnets,
+WHY: lexical rank 3 (BM25 16.0169) -> reported 0.9587
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_c2ecefbb72ff
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 1
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 0.7801
+METHOD: bm25
+TEXT_EXCERPT: ice/hydrates. Helium uses: GC carrier,
+rocket fuel, MRI cooling, leak detection, arc welding.
+Impurity â limit â removal: Hâ O <1 ppm â glycol (MEG/DEG
+
+ice/hydrates. Helium uses: GC carrier,
+rocket fuel, MRI cooling, leak detection, arc welding.
+Impurity â limit â removal: Hâ O <1 ppm â
+WHY: lexical rank 4 (BM25 14.2579) -> reported 0.7801
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_70f5e8f45b71
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 66
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.768
+METHOD: bm25
+TEXT_EXCERPT: What makes LNG Technology Special
+ï¶ LNG is a cryogenic liquid
+ï¶ The liquefaction process is thermodynamic rather than
+chemical
+ï¶ The material used in construction of equipment in
+contact with the low temperatures and associated
+systems are specialized
+ï¶ Cryogenic materials must be able to re
+WHY: lexical rank 5 (BM25 14.1389) -> reported 0.7680
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_3834e7ab260e
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 56
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.8431
+METHOD: hybrid
+TEXT_EXCERPT: MDEA (Mono di-ethanol amine) Advantage
+â¢ MDEA process has an advantage of
+selective absorption of H2S from the
+natural gas, leaving large amount of CO2 in
+the gas
+â¢ DEA(Di ethanol amine) & MEA(Mono
+ethanol amine) also used for sweetening,
+however MDEA is preferred due to above
+mentioned advantag
+WHY: dense rank 4 (cosine 0.5657) + lexical rank 7 (BM25 12.8436) -> fused 0.8431
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_cec8e5d4e4c2
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 56
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.8431
+METHOD: hybrid
+TEXT_EXCERPT: MDEA (Mono di-ethanol amine) Advantage
+â¢ MDEA process has an advantage of
+selective absorption of H2S from the
+natural gas, leaving large amount of CO2 in
+the gas
+â¢ DEA(Di ethanol amine) & MEA(Mono
+ethanol amine) also used for sweetening,
+however MDEA is preferred due to above
+mentioned advantag
+WHY: dense rank 3 (cosine 0.5657) + lexical rank 8 (BM25 12.8436) -> fused 0.8431
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_c2ecefbb72ff
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 1
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 0.7959
+METHOD: hybrid
+TEXT_EXCERPT: ice/hydrates. Helium uses: GC carrier,
+rocket fuel, MRI cooling, leak detection, arc welding.
+Impurity â limit â removal: Hâ O <1 ppm â glycol (MEG/DEG
+
+ice/hydrates. Helium uses: GC carrier,
+rocket fuel, MRI cooling, leak detection, arc welding.
+Impurity â limit â removal: Hâ O <1 ppm â
+WHY: dense rank 7 (cosine 0.5284) + lexical rank 4 (BM25 14.2579) -> fused 0.7959
+STAGES: dense, lexical, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_4ea588de5c28
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 59
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.7415
+METHOD: hybrid
+TEXT_EXCERPT: Process Chemistry
+â¢ H2S reacts instantaneously with MDEA
+H2S + R3N ---> R3NH+ + HS-
+â¢ During the absorption equilibrium is
+shifted towards right and during
+regeneration to left.
+â¢ Absorption takes place at High Pressure
+& Low Temperature while Regeneration
+takes place at low pressure & High
+Te
+WHY: dense rank 8 (cosine 0.4781) + lexical rank 1 (BM25 16.4234) -> fused 0.7415
+STAGES: dense, lexical, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_9acd36017882
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 59
+SECTION: Block Diagram Of Gas Processing Complex
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.7415
+METHOD: hybrid
+TEXT_EXCERPT: Process Chemistry
+â¢ H2S reacts instantaneously with MDEA
+H2S + R3N ---> R3NH+ + HS-
+â¢ During the absorption equilibrium is
+shifted towards right and during
+regeneration to left.
+â¢ Absorption takes place at High Pressure
+& Low Temperature while Regeneration
+takes place at low pressure & High
+Te
+WHY: dense rank 9 (cosine 0.4781) + lexical rank 2 (BM25 16.4234) -> fused 0.7415
+STAGES: dense, lexical, fusion
+
+--- END STRATEGY: hybrid ---
+
+
+QUERY: Explain LNG liquefaction and flashing. What happens to the liquid and vapour phases, and why does nitrogen concentrate in flash gas?
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_fcdb8025c12f
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 75
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.7287
+METHOD: dense
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Because nitrogen has lower boiling temperature than
+methane, it will have a significantly higher concentration
+in the vapor, which reduces the nitrogen concentration in
+the LNG
+The flash gas is about the only place to remove nitrogen
+and reduce its concentration in 
+WHY: dense rank 1 (cosine 0.7287) -> reported 0.7287
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_1b405fd11a75
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 75
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.7287
+METHOD: dense
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Because nitrogen has lower boiling temperature than
+methane, it will have a significantly higher concentration
+in the vapor, which reduces the nitrogen concentration in
+the LNG
+The flash gas is about the only place to remove nitrogen
+and reduce its concentration in 
+WHY: dense rank 2 (cosine 0.7287) -> reported 0.7287
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_ed3e65adca7b
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 74
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.7049
+METHOD: dense
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Reducing the pressure across a valve and not adding or
+taking heat form the process stream creates a lower
+boiling point and results in a portion of the stream being
+vaporized
+Temperature is reduces, and the resulting stream contains
+liquid and vapor at the new cond
+WHY: dense rank 3 (cosine 0.7049) -> reported 0.7049
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_8fedf5c833f4
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 74
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.7049
+METHOD: dense
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Reducing the pressure across a valve and not adding or
+taking heat form the process stream creates a lower
+boiling point and results in a portion of the stream being
+vaporized
+Temperature is reduces, and the resulting stream contains
+liquid and vapor at the new cond
+WHY: dense rank 4 (cosine 0.7049) -> reported 0.7049
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_70f5e8f45b71
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 66
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6388
+METHOD: dense
+TEXT_EXCERPT: What makes LNG Technology Special
+ï¶ LNG is a cryogenic liquid
+ï¶ The liquefaction process is thermodynamic rather than
+chemical
+ï¶ The material used in construction of equipment in
+contact with the low temperatures and associated
+systems are specialized
+ï¶ Cryogenic materials must be able to re
+WHY: dense rank 5 (cosine 0.6388) -> reported 0.6388
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_3fa2b95aa682
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: ipment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compressors
+
+pment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compre
+WHY: lexical rank 1 (BM25 28.1198) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_1b405fd11a75
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 75
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6645
+METHOD: bm25
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Because nitrogen has lower boiling temperature than
+methane, it will have a significantly higher concentration
+in the vapor, which reduces the nitrogen concentration in
+the LNG
+The flash gas is about the only place to remove nitrogen
+and reduce its concentration in 
+WHY: lexical rank 2 (BM25 22.5491) -> reported 0.6645
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_fcdb8025c12f
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 75
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6645
+METHOD: bm25
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Because nitrogen has lower boiling temperature than
+methane, it will have a significantly higher concentration
+in the vapor, which reduces the nitrogen concentration in
+the LNG
+The flash gas is about the only place to remove nitrogen
+and reduce its concentration in 
+WHY: lexical rank 3 (BM25 22.5491) -> reported 0.6645
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_8fedf5c833f4
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 74
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.4953
+METHOD: bm25
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Reducing the pressure across a valve and not adding or
+taking heat form the process stream creates a lower
+boiling point and results in a portion of the stream being
+vaporized
+Temperature is reduces, and the resulting stream contains
+liquid and vapor at the new cond
+WHY: lexical rank 4 (BM25 19.7392) -> reported 0.4953
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_ed3e65adca7b
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 74
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.4953
+METHOD: bm25
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Reducing the pressure across a valve and not adding or
+taking heat form the process stream creates a lower
+boiling point and results in a portion of the stream being
+vaporized
+Temperature is reduces, and the resulting stream contains
+liquid and vapor at the new cond
+WHY: lexical rank 5 (BM25 19.7392) -> reported 0.4953
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_1b405fd11a75
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 75
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.8826
+METHOD: hybrid
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Because nitrogen has lower boiling temperature than
+methane, it will have a significantly higher concentration
+in the vapor, which reduces the nitrogen concentration in
+the LNG
+The flash gas is about the only place to remove nitrogen
+and reduce its concentration in 
+WHY: dense rank 2 (cosine 0.7287) + lexical rank 2 (BM25 22.5491) -> fused 0.8826
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_fcdb8025c12f
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 75
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.8826
+METHOD: hybrid
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Because nitrogen has lower boiling temperature than
+methane, it will have a significantly higher concentration
+in the vapor, which reduces the nitrogen concentration in
+the LNG
+The flash gas is about the only place to remove nitrogen
+and reduce its concentration in 
+WHY: dense rank 1 (cosine 0.7287) + lexical rank 3 (BM25 22.5491) -> fused 0.8826
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_8fedf5c833f4
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 74
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.7516
+METHOD: hybrid
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Reducing the pressure across a valve and not adding or
+taking heat form the process stream creates a lower
+boiling point and results in a portion of the stream being
+vaporized
+Temperature is reduces, and the resulting stream contains
+liquid and vapor at the new cond
+WHY: dense rank 4 (cosine 0.7049) + lexical rank 4 (BM25 19.7392) -> fused 0.7516
+STAGES: dense, lexical, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_ed3e65adca7b
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 74
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.7516
+METHOD: hybrid
+TEXT_EXCERPT: LNG Flashing â What is Flashing
+Reducing the pressure across a valve and not adding or
+taking heat form the process stream creates a lower
+boiling point and results in a portion of the stream being
+vaporized
+Temperature is reduces, and the resulting stream contains
+liquid and vapor at the new cond
+WHY: dense rank 3 (cosine 0.7049) + lexical rank 5 (BM25 19.7392) -> fused 0.7516
+STAGES: dense, lexical, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_3fa2b95aa682
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.6538
+METHOD: hybrid
+TEXT_EXCERPT: ipment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compressors
+
+pment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compre
+WHY: dense rank 7 (cosine 0.6138) + lexical rank 1 (BM25 28.1198) -> fused 0.6538
+STAGES: dense, lexical, fusion
+
+--- END STRATEGY: hybrid ---
+
+
+QUERY: Compare the Cascade, SMR, C3MR/APCI, DMR and nitrogen-expansion liquefaction processes as described in the notes.
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_9daabdc08f4a
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 82
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6712
+METHOD: dense
+TEXT_EXCERPT: ïCascade Process
+ïMulti component Refrigeration
+ï¶ Single Mixed Refrigerant (SMR) Process
+ï¶C3MR(Propane-Mixed Refrigerant)Process
+ï¶DMR (Dual Mixed Refrigerant)Process
+ï¶APX Process
+ïNitrogen Expansion Cycle
+Various LNG Liquefaction Processes
+48Lecture notes for OE 6008
+WHY: dense rank 1 (cosine 0.6712) -> reported 0.6712
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_2f4b57da21bd
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 82
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6712
+METHOD: dense
+TEXT_EXCERPT: ïCascade Process
+ïMulti component Refrigeration
+ï¶ Single Mixed Refrigerant (SMR) Process
+ï¶C3MR(Propane-Mixed Refrigerant)Process
+ï¶DMR (Dual Mixed Refrigerant)Process
+ï¶APX Process
+ïNitrogen Expansion Cycle
+Various LNG Liquefaction Processes
+48Lecture notes for OE 6008
+WHY: dense rank 2 (cosine 0.6712) -> reported 0.6712
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_b04e2775b7b0
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.6005
+METHOD: dense
+TEXT_EXCERPT: on section (compressors, turbo-expanders, drivers, separators), storage and transfer
+(single/double/full-containment tanks, pumps), LNG flash, boil-of
+
+on section (compressors, turbo-expanders, drivers, separators), storage and transfer
+(single/double/full-containment tanks, pumps), LNG flash, boil-
+WHY: dense rank 3 (cosine 0.6005) -> reported 0.6005
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_3fa2b95aa682
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.5469
+METHOD: dense
+TEXT_EXCERPT: ipment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compressors
+
+pment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compre
+WHY: dense rank 4 (cosine 0.5469) -> reported 0.5469
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_222d04bb10fa
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 89
+SECTION: Subcooling
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.5195
+METHOD: dense
+TEXT_EXCERPT: Evolution of LNG liquefaction Capacity
+55Lecture notes for OE 6008
+WHY: dense rank 5 (cosine 0.5195) -> reported 0.5195
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_2f4b57da21bd
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 82
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: ïCascade Process
+ïMulti component Refrigeration
+ï¶ Single Mixed Refrigerant (SMR) Process
+ï¶C3MR(Propane-Mixed Refrigerant)Process
+ï¶DMR (Dual Mixed Refrigerant)Process
+ï¶APX Process
+ïNitrogen Expansion Cycle
+Various LNG Liquefaction Processes
+48Lecture notes for OE 6008
+WHY: lexical rank 1 (BM25 22.5097) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_9daabdc08f4a
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 82
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: ïCascade Process
+ïMulti component Refrigeration
+ï¶ Single Mixed Refrigerant (SMR) Process
+ï¶C3MR(Propane-Mixed Refrigerant)Process
+ï¶DMR (Dual Mixed Refrigerant)Process
+ï¶APX Process
+ïNitrogen Expansion Cycle
+Various LNG Liquefaction Processes
+48Lecture notes for OE 6008
+WHY: lexical rank 2 (BM25 22.5097) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_0c630a865cc3
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.8376
+METHOD: bm25
+TEXT_EXCERPT: n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse me
+
+n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse 
+WHY: lexical rank 3 (BM25 19.8636) -> reported 0.8376
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_c399c6dabf90
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 0.7727
+METHOD: bm25
+TEXT_EXCERPT: OE6008  Source: uploaded lecture notes and supplied short-notes PDF
+2
+OE6008 â FINAL 10-MINUTE HANDWRITTEN NOTES (CONT.)
+3) LIQUEFACTION + REGASIFICATION
+Liquefaction: thermodynamic, not chemical. Cool/condense gas to ~â150Â°C at high pressure, then flash through valve to ~â160Â°C near atmosp
+WHY: lexical rank 4 (BM25 18.8070) -> reported 0.7727
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_b04e2775b7b0
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.5659
+METHOD: bm25
+TEXT_EXCERPT: on section (compressors, turbo-expanders, drivers, separators), storage and transfer
+(single/double/full-containment tanks, pumps), LNG flash, boil-of
+
+on section (compressors, turbo-expanders, drivers, separators), storage and transfer
+(single/double/full-containment tanks, pumps), LNG flash, boil-
+WHY: lexical rank 5 (BM25 15.4375) -> reported 0.5659
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_2f4b57da21bd
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 82
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 1.0
+METHOD: hybrid
+TEXT_EXCERPT: ïCascade Process
+ïMulti component Refrigeration
+ï¶ Single Mixed Refrigerant (SMR) Process
+ï¶C3MR(Propane-Mixed Refrigerant)Process
+ï¶DMR (Dual Mixed Refrigerant)Process
+ï¶APX Process
+ïNitrogen Expansion Cycle
+Various LNG Liquefaction Processes
+48Lecture notes for OE 6008
+WHY: dense rank 2 (cosine 0.6712) + lexical rank 1 (BM25 22.5097) -> fused 1.0000
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_9daabdc08f4a
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 82
+SECTION: Liquefaction Plants
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 1.0
+METHOD: hybrid
+TEXT_EXCERPT: ïCascade Process
+ïMulti component Refrigeration
+ï¶ Single Mixed Refrigerant (SMR) Process
+ï¶C3MR(Propane-Mixed Refrigerant)Process
+ï¶DMR (Dual Mixed Refrigerant)Process
+ï¶APX Process
+ïNitrogen Expansion Cycle
+Various LNG Liquefaction Processes
+48Lecture notes for OE 6008
+WHY: dense rank 1 (cosine 0.6712) + lexical rank 2 (BM25 22.5097) -> fused 1.0000
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_b04e2775b7b0
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 2
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.6406
+METHOD: hybrid
+TEXT_EXCERPT: on section (compressors, turbo-expanders, drivers, separators), storage and transfer
+(single/double/full-containment tanks, pumps), LNG flash, boil-of
+
+on section (compressors, turbo-expanders, drivers, separators), storage and transfer
+(single/double/full-containment tanks, pumps), LNG flash, boil-
+WHY: dense rank 3 (cosine 0.6005) + lexical rank 5 (BM25 15.4375) -> fused 0.6406
+STAGES: dense, lexical, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_3fa2b95aa682
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.4802
+METHOD: hybrid
+TEXT_EXCERPT: ipment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compressors
+
+pment:
+compressors, turbo-expanders, gas engines/turbines, liquidâvapour separators, cryogenic tanks, pumps, blowers, heat exchangers and compre
+WHY: dense rank 4 (cosine 0.5469) + lexical rank 6 (BM25 15.2806) -> fused 0.4802
+STAGES: dense, lexical, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_c399c6dabf90
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 0.3924
+METHOD: hybrid
+TEXT_EXCERPT: OE6008  Source: uploaded lecture notes and supplied short-notes PDF
+2
+OE6008 â FINAL 10-MINUTE HANDWRITTEN NOTES (CONT.)
+3) LIQUEFACTION + REGASIFICATION
+Liquefaction: thermodynamic, not chemical. Cool/condense gas to ~â150Â°C at high pressure, then flash through valve to ~â160Â°C near atmosp
+WHY: dense rank 10 (cosine 0.4911) + lexical rank 4 (BM25 18.8070) -> fused 0.3924
+STAGES: dense, lexical, fusion
+
+--- END STRATEGY: hybrid ---
+
+
+QUERY: Compare ORV, SCV, IFV/STV, IFV-Rankine and AAV regasification systems. Why were air heaters and STVs selected for the Dahej case described?
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_41dd34316c96
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 3
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.5767
+METHOD: dense
+TEXT_EXCERPT: diate
+Fluid (STV)
+Closed loop of glycol-water (or propane)
+to carry heat from air/seawater;
+shell-and-tube
+Lowest opex, simple; best in
+warm climates;
+
+diate
+Fluid (STV)
+Closed loop of glycol-water (or propane)
+to carry heat from air/seawater;
+shell-and-tube
+Lowest opex, simple; best in
+warm climate
+WHY: dense rank 1 (cosine 0.5767) -> reported 0.5767
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_8dfa7d2a5674
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 121
+SECTION: Thank You
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.5449
+METHOD: dense
+TEXT_EXCERPT: Case Study
+-
+Dahej
+3
+1
+â¢ Open Rack Vaporizers (ORVs) Not Feasible
+â High Turbidity
+â High Concentration of Copper ions
+â¢ Submerged Combustion Vapourizers (SCVs) not
+accepted for Normal operation due to operating
+expenses & Environmental considerations
+â¢ Non-availability of power plant or o
+WHY: dense rank 2 (cosine 0.5449) -> reported 0.5449
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_25f7f1deb5ee
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 121
+SECTION: Thank You
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.5449
+METHOD: dense
+TEXT_EXCERPT: Case Study
+-
+Dahej
+3
+1
+â¢ Open Rack Vaporizers (ORVs) Not Feasible
+â High Turbidity
+â High Concentration of Copper ions
+â¢ Submerged Combustion Vapourizers (SCVs) not
+accepted for Normal operation due to operating
+expenses & Environmental considerations
+â¢ Non-availability of power plant or o
+WHY: dense rank 3 (cosine 0.5449) -> reported 0.5449
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_98525c5fd45d
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.5057
+METHOD: dense
+TEXT_EXCERPT: lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SCV in t
+
+lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SC
+WHY: dense rank 4 (cosine 0.5057) -> reported 0.5057
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_3a2d007d441b
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 96
+SECTION: Thank You
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.5041
+METHOD: dense
+TEXT_EXCERPT: Vaporizer Selection History
+6
+ï Traditionally base load regasification terminals have used
+following types of vaporizers
+ï 70% uses the Open rack Vaporizer (ORV),
+ï 25% uses the Submerged Combustion
+Vaporizer (SCV)
+ï 5% uses the Intermediate Fluid vaporizer
+(IFV)
+WHY: dense rank 5 (cosine 0.5041) -> reported 0.5041
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_7cf32efd8de3
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: in stages; SMR = single mixed refrigerant; C3MR/APCI = propane precooling + mixed refrigerant (widely used); DMR =
+two mixed-refrigerant cycles; AP-X
+
+ in stages; SMR = single mixed refrigerant; C3MR/APCI = propane precooling + mixed refrigerant (widely used); DMR =
+two mixed-refrigerant cycles; AP-
+WHY: lexical rank 1 (BM25 25.9041) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_7a391cc7ce5e
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 126
+SECTION: At Dahej
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6523
+METHOD: bm25
+TEXT_EXCERPT: Regasification
+by STVs & Air Heaters
+ï Use of STVs & Air Heaters offer most economical &
+Eco friendly regasification scheme for warm &
+Humid places
+ï Cold Air Re-circulation cannot be avoided but
+effect can be reduced by Computational Analysis
+Modeling
+ï Fogging can be considerably reduced by 
+WHY: lexical rank 2 (BM25 19.7350) -> reported 0.6523
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_afb355c73eff
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 126
+SECTION: At Dahej
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6523
+METHOD: bm25
+TEXT_EXCERPT: Regasification
+by STVs & Air Heaters
+ï Use of STVs & Air Heaters offer most economical &
+Eco friendly regasification scheme for warm &
+Humid places
+ï Cold Air Re-circulation cannot be avoided but
+effect can be reduced by Computational Analysis
+Modeling
+ï Fogging can be considerably reduced by 
+WHY: lexical rank 3 (BM25 19.7350) -> reported 0.6523
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_98525c5fd45d
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.5838
+METHOD: bm25
+TEXT_EXCERPT: lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SCV in t
+
+lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SC
+WHY: lexical rank 4 (BM25 18.5184) -> reported 0.5838
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_41dd34316c96
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 3
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.5652
+METHOD: bm25
+TEXT_EXCERPT: diate
+Fluid (STV)
+Closed loop of glycol-water (or propane)
+to carry heat from air/seawater;
+shell-and-tube
+Lowest opex, simple; best in
+warm climates;
+
+diate
+Fluid (STV)
+Closed loop of glycol-water (or propane)
+to carry heat from air/seawater;
+shell-and-tube
+Lowest opex, simple; best in
+warm climate
+WHY: lexical rank 5 (BM25 18.1882) -> reported 0.5652
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_41dd34316c96
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 3
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.8478
+METHOD: hybrid
+TEXT_EXCERPT: diate
+Fluid (STV)
+Closed loop of glycol-water (or propane)
+to carry heat from air/seawater;
+shell-and-tube
+Lowest opex, simple; best in
+warm climates;
+
+diate
+Fluid (STV)
+Closed loop of glycol-water (or propane)
+to carry heat from air/seawater;
+shell-and-tube
+Lowest opex, simple; best in
+warm climate
+WHY: dense rank 1 (cosine 0.5767) + lexical rank 5 (BM25 18.1882) -> fused 0.8478
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_25f7f1deb5ee
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 121
+SECTION: Thank You
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.5443
+METHOD: hybrid
+TEXT_EXCERPT: Case Study
+-
+Dahej
+3
+1
+â¢ Open Rack Vaporizers (ORVs) Not Feasible
+â High Turbidity
+â High Concentration of Copper ions
+â¢ Submerged Combustion Vapourizers (SCVs) not
+accepted for Normal operation due to operating
+expenses & Environmental considerations
+â¢ Non-availability of power plant or o
+WHY: dense rank 3 (cosine 0.5449) + lexical rank 16 (BM25 10.5207) -> fused 0.5443
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_8dfa7d2a5674
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 121
+SECTION: Thank You
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.5443
+METHOD: hybrid
+TEXT_EXCERPT: Case Study
+-
+Dahej
+3
+1
+â¢ Open Rack Vaporizers (ORVs) Not Feasible
+â High Turbidity
+â High Concentration of Copper ions
+â¢ Submerged Combustion Vapourizers (SCVs) not
+accepted for Normal operation due to operating
+expenses & Environmental considerations
+â¢ Non-availability of power plant or o
+WHY: dense rank 2 (cosine 0.5449) + lexical rank 17 (BM25 10.5207) -> fused 0.5443
+STAGES: dense, lexical, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_98525c5fd45d
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.5141
+METHOD: hybrid
+TEXT_EXCERPT: lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SCV in t
+
+lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SC
+WHY: dense rank 4 (cosine 0.5057) + lexical rank 4 (BM25 18.5184) -> fused 0.5141
+STAGES: dense, lexical, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_7a391cc7ce5e
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 126
+SECTION: At Dahej
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.4567
+METHOD: hybrid
+TEXT_EXCERPT: Regasification
+by STVs & Air Heaters
+ï Use of STVs & Air Heaters offer most economical &
+Eco friendly regasification scheme for warm &
+Humid places
+ï Cold Air Re-circulation cannot be avoided but
+effect can be reduced by Computational Analysis
+Modeling
+ï Fogging can be considerably reduced by 
+WHY: dense rank 9 (cosine 0.4887) + lexical rank 2 (BM25 19.7350) -> fused 0.4567
+STAGES: dense, lexical, fusion
+
+--- END STRATEGY: hybrid ---
+
+
+QUERY: Describe the LNG supply chain and summarise the global LNG market and contract trends in the historical lecture snapshot.
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_30215e670367
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 137
+SECTION: Lng Emerging Trends
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.5807
+METHOD: dense
+TEXT_EXCERPT: ï LNG markets to remain oversupplied for next 5-7 years
+ï Supply increases created a more bearish price
+environment, with Asia spot LNG hovering to lows of
+around $5mmbtu (except during winter) during 2017.
+ï Projected crude price to stay around $50- 60 bbl over next
+few years
+ï FSRUâs and
+WHY: dense rank 1 (cosine 0.5807) -> reported 0.5807
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_cb2c50849a95
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 137
+SECTION: Lng Emerging Trends
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.5807
+METHOD: dense
+TEXT_EXCERPT: ï LNG markets to remain oversupplied for next 5-7 years
+ï Supply increases created a more bearish price
+environment, with Asia spot LNG hovering to lows of
+around $5mmbtu (except during winter) during 2017.
+ï Projected crude price to stay around $50- 60 bbl over next
+few years
+ï FSRUâs and
+WHY: dense rank 2 (cosine 0.5807) -> reported 0.5807
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_f47f18c1fbc4
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 130
+SECTION: Overview
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.575
+METHOD: dense
+TEXT_EXCERPT: ïWorld LNG Scenario & LNG Chain
+ïDomestic Supply â Demand Scenario
+ïDomestic Re-gasification Capacity Built â up
+ïGas Pipeline Grid
+2
+WHY: dense rank 3 (cosine 0.5750) -> reported 0.5750
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_a379e442c42b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 130
+SECTION: Overview
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.575
+METHOD: dense
+TEXT_EXCERPT: ïWorld LNG Scenario & LNG Chain
+ïDomestic Supply â Demand Scenario
+ïDomestic Re-gasification Capacity Built â up
+ïGas Pipeline Grid
+2
+WHY: dense rank 4 (cosine 0.5750) -> reported 0.5750
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_1c6e29e77d5a
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 148
+SECTION: Lng Sourcing For India
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.5713
+METHOD: dense
+TEXT_EXCERPT: ï Development of terminals merchant terminals providing capacity
+ï Increase in Spot/ Short Term Trade
+ï New opportunities available in form bunkering, gassing-up,
+supply of LNG on small scale to neighboring countries and costal
+movement through barges
+Year
+Total
+Import Spot/ Short Term % (Spot
+WHY: dense rank 5 (cosine 0.5713) -> reported 0.5713
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_8c7c0b70adba
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 2
+SECTION: Fast Memory Check
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: Definitions  treatment impurity/method pairs  LNG chain  flashing/Nâ   compare ORV/SCV/IFV/AAV  market + India numbers  ship coefficients/formulae. Market
+statistics above are historical figures reproduced from the lecture notes.
+WHY: lexical rank 1 (BM25 21.8942) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_98525c5fd45d
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.7263
+METHOD: bm25
+TEXT_EXCERPT: lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SCV in t
+
+lycolâwater systems have low operating cost/simple operation and suit warm ambient conditions, but require space; capital cost is higher than
+SC
+WHY: lexical rank 2 (BM25 18.0074) -> reported 0.7263
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_37913c263157
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 1
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.5126
+METHOD: bm25
+TEXT_EXCERPT: OE6008  Quick revision from uploaded lecture notes
+Page 1
+OE6008 â EXAM QUICK REVISION
+3-page high-yield summary of the uploaded notes  Use figures/years as given in the lecture slides (many are historical snapshots).
+1. Global & Indian OilâGas Scenario
+Global energy: Notes forecast total prim
+WHY: lexical rank 3 (BM25 14.9711) -> reported 0.5126
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_4c7b5905d715
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 3
+SECTION: 92 TCF (2600 BCM) in 12 states; 4 bid rounds, 33 blocks awarded; 2016-17 production 565 MMSCM
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.3695
+METHOD: bm25
+TEXT_EXCERPT: volumes still oil-indexed (~3-month lag).
+ Contract shifts: long-term duration 25 â 10â15 years; hybrid indexation, âSâ curve, lower slopes (11â12%);
+
+olumes still oil-indexed (~3-month lag).
+ Contract shifts: long-term duration 25 â 10â15 years; hybrid indexation, âSâ curve, low
+WHY: lexical rank 4 (BM25 12.9398) -> reported 0.3695
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_6b2867e687ad
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 6
+SECTION: 13276 MTOE 17157 MTOE
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.3092
+METHOD: bm25
+TEXT_EXCERPT: Global natural gas & LNG outlook
+â¢ Global gas demand will grow strongly, but with great variation between regions.
+â¢ The marginal cost of US gas remains below US$ 4 per mBtu (million British
+Thermal Units).
+â¢ The global oversupply of LNG will peak around 2020.
+â¢ Companies are working to deve
+WHY: lexical rank 5 (BM25 12.0828) -> reported 0.3092
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_a379e442c42b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 130
+SECTION: Overview
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6738
+METHOD: hybrid
+TEXT_EXCERPT: ïWorld LNG Scenario & LNG Chain
+ïDomestic Supply â Demand Scenario
+ïDomestic Re-gasification Capacity Built â up
+ïGas Pipeline Grid
+2
+WHY: dense rank 3 (cosine 0.5750) + lexical rank 11 (BM25 10.1843) -> fused 0.6738
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_f47f18c1fbc4
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 130
+SECTION: Overview
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6738
+METHOD: hybrid
+TEXT_EXCERPT: ïWorld LNG Scenario & LNG Chain
+ïDomestic Supply â Demand Scenario
+ïDomestic Re-gasification Capacity Built â up
+ïGas Pipeline Grid
+2
+WHY: dense rank 4 (cosine 0.5750) + lexical rank 12 (BM25 10.1843) -> fused 0.6738
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_30215e670367
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 137
+SECTION: Lng Emerging Trends
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.65
+METHOD: hybrid
+TEXT_EXCERPT: ï LNG markets to remain oversupplied for next 5-7 years
+ï Supply increases created a more bearish price
+environment, with Asia spot LNG hovering to lows of
+around $5mmbtu (except during winter) during 2017.
+ï Projected crude price to stay around $50- 60 bbl over next
+few years
+ï FSRUâs and
+WHY: dense rank 2 (cosine 0.5807) -> fused 0.6500
+STAGES: dense, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_cb2c50849a95
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 137
+SECTION: Lng Emerging Trends
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.65
+METHOD: hybrid
+TEXT_EXCERPT: ï LNG markets to remain oversupplied for next 5-7 years
+ï Supply increases created a more bearish price
+environment, with Asia spot LNG hovering to lows of
+around $5mmbtu (except during winter) during 2017.
+ï Projected crude price to stay around $50- 60 bbl over next
+few years
+ï FSRUâs and
+WHY: dense rank 1 (cosine 0.5807) -> fused 0.6500
+STAGES: dense, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_6b2867e687ad
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 6
+SECTION: 13276 MTOE 17157 MTOE
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6386
+METHOD: hybrid
+TEXT_EXCERPT: Global natural gas & LNG outlook
+â¢ Global gas demand will grow strongly, but with great variation between regions.
+â¢ The marginal cost of US gas remains below US$ 4 per mBtu (million British
+Thermal Units).
+â¢ The global oversupply of LNG will peak around 2020.
+â¢ Companies are working to deve
+WHY: dense rank 8 (cosine 0.5627) + lexical rank 5 (BM25 12.0828) -> fused 0.6386
+STAGES: dense, lexical, fusion
+
+--- END STRATEGY: hybrid ---
+
+
+QUERY: What LNG infrastructure figures are provided for India, including pipeline capacity, existing terminals and the opportunities identified in the notes?
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_8c27f8b6c5bb
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 144
+SECTION: Costs Across Lng Value Chain
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6544
+METHOD: dense
+TEXT_EXCERPT: INDIA â A MAJOR GAS/LNG CONSUMER
+ï 16th largest gas consumer â 50 bcm (~132 mmscmd)
+ï 4th largest LNG importer â 22.5 bcm (~59mmscmd)
+ï Economy growing at CAGR of about 6-7% with similar growth in Energy Consumption
+ï Government aims to increase share of Natural Gas in Indian Energy ba
+WHY: dense rank 1 (cosine 0.6544) -> reported 0.6544
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_1e07a9434d09
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 144
+SECTION: Costs Across Lng Value Chain
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6544
+METHOD: dense
+TEXT_EXCERPT: INDIA â A MAJOR GAS/LNG CONSUMER
+ï 16th largest gas consumer â 50 bcm (~132 mmscmd)
+ï 4th largest LNG importer â 22.5 bcm (~59mmscmd)
+ï Economy growing at CAGR of about 6-7% with similar growth in Energy Consumption
+ï Government aims to increase share of Natural Gas in Indian Energy ba
+WHY: dense rank 2 (cosine 0.6544) -> reported 0.6544
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_e91e564b122b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 18
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6404
+METHOD: dense
+TEXT_EXCERPT: Natural Gas Pipelines Network in India
+â¢ Existing pipeline connectivity of over
+16000 km with a capacity of around 430
+WHY: dense rank 3 (cosine 0.6404) -> reported 0.6404
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_29447cbe08d0
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 18
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6404
+METHOD: dense
+TEXT_EXCERPT: Natural Gas Pipelines Network in India
+â¢ Existing pipeline connectivity of over
+16000 km with a capacity of around 430
+WHY: dense rank 4 (cosine 0.6404) -> reported 0.6404
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_af99cf5d51bd
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 149
+SECTION: Lng Sourcing For India
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6332
+METHOD: dense
+TEXT_EXCERPT: Dahej
+Kochi
+Gangavaram
+INDIAâS GAS INFRASTRUCTURE
+Hazira
+Dabhol
+Mundra
+Kakinada
+Ennore
+Dhamra
+Digha
+Kolkatta
+Krishnapattam
+Jaigarh
+Jafarbad
+Chhara
+Pipelines Length
+(Kms)
+Designed
+Capacity
+(MMSCMD)
+Existing 16150 384
+Under
+Implementat
+ion
+13821 551
+Total 29971
+WHY: dense rank 5 (cosine 0.6332) -> reported 0.6332
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_99df29d0bc83
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 28
+SECTION: Investments In Pipeline / Regas Infrastructure
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: India targets US$100 billion worth investments in gas infrastructure by 2022,
+including an addition of another 228 cities to city gas distribution (CGD) network.
+This would include setting up of RLNG terminals, pipeline projects, completion of
+the gas grid & setting up of CGD network in more cities.
+WHY: lexical rank 1 (BM25 16.0417) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_cbc9c9c8edfa
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 28
+SECTION: Investments In Pipeline / Regas Infrastructure
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: India targets US$100 billion worth investments in gas infrastructure by 2022,
+including an addition of another 228 cities to city gas distribution (CGD) network.
+This would include setting up of RLNG terminals, pipeline projects, completion of
+the gas grid & setting up of CGD network in more cities.
+WHY: lexical rank 2 (BM25 16.0417) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_0a39d98991d4
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.9746
+METHOD: bm25
+TEXT_EXCERPT: emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas pip
+
+emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas p
+WHY: lexical rank 3 (BM25 15.9220) -> reported 0.9746
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_1f77ac0afd5a
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 18
+SECTION: Mmscmd
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6465
+METHOD: bm25
+TEXT_EXCERPT: â¢ Pipeline networks concentrated around
+existing domestic gas fields with majority
+in the northern and the western regions
+of the country
+â¢ Unified tariff proposed by PNGRB can
+act as an enabler for developing natural
+gas infrastructure across the region
+18Lecture notes for OE 6008
+WHY: lexical rank 4 (BM25 14.3781) -> reported 0.6465
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_3d1377a41a59
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 18
+SECTION: Mmscmd
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6465
+METHOD: bm25
+TEXT_EXCERPT: â¢ Pipeline networks concentrated around
+existing domestic gas fields with majority
+in the northern and the western regions
+of the country
+â¢ Unified tariff proposed by PNGRB can
+act as an enabler for developing natural
+gas infrastructure across the region
+18Lecture notes for OE 6008
+WHY: lexical rank 5 (BM25 14.3781) -> reported 0.6465
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_29447cbe08d0
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 18
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.6619
+METHOD: hybrid
+TEXT_EXCERPT: Natural Gas Pipelines Network in India
+â¢ Existing pipeline connectivity of over
+16000 km with a capacity of around 430
+WHY: dense rank 3 (cosine 0.6404) + lexical rank 8 (BM25 13.3905) -> fused 0.6619
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_e91e564b122b
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 18
+SECTION: 235 MTPA refining capacity
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.6619
+METHOD: hybrid
+TEXT_EXCERPT: Natural Gas Pipelines Network in India
+â¢ Existing pipeline connectivity of over
+16000 km with a capacity of around 430
+WHY: dense rank 4 (cosine 0.6404) + lexical rank 9 (BM25 13.3905) -> fused 0.6619
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_1e07a9434d09
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 144
+SECTION: Costs Across Lng Value Chain
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.65
+METHOD: hybrid
+TEXT_EXCERPT: INDIA â A MAJOR GAS/LNG CONSUMER
+ï 16th largest gas consumer â 50 bcm (~132 mmscmd)
+ï 4th largest LNG importer â 22.5 bcm (~59mmscmd)
+ï Economy growing at CAGR of about 6-7% with similar growth in Energy Consumption
+ï Government aims to increase share of Natural Gas in Indian Energy ba
+WHY: dense rank 1 (cosine 0.6544) -> fused 0.6500
+STAGES: dense, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_8c27f8b6c5bb
+DOCUMENT_ID: doc_a762e90876ac
+SOURCE_TITLE: OE6008_Q1 portions.pdf
+PAGE: 144
+SECTION: Costs Across Lng Value Chain
+SOURCE_URL: upload://OE6008_Q1 portions.pdf
+SCORE: 0.65
+METHOD: hybrid
+TEXT_EXCERPT: INDIA â A MAJOR GAS/LNG CONSUMER
+ï 16th largest gas consumer â 50 bcm (~132 mmscmd)
+ï 4th largest LNG importer â 22.5 bcm (~59mmscmd)
+ï Economy growing at CAGR of about 6-7% with similar growth in Energy Consumption
+ï Government aims to increase share of Natural Gas in Indian Energy ba
+WHY: dense rank 2 (cosine 0.6544) -> fused 0.6500
+STAGES: dense, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_99df29d0bc83
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 28
+SECTION: Investments In Pipeline / Regas Infrastructure
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.511
+METHOD: hybrid
+TEXT_EXCERPT: India targets US$100 billion worth investments in gas infrastructure by 2022,
+including an addition of another 228 cities to city gas distribution (CGD) network.
+This would include setting up of RLNG terminals, pipeline projects, completion of
+the gas grid & setting up of CGD network in more cities.
+WHY: dense rank 16 (cosine 0.6056) + lexical rank 1 (BM25 16.0417) -> fused 0.5110
+STAGES: dense, lexical, fusion
+
+--- END STRATEGY: hybrid ---
+
+
+QUERY: Define CB, CM and CWL for LNG ship design. Explain KB, KM, GMT and the roll-period formula, including the effect of very high GM.
+--------------------------------------------------------
+
+--- Strategy: dense ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_f17f22a8d371
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 4
+SECTION: Gail, Ntpc
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.5378
+METHOD: dense
+TEXT_EXCERPT: st CB (Schneekluth: lcb = â0.135 + 0.194Â·CB for
+tankers/bulkers).
+ BMT (transverse metacentric radius) = IT/â, with IT = ktÂ·BÂ³Â·L (waterplane transver
+
+st CB (Schneekluth: lcb = â0.135 + 0.194Â·CB for
+tankers/bulkers).
+ BMT (transverse metacentric radius) = IT/â, with IT = ktÂ·BÂ³Â·L (w
+WHY: dense rank 1 (cosine 0.5378) -> reported 0.5378
+STAGES: dense
+
+--- RESULT 2 ---
+CHUNK_ID: chk_0a39d98991d4
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.5134
+METHOD: dense
+TEXT_EXCERPT: emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas pip
+
+emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas p
+WHY: dense rank 2 (cosine 0.5134) -> reported 0.5134
+STAGES: dense
+
+--- RESULT 3 ---
+CHUNK_ID: chk_ec1af31f7d79
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 156
+SECTION: Thank You
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.4923
+METHOD: dense
+TEXT_EXCERPT: Lecture Notes - OE 6008
+Basic LNG Ship Design Process
+
+Prof. R. Sharma
+E-mail: rajivatri@iitm.ac.in
+WHY: dense rank 3 (cosine 0.4923) -> reported 0.4923
+STAGES: dense
+
+--- RESULT 4 ---
+CHUNK_ID: chk_647049f2dd99
+DOCUMENT_ID: doc_652dcd8322f5
+SOURCE_TITLE: OE6008_Q1.1 portions.pdf
+PAGE: 1
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Q1.1 portions.pdf
+SCORE: 0.4923
+METHOD: dense
+TEXT_EXCERPT: Lecture Notes - OE 6008
+Basic LNG Ship Design Process
+
+Prof. R. Sharma
+E-mail: rajivatri@iitm.ac.in
+WHY: dense rank 4 (cosine 0.4923) -> reported 0.4923
+STAGES: dense
+
+--- RESULT 5 ---
+CHUNK_ID: chk_f381fee78ddf
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 0.4627
+METHOD: dense
+TEXT_EXCERPT: atsoulis, Kerlen,
+Parson, Munro-Smith, etc.).
+CB block coefficient = â/(LBT); CM midship coefficient = AM/(BT); CWL waterplane coefficient = AWL/(LB).
+
+atsoulis, Kerlen,
+Parson, Munro-Smith, etc.).
+CB block coefficient = â/(LBT); CM midship coefficient = AM/(BT); CWL waterplane coefficient = AWL
+WHY: dense rank 5 (cosine 0.4627) -> reported 0.4627
+STAGES: dense
+
+--- END STRATEGY: dense ---
+
+--- Strategy: bm25 ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_f381fee78ddf
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 1.0
+METHOD: bm25
+TEXT_EXCERPT: atsoulis, Kerlen,
+Parson, Munro-Smith, etc.).
+CB block coefficient = â/(LBT); CM midship coefficient = AM/(BT); CWL waterplane coefficient = AWL/(LB).
+
+atsoulis, Kerlen,
+Parson, Munro-Smith, etc.).
+CB block coefficient = â/(LBT); CM midship coefficient = AM/(BT); CWL waterplane coefficient = AWL
+WHY: lexical rank 1 (BM25 40.6459) -> reported 1.0000
+STAGES: lexical
+
+--- RESULT 2 ---
+CHUNK_ID: chk_f17f22a8d371
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 4
+SECTION: Gail, Ntpc
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.7402
+METHOD: bm25
+TEXT_EXCERPT: st CB (Schneekluth: lcb = â0.135 + 0.194Â·CB for
+tankers/bulkers).
+ BMT (transverse metacentric radius) = IT/â, with IT = ktÂ·BÂ³Â·L (waterplane transver
+
+st CB (Schneekluth: lcb = â0.135 + 0.194Â·CB for
+tankers/bulkers).
+ BMT (transverse metacentric radius) = IT/â, with IT = ktÂ·BÂ³Â·L (w
+WHY: lexical rank 2 (BM25 32.3606) -> reported 0.7402
+STAGES: lexical
+
+--- RESULT 3 ---
+CHUNK_ID: chk_0c630a865cc3
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.3612
+METHOD: bm25
+TEXT_EXCERPT: n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse me
+
+n coefficient; CWL = waterplane-area coefficient; KB = keel to centre-of-buoyancy ordinate; LCB =
+longitudinal centre of buoyancy; BMT = transverse 
+WHY: lexical rank 3 (BM25 20.2752) -> reported 0.3612
+STAGES: lexical
+
+--- RESULT 4 ---
+CHUNK_ID: chk_beb6288ddd18
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 4
+SECTION: Gail, Ntpc
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.3544
+METHOD: bm25
+TEXT_EXCERPT: 5.0
+Kochi
+Petronet LNG
+5.0
+Total existing
+30.0
+Under construction
+Dahej expansion, Mundra, Ennore
+12.5
+Planned / Proposed
+Dhamra, Jafrabad (FSRU), Jaigarh / Kakinada, Gangavaram, Kolkata,
+Chhara, Krishnapatnam
+15.0 / 18.5 (grand total 76)
+ Conclusion: tie up volumes on term basis while prices are l
+WHY: lexical rank 4 (BM25 20.0601) -> reported 0.3544
+STAGES: lexical
+
+--- RESULT 5 ---
+CHUNK_ID: chk_0a39d98991d4
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.3264
+METHOD: bm25
+TEXT_EXCERPT: emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas pip
+
+emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas p
+WHY: lexical rank 5 (BM25 19.1655) -> reported 0.3264
+STAGES: lexical
+
+--- END STRATEGY: bm25 ---
+
+--- Strategy: hybrid ---
+RESULT_COUNT: 5
+
+--- RESULT 1 ---
+CHUNK_ID: chk_f17f22a8d371
+DOCUMENT_ID: doc_5d9c4c1baa56
+SOURCE_TITLE: OE6008_Short_Notes.pdf
+PAGE: 4
+SECTION: Gail, Ntpc
+SOURCE_URL: upload://OE6008_Short_Notes.pdf
+SCORE: 0.9091
+METHOD: hybrid
+TEXT_EXCERPT: st CB (Schneekluth: lcb = â0.135 + 0.194Â·CB for
+tankers/bulkers).
+ BMT (transverse metacentric radius) = IT/â, with IT = ktÂ·BÂ³Â·L (waterplane transver
+
+st CB (Schneekluth: lcb = â0.135 + 0.194Â·CB for
+tankers/bulkers).
+ BMT (transverse metacentric radius) = IT/â, with IT = ktÂ·BÂ³Â·L (w
+WHY: dense rank 1 (cosine 0.5378) + lexical rank 2 (BM25 32.3606) -> fused 0.9091
+STAGES: dense, lexical, fusion
+
+--- RESULT 2 ---
+CHUNK_ID: chk_f381fee78ddf
+DOCUMENT_ID: doc_09123602d55a
+SOURCE_TITLE: OE6008_Final_10min_Handwritten_Notes.pdf
+PAGE: 2
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Final_10min_Handwritten_Notes.pdf
+SCORE: 0.727
+METHOD: hybrid
+TEXT_EXCERPT: atsoulis, Kerlen,
+Parson, Munro-Smith, etc.).
+CB block coefficient = â/(LBT); CM midship coefficient = AM/(BT); CWL waterplane coefficient = AWL/(LB).
+
+atsoulis, Kerlen,
+Parson, Munro-Smith, etc.).
+CB block coefficient = â/(LBT); CM midship coefficient = AM/(BT); CWL waterplane coefficient = AWL
+WHY: dense rank 5 (cosine 0.4627) + lexical rank 1 (BM25 40.6459) -> fused 0.7270
+STAGES: dense, lexical, fusion
+
+--- RESULT 3 ---
+CHUNK_ID: chk_0a39d98991d4
+DOCUMENT_ID: doc_b7250db0e043
+SOURCE_TITLE: OE6008_Exam_Quick_Revision.pdf
+PAGE: 3
+SECTION: Lng Regasification, Market & Ship-Design Terms
+SOURCE_URL: upload://OE6008_Exam_Quick_Revision.pdf
+SCORE: 0.6755
+METHOD: hybrid
+TEXT_EXCERPT: emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas pip
+
+emand exceeds domestic supply, so LNG imports and infrastructure matter. Key infrastructure: LNG receiving
+terminals, regasification, national gas p
+WHY: dense rank 2 (cosine 0.5134) + lexical rank 5 (BM25 19.1655) -> fused 0.6755
+STAGES: dense, lexical, fusion
+
+--- RESULT 4 ---
+CHUNK_ID: chk_647049f2dd99
+DOCUMENT_ID: doc_652dcd8322f5
+SOURCE_TITLE: OE6008_Q1.1 portions.pdf
+PAGE: 1
+SECTION: Introduction
+SOURCE_URL: upload://OE6008_Q1.1 portions.pdf
+SCORE: 0.4888
+METHOD: hybrid
+TEXT_EXCERPT: Lecture Notes - OE 6008
+Basic LNG Ship Design Process
+
+Prof. R. Sharma
+E-mail: rajivatri@iitm.ac.in
+WHY: dense rank 4 (cosine 0.4923) + lexical rank 12 (BM25 9.1535) -> fused 0.4888
+STAGES: dense, lexical, fusion
+
+--- RESULT 5 ---
+CHUNK_ID: chk_ec1af31f7d79
+DOCUMENT_ID: doc_9c7e207da4d2
+SOURCE_TITLE: OE6008_Q1 portions_merged.pdf
+PAGE: 156
+SECTION: Thank You
+SOURCE_URL: upload://OE6008_Q1 portions_merged.pdf
+SCORE: 0.4888
+METHOD: hybrid
+TEXT_EXCERPT: Lecture Notes - OE 6008
+Basic LNG Ship Design Process
+
+Prof. R. Sharma
+E-mail: rajivatri@iitm.ac.in
+WHY: dense rank 3 (cosine 0.4923) + lexical rank 13 (BM25 9.1535) -> fused 0.4888
+STAGES: dense, lexical, fusion
+
+--- END STRATEGY: hybrid ---
+

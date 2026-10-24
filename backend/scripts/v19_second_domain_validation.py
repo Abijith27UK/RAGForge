@@ -704,14 +704,20 @@ async def cmd_ingest(args: argparse.Namespace) -> int:
             log.problem(
                 f"the freshly built KB is not READY: {validation['verdict']} "
                 f"({'; '.join(validation['blocking'])})"
-            )
-
-        # -- retrieval probes across subdomains --------------------------------
+            )        # -- retrieval probes across subdomains --------------------------------
+        # Each post-build section is guarded: a failed probe is RECORDED as a
+        # failure (exit 1, PROBLEM printed, stored in the run record) instead of
+        # crashing the script before the record — and the protected-KB check —
+        # are written. Failures are never turned into successes.
         probe_rows: list[dict[str, Any]] = []
         for probe in RETRIEVAL_PROBES:
-            search = await agent.structured(
-                "search_knowledge_base", {"kb_id": kb_id, "query": probe["query"], "top_k": 5}
-            )
+            try:
+                search = await agent.structured(
+                    "search_knowledge_base", {"kb_id": kb_id, "query": probe["query"], "top_k": 5}
+                )
+            except Exception as exc:  # noqa: BLE001 - recorded, not hidden
+                log.problem(f"search_knowledge_base [{probe['subdomain']}] failed: {exc}")
+                continue
             timings = (search.get("trace") or {}).get("timings") or {}
             row = {
                 "subdomain": probe["subdomain"],
@@ -735,11 +741,14 @@ async def cmd_ingest(args: argparse.Namespace) -> int:
 
         # -- evidence + provenance ---------------------------------------------
         sample_ids = [row["top"][0]["chunk_id"] for row in probe_rows if row["top"]][:5]
-        evidence = await agent.structured(
-            "get_evidence", {"kb_id": kb_id, "chunk_ids": sample_ids}
-        )
-        log.step(
-            "get_evidence (provenance of one chunk per subdomain)",
+        try:
+            evidence = await agent.structured(
+                "get_evidence", {"kb_id": kb_id, "chunk_ids": sample_ids}
+            )
+        except Exception as exc:  # noqa: BLE001 - recorded, not hidden
+            evidence = {}
+            log.problem(f"get_evidence failed: {exc}")
+        log.step("get_evidence (provenance of one chunk per subdomain)",
             {
                 "found": evidence.get("found"),
                 "missing_chunk_ids": evidence.get("missing_chunk_ids", []),
@@ -763,9 +772,13 @@ async def cmd_ingest(args: argparse.Namespace) -> int:
         # -- grounded answers + abstention ---------------------------------------
         answer_rows: list[dict[str, Any]] = []
         for question in ANSWER_PROBES_IN_CORPUS:
-            answer = await agent.structured(
-                "answer_from_knowledge_base", {"kb_id": kb_id, "question": question, "top_k": 5}
-            )
+            try:
+                answer = await agent.structured(
+                    "answer_from_knowledge_base", {"kb_id": kb_id, "question": question, "top_k": 5}
+                )
+            except Exception as exc:  # noqa: BLE001 - a failed real-LLM call stays a failure
+                log.problem(f"answer probe failed: {question!r}: {exc}")
+                continue
             row = {
                 "kind": "in_corpus",
                 "question": question,
@@ -787,9 +800,13 @@ async def cmd_ingest(args: argparse.Namespace) -> int:
 
         abstain_rows: list[dict[str, Any]] = []
         for question in ANSWER_PROBES_UNSUPPORTED:
-            answer = await agent.structured(
-                "answer_from_knowledge_base", {"kb_id": kb_id, "question": question, "top_k": 5}
-            )
+            try:
+                answer = await agent.structured(
+                    "answer_from_knowledge_base", {"kb_id": kb_id, "question": question, "top_k": 5}
+                )
+            except Exception as exc:  # noqa: BLE001 - recorded, not hidden
+                log.problem(f"unsupported probe failed: {question!r}: {exc}")
+                continue
             row = {
                 "kind": "unsupported",
                 "question": question,
@@ -806,44 +823,73 @@ async def cmd_ingest(args: argparse.Namespace) -> int:
                 log.problem(f"the KB confidently answered an unsupported question: {question!r}")
 
         # -- the gated comparison tool, against whatever instrument exists -----
-        comparison = await agent.structured(
-            "compare_retrieval_strategies",
-            {
-                "kb_id": kb_id,
-                "benchmark_path": "benchmarks/internet-protocols-draft-v1.json",
-                "strategies": ["dense", "bm25"],
-                "top_k": 10,
-                "acknowledge_exploratory": True,
-                "label": "v19-draft-exploratory",
-            },
-        )
-        log.step(
-            "compare_retrieval_strategies (draft instrument)",
-            {
-                "permitted": comparison["permitted"],
-                "reason": comparison["reason"],
-                "claim_strength": comparison["claim_strength"],
-                "promoted": comparison["promoted"],
-                "run_id": comparison["run_id"],
-                "strategies": comparison["strategies"],
-                "warnings": comparison["warnings"],
-            },
-            limit=2000,
-        )
+        # The draft benchmark is AUTHORED AFTER this build (its grounding must
+        # reference real chunk ids from THIS build), so on a first run the
+        # instrument does not exist yet: record that as the outcome and defer
+        # the comparison to Phase 3 instead of crashing before the record and
+        # the protected-KB check are written.
+        benchmark_rel = "benchmarks/internet-protocols-draft-v1.json"
+        benchmark_abs = BACKEND_ROOT.parent / benchmark_rel
+        if not benchmark_abs.is_file():
+            log.step(
+                "compare_retrieval_strategies (deferred)",
+                {
+                    "permitted": False,
+                    "deferred": True,
+                    "reason": (
+                        f"{benchmark_rel} does not exist yet: the draft instrument is "
+                        "grounded in chunk ids from THIS build, so it is authored after "
+                        "the build. Deferred to Phase 3 (after v19_benchmark_tool finalize)."
+                    ),
+                },
+            )
+        else:
+            try:
+                comparison = await agent.structured(
+                    "compare_retrieval_strategies",
+                    {
+                        "kb_id": kb_id,
+                        "benchmark_path": benchmark_rel,
+                        "strategies": ["dense", "bm25"],
+                        "top_k": 10,
+                        "acknowledge_exploratory": True,
+                        "label": "v19-draft-exploratory",
+                    },
+                )
+            except Exception as exc:  # noqa: BLE001 - recorded, not hidden
+                comparison = {}
+                log.problem(f"compare_retrieval_strategies failed: {exc}")
+            log.step(
+                "compare_retrieval_strategies (draft instrument)",
+                {
+                    "permitted": comparison.get("permitted"),
+                    "reason": comparison.get("reason"),
+                    "claim_strength": comparison.get("claim_strength"),
+                    "promoted": comparison.get("promoted"),
+                    "run_id": comparison.get("run_id"),
+                    "strategies": comparison.get("strategies"),
+                    "warnings": comparison.get("warnings"),
+                },
+                limit=2000,
+            )
 
         # -- audit trail ---------------------------------------------------------
-        operations = await agent.structured(
-            "get_operation_status", {"operation_id": ingested["operation_id"], "kb_id": kb_id}
-        )
+        try:
+            operations = await agent.structured(
+                "get_operation_status", {"operation_id": ingested["operation_id"], "kb_id": kb_id}
+            )
+        except Exception as exc:  # noqa: BLE001 - recorded, not hidden
+            operations = {}
+            log.problem(f"get_operation_status failed: {exc}")
         log.step(
             "get_operation_status (ingest operation)",
             {
-                "operation_id": operations["operation_id"],
-                "action": operations["action"],
-                "lifecycle_stage": operations["lifecycle_stage"],
-                "status": operations["status"],
-                "confirmation_used": operations["confirmation_used"],
-                "run_status": operations["run_status"],
+                "operation_id": operations.get("operation_id"),
+                "action": operations.get("action"),
+                "lifecycle_stage": operations.get("lifecycle_stage"),
+                "status": operations.get("status"),
+                "confirmation_used": operations.get("confirmation_used"),
+                "run_status": operations.get("run_status"),
             },
         )
 
@@ -914,7 +960,9 @@ def cmd_audit(_args: argparse.Namespace) -> int:
         ops_on_protected = [
             row[0]
             for row in con.execute(
-                "SELECT id FROM mcp_operations WHERE kb_id = ? OR parameters LIKE ?",
+                # `data` is the JSON payload column; there is no `parameters`
+                # column in this schema (verified against PRAGMA table_info).
+                "SELECT id FROM mcp_operations WHERE kb_id = ? OR data LIKE ?",
                 (PROTECTED_KB_ID, f"%{PROTECTED_KB_ID}%"),
             )
         ]

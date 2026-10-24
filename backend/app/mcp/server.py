@@ -206,14 +206,30 @@ _COMPARISON = ToolAnnotations(
 )
 
 
-def create_server(bridge: RAGForgeBridge | None = None) -> MCPServer:
-    """Build the MCP server. `bridge` may be injected for tests."""
+def create_server(
+    bridge: RAGForgeBridge | None = None,
+    *,
+    token_verifier: Any | None = None,
+    auth: Any | None = None,
+    auth_server_provider: Any | None = None,
+) -> MCPServer:
+    """Build the MCP server. `bridge` may be injected for tests.
+
+    The optional ``token_verifier`` / ``auth`` / ``auth_server_provider``
+    arguments are passed straight to the SDK's ``MCPServer`` and are what turn
+    this into a protected RESOURCE SERVER for the V22 Streamable HTTP transport
+    (see ``app.mcp.remote``). They default to ``None``, so the stdio server keeps
+    its original behaviour exactly: one tool registry, one bridge, two transports.
+    """
     bridge = bridge or RAGForgeBridge()
     server = MCPServer(
         name="ragforge",
         title="RAGForge Knowledge Bases",
         version=SERVER_VERSION,
         instructions=SERVER_INSTRUCTIONS,
+        token_verifier=token_verifier,
+        auth=auth,
+        auth_server_provider=auth_server_provider,
     )
 
     # ---------------------------------------------------------------- tools

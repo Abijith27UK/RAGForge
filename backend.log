@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\abiji\Documents\ID4100\RAGForge\backend\app\main.py", line 11, in <module>
+    from app.config import get_settings
+ModuleNotFoundError: No module named 'app'
